@@ -5,7 +5,7 @@ class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   Future<void> _launchWebsite() async {
-    final Uri websiteUri = Uri.parse('https://orapide.shop');
+    final Uri websiteUri = Uri.parse('https://sarci.ci');
 
     if (await canLaunchUrl(websiteUri)) {
       await launchUrl(websiteUri, mode: LaunchMode.externalApplication);
@@ -18,7 +18,7 @@ class AboutScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text('À propos'),
-        backgroundColor: const Color(0xFF4CAF50),
+        backgroundColor: const Color(0xFF488950),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -34,12 +34,12 @@ class AboutScreen extends StatelessWidget {
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
+                  colors: [Color(0xFF488950), Color(0xFF60A066)],
                 ),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF4CAF50).withOpacity(0.3),
+                    color: const Color(0xFF488950).withOpacity(0.3),
                     blurRadius: 15,
                     offset: const Offset(0, 8),
                   ),
@@ -62,7 +62,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Aya Huiles',
+                    'Mon univers AYA',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -113,7 +113,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Aya Huiles est une application innovante qui vous permet de collecter des points en scannant des codes QR et en participant à des mini-jeux.',
+                    'Aya est une marque qui valorise le patrimoine ivoirien et offre des produits de qualité. Avec Aya, chaque achat compte ! Scannez vos produits, gagnez des points et profitez d’avantages exclusifs pour nos clients fidèles.',
                     style: TextStyle(
                       fontSize: 16,
                       color: Color(0xFF424242),
@@ -169,7 +169,7 @@ class AboutScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   _buildInfoItem('Version', '1.0.0'),
                   _buildInfoItem('Dernière mise à jour', 'Décembre 2024'),
-                  _buildInfoItem('Développeur', 'Aya Huiles Team'),
+                  _buildInfoItem('Développeur', 'Aya+ Team'),
                   _buildInfoItem('Plateforme', 'Android & iOS'),
                   _buildInfoItem('Langue', 'Français'),
                 ],
@@ -206,13 +206,13 @@ class AboutScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   _buildLinkItem(
                     'Site web officiel',
-                    'orapide.shop',
+                    'www.sarci.ci',
                     Icons.language,
                     _launchWebsite,
                   ),
                   _buildLinkItem(
                     'Support',
-                    'support@aya-huiles.com',
+                    'sarci@sarci.ci',
                     Icons.email,
                     null,
                   ),
@@ -228,7 +228,7 @@ class AboutScreen extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4CAF50),
+                  backgroundColor: const Color(0xFF488950),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -303,10 +303,10 @@ class AboutScreen extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: const Color(0xFF4CAF50).withOpacity(0.1),
+          color: const Color(0xFF488950).withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Icon(icon, color: const Color(0xFF4CAF50), size: 20),
+        child: Icon(icon, color: const Color(0xFF488950), size: 20),
       ),
       title: Text(
         title,

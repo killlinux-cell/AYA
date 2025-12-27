@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../providers/user_provider.dart';
-import '../services/user_service.dart';
+import '../services/local_user_service.dart';
 
 class FloatingQRButton extends StatefulWidget {
   const FloatingQRButton({super.key});
@@ -18,7 +18,7 @@ class _FloatingQRButtonState extends State<FloatingQRButton>
   bool _isExpanded = false;
   String? _personalQRCode;
   bool _isLoading = false;
-  final UserService _userService = UserService();
+  final LocalUserService _userService = LocalUserService();
 
   @override
   void initState() {
@@ -79,7 +79,7 @@ class _FloatingQRButtonState extends State<FloatingQRButton>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Nouveau QR code généré !'),
-          backgroundColor: Color(0xFF4CAF50),
+          backgroundColor: Color(0xFF488950),
           duration: Duration(seconds: 2),
         ),
       );
@@ -113,14 +113,14 @@ class _FloatingQRButtonState extends State<FloatingQRButton>
           child: Container(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
+                colors: [Color(0xFF488950), Color(0xFF60A066)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF4CAF50).withOpacity(0.3),
+                  color: const Color(0xFF488950).withOpacity(0.3),
                   blurRadius: 15,
                   offset: const Offset(0, 8),
                 ),
@@ -175,7 +175,7 @@ class _FloatingQRButtonState extends State<FloatingQRButton>
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: const BoxDecoration(
-                        color: Color(0xFF4CAF50),
+                        color: Color(0xFF488950),
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
@@ -222,7 +222,7 @@ class _FloatingQRButtonState extends State<FloatingQRButton>
                             const Padding(
                               padding: EdgeInsets.all(20),
                               child: CircularProgressIndicator(
-                                color: Color(0xFF4CAF50),
+                                color: Color(0xFF488950),
                               ),
                             )
                           else if (_personalQRCode != null) ...[
@@ -251,7 +251,7 @@ class _FloatingQRButtonState extends State<FloatingQRButton>
                                     ),
                                     decoration: BoxDecoration(
                                       color: const Color(
-                                        0xFF4CAF50,
+                                        0xFF488950,
                                       ).withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -279,7 +279,7 @@ class _FloatingQRButtonState extends State<FloatingQRButton>
                                     icon: const Icon(Icons.refresh, size: 16),
                                     label: const Text('Régénérer'),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF4CAF50),
+                                      backgroundColor: const Color(0xFF488950),
                                       foregroundColor: Colors.white,
                                       padding: const EdgeInsets.symmetric(
                                         vertical: 8,
@@ -301,16 +301,16 @@ class _FloatingQRButtonState extends State<FloatingQRButton>
                                           content: Text(
                                             'Fonctionnalité de partage à venir !',
                                           ),
-                                          backgroundColor: Color(0xFF4CAF50),
+                                          backgroundColor: Color(0xFF488950),
                                         ),
                                       );
                                     },
                                     icon: const Icon(Icons.share, size: 16),
                                     label: const Text('Partager'),
                                     style: OutlinedButton.styleFrom(
-                                      foregroundColor: const Color(0xFF4CAF50),
+                                      foregroundColor: const Color(0xFF488950),
                                       side: const BorderSide(
-                                        color: Color(0xFF4CAF50),
+                                        color: Color(0xFF488950),
                                       ),
                                       padding: const EdgeInsets.symmetric(
                                         vertical: 8,

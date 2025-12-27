@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/loading_widget.dart';
+import '../theme/app_colors.dart';
 import 'auth_screen.dart';
 import 'home_screen.dart';
 
@@ -25,21 +27,13 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeIn,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.elasticOut,
-    ));
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    );
 
     _animationController.forward();
 
@@ -48,10 +42,10 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _checkAuthAndNavigate() async {
     await Future.delayed(const Duration(seconds: 3));
-    
+
     if (mounted) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
+
       if (authProvider.isAuthenticated) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -73,7 +67,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF4CAF50),
+      backgroundColor: AppColors.primaryGreen,
       body: Center(
         child: AnimatedBuilder(
           animation: _animationController,
@@ -89,43 +83,44 @@ class _SplashScreenState extends State<SplashScreen>
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(60),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: AppColors.black.withOpacity(0.2),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.local_florist,
-                        size: 60,
-                        color: Color(0xFF4CAF50),
+                      child: Image.asset(
+                        'assets/icons/univers.png',
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.contain,
                       ),
                     ),
                     const SizedBox(height: 24),
                     const Text(
-                      'Aya HUILE VÉGÉTALE',
+                      'Mon univers AYA',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppColors.white,
                         letterSpacing: 1.2,
                       ),
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Collectez des points, jouez et gagnez !',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white70,
-                      ),
+                      'Trésor de mon Pays.',
+                      style: TextStyle(fontSize: 16, color: AppColors.white),
                     ),
                     const SizedBox(height: 40),
-                    const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    // Utilisation du widget de chargement personnalisé
+                    const LoadingWidget(
+                      message: 'Initialisation...',
+                      size: 40.0,
+                      backgroundColor: Colors.transparent,
                     ),
                   ],
                 ),

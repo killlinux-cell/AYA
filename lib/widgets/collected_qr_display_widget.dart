@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/user_provider.dart';
+import '../providers/auth_provider.dart';
 
 class CollectedQRDisplayWidget extends StatelessWidget {
   const CollectedQRDisplayWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<UserProvider>(
-      builder: (context, userProvider, child) {
-        final user = userProvider.user;
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final user = authProvider.currentUser;
         if (user == null) {
           return const SizedBox.shrink();
         }
@@ -36,12 +36,12 @@ class CollectedQRDisplayWidget extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF4CAF50).withOpacity(0.1),
+                      color: const Color(0xFF488950).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Icon(
                       Icons.qr_code,
-                      color: Color(0xFF4CAF50),
+                      color: Color(0xFF488950),
                       size: 24,
                     ),
                   ),
@@ -57,9 +57,12 @@ class CollectedQRDisplayWidget extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF4CAF50),
+                      color: const Color(0xFF488950),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -73,9 +76,9 @@ class CollectedQRDisplayWidget extends StatelessWidget {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Barre de progression
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,7 +98,7 @@ class CollectedQRDisplayWidget extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF4CAF50),
+                          color: Color(0xFF488950),
                         ),
                       ),
                     ],
@@ -104,30 +107,32 @@ class CollectedQRDisplayWidget extends StatelessWidget {
                   LinearProgressIndicator(
                     value: (user.collectedQRCodes / 10).clamp(0.0, 1.0),
                     backgroundColor: Colors.grey.shade200,
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFF488950),
+                    ),
                     minHeight: 8,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Message d'encouragement
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50).withOpacity(0.1),
+                  color: const Color(0xFF488950).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFF4CAF50).withOpacity(0.3),
+                    color: const Color(0xFF488950).withOpacity(0.3),
                   ),
                 ),
                 child: Row(
                   children: [
                     const Icon(
                       Icons.emoji_events,
-                      color: Color(0xFF4CAF50),
+                      color: Color(0xFF488950),
                       size: 20,
                     ),
                     const SizedBox(width: 12),
@@ -138,7 +143,7 @@ class CollectedQRDisplayWidget extends StatelessWidget {
                             : 'Continuez à scanner pour collecter plus de codes et gagner des points !',
                         style: const TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF4CAF50),
+                          color: Color(0xFF488950),
                           fontWeight: FontWeight.w500,
                         ),
                       ),

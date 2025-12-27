@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Couleurs de la marque Aya+ -->
+    <color name="aya_primary_green">#488950</color>
+    <color name="aya_primary_green_light">#60A066</color>
+    <color name="aya_primary_green_dark">#3A6F41</color>
+    
+    <!-- Couleurs d'accent -->
+    <color name="aya_red">#a93236</color>
+    <color name="aya_red_light">#C54A4E</color>
+    <color name="aya_red_dark">#8B282B</color>
+    
+    <color name="aya_yellow">#f2ce11</color>
+    <color name="aya_yellow_light">#F4D63A</color>
+    <color name="aya_yellow_dark">#D4B50E</color>
+    
+    <color name="aya_white">#ffffff</color>
+    <color name="aya_black">#000000</color>
+    
+    <!-- Couleurs système -->
+    <color name="aya_background">#ffffff</color>
+    <color name="aya_surface">#f8f9fa</color>
+    <color name="aya_text_primary">#212529</color>
+    <color name="aya_text_secondary">#6c757d</color>
+    
+    <!-- Anciennes couleurs (pour compatibilité) -->
+    <color name="aya_green">#488950</color>
+    <color name="aya_green_light">#60A066</color>
+    <color name="aya_green_dark">#3A6F41</color>
+    
+    <!-- Couleurs de base -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>

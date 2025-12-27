@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../providers/user_provider.dart';
-import '../services/user_service.dart';
+import '../services/local_user_service.dart';
 
 class PersonalQRScreen extends StatefulWidget {
   const PersonalQRScreen({super.key});
@@ -14,7 +14,7 @@ class PersonalQRScreen extends StatefulWidget {
 class _PersonalQRScreenState extends State<PersonalQRScreen> {
   String? _personalQRCode;
   bool _isLoading = false;
-  final UserService _userService = UserService();
+  final LocalUserService _userService = LocalUserService();
 
   @override
   void initState() {
@@ -78,7 +78,7 @@ class _PersonalQRScreenState extends State<PersonalQRScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Nouveau QR code généré avec succès !'),
-          backgroundColor: Color(0xFF4CAF50),
+          backgroundColor: Color(0xFF488950),
         ),
       );
     } catch (e) {
@@ -100,7 +100,7 @@ class _PersonalQRScreenState extends State<PersonalQRScreen> {
     final user = userProvider.user;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF4CAF50),
+      backgroundColor: const Color(0xFF488950),
       appBar: AppBar(
         title: const Text(
           'Mon QR Code Personnel',
@@ -135,7 +135,7 @@ class _PersonalQRScreenState extends State<PersonalQRScreen> {
                     child: const Icon(
                       Icons.qr_code,
                       size: 40,
-                      color: Color(0xFF4CAF50),
+                      color: Color(0xFF488950),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -174,7 +174,7 @@ class _PersonalQRScreenState extends State<PersonalQRScreen> {
                       if (_isLoading) ...[
                         const CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Color(0xFF4CAF50),
+                            Color(0xFF488950),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -184,7 +184,7 @@ class _PersonalQRScreenState extends State<PersonalQRScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF4CAF50).withOpacity(0.1),
+                            color: const Color(0xFF488950).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(
@@ -194,7 +194,7 @@ class _PersonalQRScreenState extends State<PersonalQRScreen> {
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF4CAF50),
+                                  color: Color(0xFF488950),
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -316,7 +316,7 @@ class _PersonalQRScreenState extends State<PersonalQRScreen> {
                             ),
                           ),
                         ),
-                        
+
                         // Espace supplémentaire en bas pour éviter que le bouton soit trop près du bord
                         const SizedBox(height: 20),
                       ] else ...[

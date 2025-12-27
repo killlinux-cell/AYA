@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import '../models/user.dart' as app_user;
 import '../models/qr_code.dart';
-import '../services/user_service.dart';
-import '../services/auth_service.dart';
+import '../services/django_user_service.dart';
+import '../services/django_auth_service.dart';
 
 class UserProvider with ChangeNotifier {
   app_user.User? _user;
@@ -10,8 +10,8 @@ class UserProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
-  final UserService _userService = UserService();
-  final AuthService _authService = AuthService();
+  final DjangoUserService _userService = DjangoUserService.singleton();
+  final DjangoAuthService _authService = DjangoAuthService.instance;
 
   app_user.User? get user => _user;
   List<QRCode> get collectedQRCodes => _qrCodes;
@@ -21,6 +21,15 @@ class UserProvider with ChangeNotifier {
   // Initialiser le provider
   void initialize() {
     _checkCurrentUser();
+  }
+
+  // Synchroniser avec l'utilisateur de l'AuthProvider (pour l'inscription)
+  void syncWithAuthUser(app_user.User authUser) {
+    _user = authUser;
+    _error = null;
+    _isLoading = false;
+    notifyListeners();
+    print('UserProvider: Synchronized with AuthUser: ${authUser.email}');
   }
 
   // Vérifier l'utilisateur actuel
@@ -35,21 +44,18 @@ class UserProvider with ChangeNotifier {
         'UserProvider: AuthService.isAuthenticated: ${_authService.isAuthenticated}',
       );
 
-      if (_authService.isAuthenticated) {
-        final currentUser = _authService.currentUser;
-        if (currentUser != null) {
-          print(
-            'UserProvider: Current user from AuthService: ${currentUser.id}',
-          );
-          print('UserProvider: Current user email: ${currentUser.email}');
-          await loadUserData(currentUser.id);
-        } else {
-          print('UserProvider: No current user found in AuthService');
-          _error = 'Aucun utilisateur connecté trouvé';
-        }
+      // Récupérer les données utilisateur fraîches depuis l'API
+      final freshUserData = await _authService.getUserProfile();
+      if (freshUserData != null) {
+        print('UserProvider: Fresh user data from API: ${freshUserData.id}');
+        print(
+          'UserProvider: Fresh user points: ${freshUserData.availablePoints}',
+        );
+        // Synchroniser avec les données fraîches de l'API
+        syncWithAuthUser(freshUserData);
       } else {
-        print('UserProvider: User not authenticated');
-        _error = 'Utilisateur non authentifié';
+        print('UserProvider: No fresh user data found from API');
+        _error = 'Aucun utilisateur connecté trouvé';
       }
 
       _isLoading = false;
@@ -64,12 +70,14 @@ class UserProvider with ChangeNotifier {
 
   // Rafraîchir les données utilisateur
   Future<void> refreshUserData() async {
-    if (_authService.isAuthenticated) {
-      final currentUser = _authService.currentUser;
-      if (currentUser != null) {
-        print('Refreshing user data for: ${currentUser.id}');
-        await loadUserData(currentUser.id);
-      }
+    final currentUser = _authService.currentUser;
+    if (currentUser != null) {
+      print('Refreshing user data for: ${currentUser.id}');
+      // Synchroniser avec les données de l'AuthProvider
+      syncWithAuthUser(currentUser);
+
+      // Rafraîchir aussi la liste des QR codes
+      await loadUserQRCodes(currentUser.id);
     }
   }
 
@@ -78,35 +86,8 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Charger les données utilisateur
-  Future<void> loadUserData(String userId) async {
-    try {
-      print('UserProvider: Loading user data for ID: $userId');
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
-
-      final userData = await _userService.getUserData(userId);
-      if (userData != null) {
-        _user = userData;
-        print('UserProvider: User data loaded successfully: ${userData.name}');
-        
-        // Charger les QR codes de l'utilisateur
-        await loadUserQRCodes(userId);
-      } else {
-        _error = 'Impossible de charger les données utilisateur';
-        print('UserProvider: No user data found for ID: $userId');
-      }
-
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      print('UserProvider: Error loading user data: $e');
-      _error = 'Erreur lors du chargement des données utilisateur: ${e.toString()}';
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
+  // Méthode loadUserData supprimée - plus nécessaire
+  // Les données utilisateur sont maintenant synchronisées directement depuis l'AuthProvider
 
   // Charger les codes QR collectés
   Future<void> loadUserQRCodes(String userId) async {
@@ -246,6 +227,8 @@ class UserProvider with ChangeNotifier {
     _isLoading = false;
     _error = null;
     notifyListeners();
-    print('UserProvider reset - user: ${_user?.id}, QR codes: ${_qrCodes.length}');
+    print(
+      'UserProvider reset - user: ${_user?.id}, QR codes: ${_qrCodes.length}',
+    );
   }
 }

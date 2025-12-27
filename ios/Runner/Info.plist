@@ -55,6 +55,21 @@
 				<string>aya-huile-app</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>monuniversaya.com</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>https</string>
+			</array>
+		</dict>
+	</array>
+	
+	<!-- Associated Domains pour les App Links universels -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:monuniversaya.com</string>
+		<string>applinks:www.monuniversaya.com</string>
 	</array>
 </dict>
 </plist>

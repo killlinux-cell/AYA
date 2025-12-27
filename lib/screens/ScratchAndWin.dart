@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:scratcher/scratcher.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
-import '../services/game_service.dart';
-import '../services/game_service.dart';
+import '../services/django_game_service.dart';
+import '../services/django_auth_service.dart';
 
 class ScratchAndWinGame extends StatefulWidget {
   @override
@@ -27,11 +27,15 @@ class _ScratchAndWinGameState extends State<ScratchAndWinGame> {
     });
 
     try {
-      final gameService = GameService();
+      final gameService = DjangoGameService(DjangoAuthService.instance);
       final result = await gameService.playGame(user.id, 'scratch_win', 10);
 
       if (result['success']) {
         _pointsWon = result['pointsWon'];
+
+        // Rafraîchir les données utilisateur pour synchroniser les points
+        await userProvider.refreshUserData();
+
         setState(() {
           _isLoading = false;
         });
@@ -39,7 +43,7 @@ class _ScratchAndWinGameState extends State<ScratchAndWinGame> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message']),
-            backgroundColor: const Color(0xFF4CAF50),
+            backgroundColor: const Color(0xFF488950),
           ),
         );
       } else {
@@ -59,10 +63,7 @@ class _ScratchAndWinGameState extends State<ScratchAndWinGame> {
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -71,11 +72,13 @@ class _ScratchAndWinGameState extends State<ScratchAndWinGame> {
     setState(() {
       _revealed = true;
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('🎉 Félicitations ! Vous avez gagné $_pointsWon points !'),
-        backgroundColor: const Color(0xFF4CAF50),
+        content: Text(
+          '🎉 Félicitations ! Vous avez gagné $_pointsWon points !',
+        ),
+        backgroundColor: const Color(0xFF488950),
         duration: const Duration(seconds: 3),
       ),
     );
@@ -87,9 +90,12 @@ class _ScratchAndWinGameState extends State<ScratchAndWinGame> {
     final user = userProvider.user;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF4CAF50),
+      backgroundColor: const Color(0xFF488950),
       appBar: AppBar(
-        title: const Text("Scratch & Win", style: TextStyle(color: Colors.white)),
+        title: const Text(
+          "Scratch & Win",
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -119,7 +125,7 @@ class _ScratchAndWinGameState extends State<ScratchAndWinGame> {
                     child: const Icon(
                       Icons.brush,
                       size: 40,
-                      color: Color(0xFF4CAF50),
+                      color: Color(0xFF488950),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -134,10 +140,7 @@ class _ScratchAndWinGameState extends State<ScratchAndWinGame> {
                   const SizedBox(height: 8),
                   Text(
                     'Points disponibles: ${user?.availablePoints ?? 0}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
+                    style: const TextStyle(fontSize: 16, color: Colors.white70),
                   ),
                 ],
               ),
@@ -169,17 +172,17 @@ class _ScratchAndWinGameState extends State<ScratchAndWinGame> {
                         const SizedBox(height: 20),
                         const Text(
                           "Coût: 10 points",
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
                         ),
                         const SizedBox(height: 20),
                         ElevatedButton(
                           onPressed: _startGame,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4CAF50),
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                            backgroundColor: const Color(0xFF488950),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
                           ),
                           child: const Text(
                             'Commencer le jeu',
@@ -188,7 +191,9 @@ class _ScratchAndWinGameState extends State<ScratchAndWinGame> {
                         ),
                       ] else if (_isLoading) ...[
                         const CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF488950),
+                          ),
                         ),
                         const SizedBox(height: 20),
                         const Text('Préparation du jeu...'),
@@ -216,7 +221,7 @@ class _ScratchAndWinGameState extends State<ScratchAndWinGame> {
                             height: 200,
                             width: 300,
                             decoration: BoxDecoration(
-                              color: Colors.amber,
+                              color: const Color(0xFF488950),
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
@@ -246,9 +251,9 @@ class _ScratchAndWinGameState extends State<ScratchAndWinGame> {
                           ),
                         ),
                       ],
-                      
+
                       const Spacer(),
-                      
+
                       // Bouton pour rejouer
                       if (_revealed)
                         ElevatedButton(
@@ -260,8 +265,11 @@ class _ScratchAndWinGameState extends State<ScratchAndWinGame> {
                             });
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4CAF50),
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                            backgroundColor: const Color(0xFF488950),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
                           ),
                           child: const Text(
                             'Rejouer',

@@ -10,6 +10,8 @@ import 'change_password_screen.dart';
 import 'help_support_screen.dart';
 import 'about_screen.dart';
 import 'privacy_policy_screen.dart';
+import 'contact_screen.dart';
+import 'qr_generator_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -32,7 +34,7 @@ class ProfileScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text('Profil'),
-        backgroundColor: const Color(0xFF4CAF50),
+        backgroundColor: const Color(0xFF488950),
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -42,15 +44,15 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Consumer2<AuthProvider, UserProvider>(
-        builder: (context, authProvider, userProvider, child) {
+      body: Consumer<AuthProvider>(
+        builder: (context, authProvider, child) {
           // Afficher l'état de chargement
-          if (authProvider.isLoading || userProvider.isLoading) {
+          if (authProvider.isLoading) {
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(color: Color(0xFF4CAF50)),
+                  CircularProgressIndicator(color: Color(0xFF488950)),
                   SizedBox(height: 16),
                   Text(
                     'Chargement du profil...',
@@ -62,7 +64,7 @@ class ProfileScreen extends StatelessWidget {
           }
 
           // Afficher les erreurs
-          if (authProvider.error != null || userProvider.error != null) {
+          if (authProvider.error != null) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -74,7 +76,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    _getErrorMessage(authProvider.error, userProvider.error),
+                    authProvider.error ?? 'Erreur inconnue',
                     style: const TextStyle(
                       fontSize: 16,
                       color: Color(0xFF757575),
@@ -85,11 +87,12 @@ class ProfileScreen extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {
                       if (authProvider.isAuthenticated) {
-                        userProvider.initialize();
+                        // Recharger les données utilisateur
+                        authProvider.refreshUser();
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4CAF50),
+                      backgroundColor: const Color(0xFF488950),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,
@@ -100,11 +103,12 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   // Bouton pour créer le profil si nécessaire
-                  if (_isProfileMissingError(userProvider.error))
+                  if (_isProfileMissingError(authProvider.error))
                     ElevatedButton(
                       onPressed: () {
                         if (authProvider.isAuthenticated) {
-                          userProvider.initialize();
+                          // Recharger les données utilisateur
+                          authProvider.refreshUser();
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -139,8 +143,8 @@ class ProfileScreen extends StatelessWidget {
             );
           }
 
-          // Utiliser les données de l'AuthProvider si le UserProvider n'a pas de données
-          final user = userProvider.user ?? authProvider.currentUser;
+          // Utiliser les données de l'AuthProvider
+          final user = authProvider.currentUser;
           if (user == null) {
             return const Center(
               child: Column(
@@ -175,12 +179,12 @@ class ProfileScreen extends StatelessWidget {
                     gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
+                      colors: [Color(0xFF488950), Color(0xFF60A066)],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF4CAF50).withOpacity(0.3),
+                        color: const Color(0xFF488950).withOpacity(0.3),
                         blurRadius: 15,
                         offset: const Offset(0, 8),
                       ),
@@ -421,6 +425,19 @@ class ProfileScreen extends StatelessWidget {
                       },
                     ),
                     _buildProfileOption(
+                      icon: Icons.contact_phone,
+                      title: 'Contact',
+                      subtitle: 'Nous contacter',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ContactScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildProfileOption(
                       icon: Icons.info,
                       title: 'À propos',
                       subtitle: 'Informations sur l\'application',
@@ -470,48 +487,6 @@ class ProfileScreen extends StatelessWidget {
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Bouton de test pour vérifier l'état d'authentification
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () => _showAuthStatus(context),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.blue,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Vérifier l\'état d\'authentification',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Bouton de test pour forcer la déconnexion
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () => _forceLogout(context),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.orange,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Forcer la déconnexion (Test)',
-                      style: TextStyle(fontSize: 14),
                     ),
                   ),
                 ),
@@ -599,10 +574,10 @@ class ProfileScreen extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: const Color(0xFF4CAF50).withOpacity(0.1),
+          color: const Color(0xFF488950).withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Icon(icon, color: const Color(0xFF4CAF50), size: 20),
+        child: Icon(icon, color: const Color(0xFF488950), size: 20),
       ),
       title: Text(
         title,
@@ -662,8 +637,19 @@ class ProfileScreen extends StatelessWidget {
           title: const Text('Se déconnecter'),
           content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
           actions: [
-            TextButton(
+            ElevatedButton(
               onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF327239), // Vert Aya+
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
               child: const Text('Annuler'),
             ),
             ElevatedButton(
@@ -701,13 +687,7 @@ class ProfileScreen extends StatelessWidget {
                     context,
                     listen: false,
                   );
-                  final userProvider = Provider.of<UserProvider>(
-                    context,
-                    listen: false,
-                  );
-
-                  // Réinitialiser le UserProvider immédiatement
-                  userProvider.reset();
+                  // Plus besoin de réinitialiser le UserProvider
 
                   // Effectuer la déconnexion
                   await authProvider.logout();
@@ -768,15 +748,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  String _getErrorMessage(String? authError, String? userError) {
-    if (authError != null) {
-      return authError;
-    }
-    if (userError != null) {
-      return userError;
-    }
-    return 'Erreur inconnue';
-  }
+  // Méthode _getErrorMessage supprimée - plus nécessaire
 
   bool _isProfileMissingError(String? error) {
     return error?.contains('Profile not found') ?? false;
@@ -784,7 +756,6 @@ class ProfileScreen extends StatelessWidget {
 
   void _showAuthStatus(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
 
     showDialog(
       context: context,
@@ -801,9 +772,7 @@ class ProfileScreen extends StatelessWidget {
               Text(
                 'AuthProvider.currentUser: ${authProvider.currentUser?.id ?? 'null'}',
               ),
-              Text('UserProvider.user: ${userProvider.user?.id ?? 'null'}'),
-              Text('UserProvider.isLoading: ${userProvider.isLoading}'),
-              Text('UserProvider.error: ${userProvider.error ?? 'null'}'),
+              Text('UserProvider: Non utilisé (données dans AuthProvider)'),
             ],
           ),
           actions: [
@@ -822,17 +791,11 @@ class ProfileScreen extends StatelessWidget {
       print('=== FORCE LOGOUT TEST ===');
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
 
       // Afficher l'état avant la déconnexion
       print('Before logout:');
       print('  AuthProvider.isAuthenticated: ${authProvider.isAuthenticated}');
       print('  AuthProvider.currentUser: ${authProvider.currentUser?.id}');
-      print('  UserProvider.user: ${userProvider.user?.id}');
-
-      // Réinitialiser le UserProvider
-      userProvider.reset();
-      print('UserProvider reset completed');
 
       // Effectuer la déconnexion
       await authProvider.logout();
@@ -842,7 +805,7 @@ class ProfileScreen extends StatelessWidget {
       print('After logout:');
       print('  AuthProvider.isAuthenticated: ${authProvider.isAuthenticated}');
       print('  AuthProvider.currentUser: ${authProvider.currentUser?.id}');
-      print('  UserProvider.user: ${userProvider.user?.id}');
+      // UserProvider non utilisé
 
       // Rediriger vers l'écran de connexion
       if (context.mounted) {

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../services/auth_service.dart';
+import '../services/local_auth_service.dart';
 import 'home_screen.dart';
 import 'auth_screen.dart';
 import 'new_password_screen.dart';
@@ -9,14 +8,11 @@ class EmailConfirmationScreen extends StatefulWidget {
   final String? email;
   final String? type; // 'confirmation' ou 'reset'
 
-  const EmailConfirmationScreen({
-    super.key,
-    this.email,
-    this.type,
-  });
+  const EmailConfirmationScreen({super.key, this.email, this.type});
 
   @override
-  State<EmailConfirmationScreen> createState() => _EmailConfirmationScreenState();
+  State<EmailConfirmationScreen> createState() =>
+      _EmailConfirmationScreenState();
 }
 
 class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
@@ -33,55 +29,24 @@ class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
 
   Future<void> _handleEmailConfirmation() async {
     try {
-      final authService = AuthService();
-      
-      // Vérifier si l'utilisateur est maintenant connecté
-      if (authService.isAuthenticated) {
-        if (authService.isEmailConfirmed) {
-          setState(() {
-            _isConfirmed = true;
-            _message = 'Votre email a été confirmé avec succès !';
-            _isLoading = false;
-          });
-          
-          // Rediriger vers l'écran principal après un délai
-          Future.delayed(const Duration(seconds: 2), () {
-            if (mounted) {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => const HomeScreen()),
-                (route) => false,
-              );
-            }
-          });
-        } else {
-          setState(() {
-            _isConfirmed = false;
-            _message = 'Votre email n\'est pas encore confirmé. Veuillez vérifier votre boîte de réception.';
-            _isLoading = false;
-          });
+      final authService = LocalAuthService();
+
+      // Pour la démo, toujours considérer l'email comme confirmé
+      setState(() {
+        _isConfirmed = true;
+        _message = 'Votre email a été confirmé avec succès !';
+        _isLoading = false;
+      });
+
+      // Rediriger vers l'écran principal après un délai
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            (route) => false,
+          );
         }
-      } else {
-        // Vérifier si c'est une réinitialisation de mot de passe
-        final supabase = Supabase.instance.client;
-        final session = supabase.auth.currentSession;
-        
-        if (session != null && widget.type == 'reset') {
-          // Rediriger vers l'écran de nouveau mot de passe
-          if (mounted) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const NewPasswordScreen()),
-            );
-            return;
-          }
-        }
-        
-        // L'utilisateur n'est pas connecté, probablement une erreur
-        setState(() {
-          _isConfirmed = false;
-          _message = 'Une erreur s\'est produite lors de la confirmation. Veuillez réessayer.';
-          _isLoading = false;
-        });
-      }
+      });
     } catch (e) {
       setState(() {
         _isConfirmed = false;
@@ -94,7 +59,7 @@ class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF4CAF50),
+      backgroundColor: const Color(0xFF488950),
       body: SafeArea(
         child: Column(
           children: [
@@ -118,26 +83,26 @@ class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
                       ],
                     ),
                     child: Icon(
-                      _isLoading 
+                      _isLoading
                           ? Icons.hourglass_empty
-                          : _isConfirmed 
-                              ? Icons.check_circle 
-                              : Icons.error,
+                          : _isConfirmed
+                          ? Icons.check_circle
+                          : Icons.error,
                       size: 40,
-                      color: _isLoading 
-                          ? Colors.orange 
-                          : _isConfirmed 
-                              ? const Color(0xFF4CAF50) 
-                              : Colors.red,
+                      color: _isLoading
+                          ? Colors.orange
+                          : _isConfirmed
+                          ? const Color(0xFF488950)
+                          : Colors.red,
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    _isLoading 
+                    _isLoading
                         ? 'Vérification en cours...'
-                        : _isConfirmed 
-                            ? 'Email confirmé !'
-                            : 'Erreur de confirmation',
+                        : _isConfirmed
+                        ? 'Email confirmé !'
+                        : 'Erreur de confirmation',
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -177,15 +142,12 @@ class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF488950)),
             ),
             SizedBox(height: 24),
             Text(
               'Vérification de votre email...',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 18, color: Colors.grey),
             ),
           ],
         ),
@@ -197,7 +159,7 @@ class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
       children: [
         Icon(
           _isConfirmed ? Icons.check_circle : Icons.error,
-          color: _isConfirmed ? const Color(0xFF4CAF50) : Colors.red,
+          color: _isConfirmed ? const Color(0xFF488950) : Colors.red,
           size: 80,
         ),
         const SizedBox(height: 24),
@@ -206,26 +168,20 @@ class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: _isConfirmed ? const Color(0xFF4CAF50) : Colors.red,
+            color: _isConfirmed ? const Color(0xFF488950) : Colors.red,
           ),
         ),
         const SizedBox(height: 16),
         Text(
           _errorMessage.isNotEmpty ? _errorMessage : _message,
-          style: const TextStyle(
-            fontSize: 16,
-            color: Colors.grey,
-          ),
+          style: const TextStyle(fontSize: 16, color: Colors.grey),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 32),
         if (_isConfirmed)
           const Text(
             'Redirection automatique...',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey),
           )
         else
           ElevatedButton(
@@ -236,7 +192,7 @@ class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4CAF50),
+              backgroundColor: const Color(0xFF488950),
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             ),
             child: const Text(

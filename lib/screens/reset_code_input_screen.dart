@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
+import '../services/django_auth_service.dart';
 import 'new_password_screen.dart';
 
 class ResetCodeInputScreen extends StatefulWidget {
@@ -16,7 +16,7 @@ class _ResetCodeInputScreenState extends State<ResetCodeInputScreen> {
   final _codeController = TextEditingController();
   bool _isLoading = false;
   bool _isValidating = false;
-  final AuthService _authService = AuthService();
+  final DjangoAuthService _authService = DjangoAuthService.instance;
 
   @override
   void dispose() {
@@ -39,21 +39,24 @@ class _ResetCodeInputScreenState extends State<ResetCodeInputScreen> {
         throw Exception('Lien ou code de réinitialisation invalide');
       }
 
-      // Pour les liens de réinitialisation, nous n'avons pas besoin de valider
-      // le code séparément, nous pouvons directement naviguer vers la page
-      // de nouveau mot de passe
+      // Valider le code avec le serveur
+      final isValid = await _authService.isResetCodeValid(resetCode);
 
       if (mounted) {
         setState(() {
           _isValidating = false;
         });
 
-        // Naviguer directement vers la page de nouveau mot de passe
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => NewPasswordScreen(resetCode: resetCode),
-          ),
-        );
+        if (isValid) {
+          // Naviguer vers la page de nouveau mot de passe
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => NewPasswordScreen(resetCode: resetCode),
+            ),
+          );
+        } else {
+          throw Exception('Code de réinitialisation invalide ou expiré');
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -93,14 +96,14 @@ class _ResetCodeInputScreenState extends State<ResetCodeInputScreen> {
     });
 
     try {
-      final success = await _authService.resetPasswordInternal(widget.email);
+      final token = await _authService.resetPasswordInternal(widget.email);
 
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
 
-        if (success) {
+        if (token != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Row(
@@ -165,7 +168,7 @@ class _ResetCodeInputScreenState extends State<ResetCodeInputScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF4CAF50),
+      backgroundColor: const Color(0xFF488950),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -203,7 +206,7 @@ class _ResetCodeInputScreenState extends State<ResetCodeInputScreen> {
                     child: const Icon(
                       Icons.email,
                       size: 40,
-                      color: Color(0xFF4CAF50),
+                      color: Color(0xFF488950),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -275,7 +278,7 @@ class _ResetCodeInputScreenState extends State<ResetCodeInputScreen> {
                         ElevatedButton(
                           onPressed: _isValidating ? null : _validateCode,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4CAF50),
+                            backgroundColor: const Color(0xFF488950),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -308,7 +311,7 @@ class _ResetCodeInputScreenState extends State<ResetCodeInputScreen> {
                           onPressed: _isLoading ? null : _resendCode,
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            side: const BorderSide(color: Color(0xFF4CAF50)),
+                            side: const BorderSide(color: Color(0xFF488950)),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -320,7 +323,7 @@ class _ResetCodeInputScreenState extends State<ResetCodeInputScreen> {
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
-                                      Color(0xFF4CAF50),
+                                      Color(0xFF488950),
                                     ),
                                   ),
                                 )
@@ -328,7 +331,7 @@ class _ResetCodeInputScreenState extends State<ResetCodeInputScreen> {
                                   'Renvoyer le code',
                                   style: TextStyle(
                                     fontSize: 16,
-                                    color: Color(0xFF4CAF50),
+                                    color: Color(0xFF488950),
                                   ),
                                 ),
                         ),
@@ -389,7 +392,7 @@ class _ResetCodeInputScreenState extends State<ResetCodeInputScreen> {
                           child: const Text(
                             'Retour à la connexion',
                             style: TextStyle(
-                              color: Color(0xFF4CAF50),
+                              color: Color(0xFF488950),
                               decoration: TextDecoration.underline,
                             ),
                           ),

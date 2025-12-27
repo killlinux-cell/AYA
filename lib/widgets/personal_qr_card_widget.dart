@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../providers/user_provider.dart';
-import '../services/user_service.dart';
+import '../providers/auth_provider.dart';
+import '../services/django_user_service.dart';
 
 class PersonalQRCardWidget extends StatefulWidget {
   const PersonalQRCardWidget({super.key});
@@ -15,7 +15,7 @@ class _PersonalQRCardWidgetState extends State<PersonalQRCardWidget> {
   String? _personalQRCode;
   bool _isLoading = false;
   bool _isExpanded = false;
-  final UserService _userService = UserService();
+  final DjangoUserService _userService = DjangoUserService.singleton();
 
   @override
   void initState() {
@@ -24,8 +24,8 @@ class _PersonalQRCardWidgetState extends State<PersonalQRCardWidget> {
   }
 
   Future<void> _loadPersonalQRCode() async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final user = userProvider.user;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.currentUser;
 
     if (user == null) return;
 
@@ -35,15 +35,13 @@ class _PersonalQRCardWidgetState extends State<PersonalQRCardWidget> {
 
     try {
       String? existingCode = await _userService.getPersonalQRCode(user.id);
-      if (existingCode == null) {
-        existingCode = await _userService.generatePersonalQRCode(user.id);
-      }
 
       setState(() {
         _personalQRCode = existingCode;
         _isLoading = false;
       });
     } catch (e) {
+      print('Erreur lors du chargement du QR code personnel: $e');
       setState(() {
         _isLoading = false;
       });
@@ -51,8 +49,8 @@ class _PersonalQRCardWidgetState extends State<PersonalQRCardWidget> {
   }
 
   Future<void> _regenerateQRCode() async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final user = userProvider.user;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.currentUser;
 
     if (user == null) return;
 
@@ -61,20 +59,23 @@ class _PersonalQRCardWidgetState extends State<PersonalQRCardWidget> {
     });
 
     try {
-      final newCode = await _userService.generatePersonalQRCode(user.id);
+      // Pour l'instant, on ne peut pas régénérer le QR code via l'API
+      // On utilise le QR code existant
+      final existingCode = await _userService.getPersonalQRCode(user.id);
       setState(() {
-        _personalQRCode = newCode;
+        _personalQRCode = existingCode;
         _isLoading = false;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Nouveau QR code généré !'),
-          backgroundColor: Color(0xFF4CAF50),
+          content: Text('QR code rechargé !'),
+          backgroundColor: Color(0xFF488950),
           duration: Duration(seconds: 2),
         ),
       );
     } catch (e) {
+      print('Erreur lors de la régénération du QR code: $e');
       setState(() {
         _isLoading = false;
       });
@@ -93,13 +94,13 @@ class _PersonalQRCardWidgetState extends State<PersonalQRCardWidget> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF4CAF50).withOpacity(0.1),
+            const Color(0xFF488950).withOpacity(0.1),
             const Color(0xFF81C784).withOpacity(0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF4CAF50).withOpacity(0.2),
+          color: const Color(0xFF488950).withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
@@ -130,12 +131,12 @@ class _PersonalQRCardWidgetState extends State<PersonalQRCardWidget> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF4CAF50).withOpacity(0.1),
+                        color: const Color(0xFF488950).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
                         Icons.qr_code,
-                        color: Color(0xFF4CAF50),
+                        color: Color(0xFF488950),
                         size: 24,
                       ),
                     ),
@@ -165,7 +166,7 @@ class _PersonalQRCardWidgetState extends State<PersonalQRCardWidget> {
                     ),
                     Icon(
                       _isExpanded ? Icons.expand_less : Icons.expand_more,
-                      color: const Color(0xFF4CAF50),
+                      color: const Color(0xFF488950),
                       size: 24,
                     ),
                   ],
@@ -177,7 +178,7 @@ class _PersonalQRCardWidgetState extends State<PersonalQRCardWidget> {
                   if (_isLoading)
                     const Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF4CAF50),
+                        color: Color(0xFF488950),
                       ),
                     )
                   else if (_personalQRCode != null) ...[
@@ -212,7 +213,7 @@ class _PersonalQRCardWidgetState extends State<PersonalQRCardWidget> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF4CAF50).withOpacity(0.1),
+                                color: const Color(0xFF488950).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
@@ -240,7 +241,7 @@ class _PersonalQRCardWidgetState extends State<PersonalQRCardWidget> {
                             icon: const Icon(Icons.refresh, size: 18),
                             label: const Text('Régénérer'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF4CAF50),
+                              backgroundColor: const Color(0xFF488950),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
@@ -259,15 +260,15 @@ class _PersonalQRCardWidgetState extends State<PersonalQRCardWidget> {
                                   content: Text(
                                     'Fonctionnalité de partage à venir !',
                                   ),
-                                  backgroundColor: Color(0xFF4CAF50),
+                                  backgroundColor: Color(0xFF488950),
                                 ),
                               );
                             },
                             icon: const Icon(Icons.share, size: 18),
                             label: const Text('Partager'),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF4CAF50),
-                              side: const BorderSide(color: Color(0xFF4CAF50)),
+                              foregroundColor: const Color(0xFF488950),
+                              side: const BorderSide(color: Color(0xFF488950)),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),

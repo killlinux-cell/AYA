@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../services/auth_service.dart';
+import '../services/django_auth_service.dart';
 import 'auth_screen.dart';
 
 class NewPasswordScreen extends StatefulWidget {
   final String? resetCode;
-  
+
   const NewPasswordScreen({super.key, this.resetCode});
 
   @override
@@ -20,7 +19,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
   bool _isSuccess = false;
-  final AuthService _authService = AuthService(); // Ajout de cette ligne
+  final DjangoAuthService _authService = DjangoAuthService.instance;
 
   @override
   void dispose() {
@@ -130,7 +129,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF4CAF50),
+      backgroundColor: const Color(0xFF488950),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -168,7 +167,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                     child: const Icon(
                       Icons.lock_open,
                       size: 40,
-                      color: Color(0xFF4CAF50),
+                      color: Color(0xFF488950),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -183,10 +182,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'Choisissez un mot de passe sécurisé pour votre compte',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.white70),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -205,7 +201,9 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(24),
-                  child: _isSuccess ? _buildSuccessView() : _buildPasswordForm(),
+                  child: _isSuccess
+                      ? _buildSuccessView()
+                      : _buildPasswordForm(),
                 ),
               ),
             ),
@@ -222,7 +220,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 20),
-          
+
           // Champ nouveau mot de passe
           TextFormField(
             controller: _passwordController,
@@ -255,9 +253,9 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
               return null;
             },
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Champ confirmation du mot de passe
           TextFormField(
             controller: _confirmPasswordController,
@@ -268,7 +266,9 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
               hintText: 'Confirmez votre nouveau mot de passe',
               suffixIcon: IconButton(
                 icon: Icon(
-                  _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                  _isConfirmPasswordVisible
+                      ? Icons.visibility
+                      : Icons.visibility_off,
                 ),
                 onPressed: () {
                   setState(() {
@@ -290,9 +290,9 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
               return null;
             },
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           // Conseils de sécurité
           Container(
             padding: const EdgeInsets.all(16),
@@ -332,14 +332,14 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           // Bouton de mise à jour
           ElevatedButton(
             onPressed: _isLoading ? null : _updatePassword,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4CAF50),
+              backgroundColor: const Color(0xFF488950),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -359,16 +359,16 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                     style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Lien de retour à la connexion
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text(
               'Retour à la connexion',
               style: TextStyle(
-                color: Color(0xFF4CAF50),
+                color: Color(0xFF488950),
                 decoration: TextDecoration.underline,
               ),
             ),
@@ -382,27 +382,20 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(
-          Icons.check_circle,
-          color: Color(0xFF4CAF50),
-          size: 80,
-        ),
+        const Icon(Icons.check_circle, color: Color(0xFF488950), size: 80),
         const SizedBox(height: 24),
         const Text(
           'Mot de passe mis à jour !',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF4CAF50),
+            color: Color(0xFF488950),
           ),
         ),
         const SizedBox(height: 16),
         const Text(
           'Votre mot de passe a été mis à jour avec succès. Vous allez être redirigé vers la page de connexion.',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey,
-          ),
+          style: TextStyle(fontSize: 16, color: Colors.grey),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 32),
@@ -414,7 +407,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
             );
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF4CAF50),
+            backgroundColor: const Color(0xFF488950),
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           ),
           child: const Text(

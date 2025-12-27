@@ -1,8 +1,8 @@
-# Aya HUILE VÉGÉTALE - Application Mobile
+# Aya+ - Application Mobile
 
 ## 📱 Description
 
-Application mobile Flutter pour la marque Aya HUILE VÉGÉTALE, permettant aux utilisateurs de collecter des points en scannant des codes QR et de participer à des mini-jeux pour gagner des récompenses.
+Application mobile Flutter pour la marque Aya+, permettant aux utilisateurs de collecter des points en scannant des codes QR et de participer à des mini-jeux pour gagner des récompenses.
 
 ## ✨ Fonctionnalités
 
@@ -35,7 +35,7 @@ Application mobile Flutter pour la marque Aya HUILE VÉGÉTALE, permettant aux u
 ## 🎨 Design et UX
 
 ### Palette de couleurs
-- **Vert principal** : #4CAF50 (Aya HUILE VÉGÉTALE)
+- **Vert principal** : #4CAF50 (Aya+)
 - **Vert accent** : #66BB6A
 - **Orange** : #FF9800 (Bonus et jeux)
 - **Violet** : #9C27B0 (Spin a wheel)
@@ -185,8 +185,8 @@ Pour toute question ou problème :
 
 - Équipe Flutter pour le framework
 - Communauté open source
-- Équipe Aya HUILE VÉGÉTALE
+- Équipe Aya+
 
 ---
 
-**Développé avec ❤️ pour Aya HUILE VÉGÉTALE**
+**Développé avec ❤️ pour Aya+**

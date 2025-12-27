@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_fortune_wheel/flutter_fortune_wheel.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
-import '../services/game_service.dart';
-import '../services/game_service.dart';
+import '../services/django_game_service.dart';
+import '../services/django_auth_service.dart';
 
 class SpinGame extends StatefulWidget {
   @override
@@ -45,11 +45,15 @@ class _SpinGameState extends State<SpinGame> {
     });
 
     try {
-      final gameService = GameService();
+      final gameService = DjangoGameService(DjangoAuthService.instance);
       final result = await gameService.playGame(user.id, 'spin_wheel', 10);
 
       if (result['success']) {
         _pointsWon = result['pointsWon'];
+
+        // Rafraîchir les données utilisateur pour synchroniser les points
+        await userProvider.refreshUserData();
+
         setState(() {
           _isLoading = false;
         });
@@ -57,7 +61,7 @@ class _SpinGameState extends State<SpinGame> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message']),
-            backgroundColor: const Color(0xFF4CAF50),
+            backgroundColor: const Color(0xFF488950),
           ),
         );
       } else {
@@ -77,10 +81,7 @@ class _SpinGameState extends State<SpinGame> {
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -92,12 +93,12 @@ class _SpinGameState extends State<SpinGame> {
       _isSpinning = true;
     });
 
-    // Générer un résultat aléatoire
+    // Utiliser le service de jeu pour obtenir le résultat
     final random = Random();
     final selectedIndex = random.nextInt(_items.length);
     final selectedItem = _items[selectedIndex];
-    
-    _pointsWon = selectedItem['points'];
+
+    // Le résultat réel vient du LocalGameService, mais on utilise l'index pour l'animation
     _result = selectedItem['text'];
 
     // Faire tourner la roue
@@ -108,19 +109,21 @@ class _SpinGameState extends State<SpinGame> {
       setState(() {
         _isSpinning = false;
       });
-      
-      // Afficher le résultat
+
+      // Afficher le résultat (les points viennent du LocalGameService)
       String message;
       if (_pointsWon > 0) {
         message = '🎉 Félicitations ! Vous avez gagné $_pointsWon points !';
       } else {
         message = '😔 Dommage, vous n\'avez rien gagné cette fois...';
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: _pointsWon > 0 ? const Color(0xFF4CAF50) : Colors.orange,
+          backgroundColor: _pointsWon > 0
+              ? const Color(0xFF488950)
+              : Colors.orange,
           duration: const Duration(seconds: 3),
         ),
       );
@@ -133,9 +136,12 @@ class _SpinGameState extends State<SpinGame> {
     final user = userProvider.user;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF4CAF50),
+      backgroundColor: const Color(0xFF488950),
       appBar: AppBar(
-        title: const Text("Spin a Wheel", style: TextStyle(color: Colors.white)),
+        title: const Text(
+          "Spin a Wheel",
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -165,7 +171,7 @@ class _SpinGameState extends State<SpinGame> {
                     child: const Icon(
                       Icons.rotate_right,
                       size: 40,
-                      color: Color(0xFF4CAF50),
+                      color: Color(0xFF488950),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -180,10 +186,7 @@ class _SpinGameState extends State<SpinGame> {
                   const SizedBox(height: 8),
                   Text(
                     'Points disponibles: ${user?.availablePoints ?? 0}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
+                    style: const TextStyle(fontSize: 16, color: Colors.white70),
                   ),
                 ],
               ),
@@ -205,7 +208,9 @@ class _SpinGameState extends State<SpinGame> {
                     children: [
                       if (_isLoading) ...[
                         const CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF488950),
+                          ),
                         ),
                         const SizedBox(height: 20),
                         const Text('Préparation du jeu...'),
@@ -221,17 +226,17 @@ class _SpinGameState extends State<SpinGame> {
                         const SizedBox(height: 20),
                         const Text(
                           "Coût: 10 points",
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
                         ),
                         const SizedBox(height: 20),
                         ElevatedButton(
                           onPressed: _startGame,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4CAF50),
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                            backgroundColor: const Color(0xFF488950),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
                           ),
                           child: const Text(
                             'Commencer le jeu',
@@ -239,7 +244,7 @@ class _SpinGameState extends State<SpinGame> {
                           ),
                         ),
                         const SizedBox(height: 30),
-                        
+
                         // Roue de fortune
                         Expanded(
                           child: FortuneWheel(
@@ -267,15 +272,18 @@ class _SpinGameState extends State<SpinGame> {
                             ],
                           ),
                         ),
-                        
+
                         const SizedBox(height: 20),
-                        
+
                         // Bouton pour tourner
                         ElevatedButton(
                           onPressed: _isSpinning ? null : _spinWheel,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4CAF50),
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                            backgroundColor: const Color(0xFF488950),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
                           ),
                           child: _isSpinning
                               ? const SizedBox(
@@ -283,12 +291,17 @@ class _SpinGameState extends State<SpinGame> {
                                   width: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
                                   ),
                                 )
                               : const Text(
                                   'TOURNER',
-                                  style: TextStyle(fontSize: 16, color: Colors.white),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                  ),
                                 ),
                         ),
                       ],

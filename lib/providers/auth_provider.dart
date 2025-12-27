@@ -1,19 +1,16 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user.dart' as app_user;
-import '../services/auth_service.dart';
-import '../services/user_service.dart';
+import '../services/django_auth_service.dart';
 
 class AuthProvider with ChangeNotifier {
   app_user.User? _currentUser;
   bool _isLoading = false;
   String? _error;
   bool _isAuthenticated = false;
-  StreamSubscription<AuthState>? _authStateSubscription;
+  StreamSubscription<Map<String, dynamic>>? _authStateSubscription;
 
-  final AuthService _authService = AuthService();
-  final UserService _userService = UserService();
+  final DjangoAuthService _authService = DjangoAuthService.instance;
 
   app_user.User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
@@ -26,82 +23,44 @@ class AuthProvider with ChangeNotifier {
   }
 
   void _listenToAuthChanges() {
-    _authStateSubscription = _authService.authStateChanges.listen((data) async {
-      final AuthChangeEvent event = data.event;
-      final Session? session = data.session;
+    _authStateSubscription = _authService.authStateChanges.listen((event) {
+      final eventType = event['event'];
+      final user = event['user'];
+      final message = event['message'];
 
-      print('Auth state changed: $event, session: ${session?.user.id}');
-
-      switch (event) {
-        case AuthChangeEvent.signedIn:
-          if (session?.user != null) {
-            print('User signed in, loading user data...');
-            await _loadUserData(session!.user.id);
+      switch (eventType) {
+        case 'SIGNED_UP':
+          _error = null;
+          _isLoading = false;
+          notifyListeners();
+          // Afficher un message de succès
+          if (message != null) {
+            print('✅ $message');
           }
           break;
-        case AuthChangeEvent.signedIn:
-          if (session?.user != null) {
-            print('User signed in, loading user data...');
-            await _loadUserData(session!.user.id);
-          }
+        case 'SIGNED_IN':
+          _currentUser = user;
+          _isAuthenticated = true;
+          _error = null;
+          _isLoading = false;
+          print('AuthProvider: SIGNED_IN event received');
+          print('AuthProvider: User: ${user?.email}');
+          print('AuthProvider: isAuthenticated: $_isAuthenticated');
+          notifyListeners();
           break;
-        case AuthChangeEvent.signedOut:
-          print('User signed out, clearing data...');
-          _clearUserData();
-          break;
-        case AuthChangeEvent.tokenRefreshed:
-          if (session?.user != null) {
-            print('Token refreshed, loading user data...');
-            await _loadUserData(session!.user.id);
-          }
-          break;
-        case AuthChangeEvent.userUpdated:
-          if (session?.user != null) {
-            print('User updated, loading user data...');
-            await _loadUserData(session!.user.id);
-          }
-          break;
-        default:
-          print('Unhandled auth event: $event');
+        case 'SIGNED_OUT':
+          _currentUser = null;
+          _isAuthenticated = false;
+          _error = null;
+          _isLoading = false;
+          notifyListeners();
           break;
       }
     });
   }
 
-  Future<void> _loadUserData(String userId) async {
-    try {
-      print('Loading user data for ID: $userId');
-      _isLoading = true;
-      notifyListeners();
-
-      // Attendre un peu pour s'assurer que le profil est créé
-      await Future.delayed(const Duration(milliseconds: 1000));
-
-      final userData = await _userService.getUserData(userId);
-      if (userData != null) {
-        _currentUser = userData;
-        _isAuthenticated = true;
-        _error = null;
-        print(
-          'User data loaded successfully in AuthProvider: ${userData.name}, Points: ${userData.availablePoints}',
-        );
-      } else {
-        _error = 'Impossible de charger les données utilisateur';
-        _isAuthenticated = false;
-        print('No user data found in AuthProvider for ID: $userId');
-      }
-
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      print('Error loading user data: $e');
-      _error =
-          'Erreur lors du chargement des données utilisateur: ${e.toString()}';
-      _isLoading = false;
-      _isAuthenticated = false;
-      notifyListeners();
-    }
-  }
+  // Méthode _loadUserData supprimée - plus nécessaire
+  // Les données utilisateur sont maintenant gérées directement par l'AuthService
 
   void _clearUserData() {
     print('Clearing user data in AuthProvider');
@@ -120,16 +79,30 @@ class AuthProvider with ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
+      // Vérifier l'état d'authentification du service
+      print(
+        'AuthProvider: _authService.isAuthenticated = ${_authService.isAuthenticated}',
+      );
+      print(
+        'AuthProvider: _authService.currentUser = ${_authService.currentUser?.email}',
+      );
+
       if (_authService.isAuthenticated) {
-        final user = _authService.currentUser;
-        if (user != null) {
-          await _loadUserData(user.id);
-        }
+        _currentUser = _authService.currentUser;
+        _isAuthenticated = true;
+        _error = null;
+        print('AuthProvider: User is authenticated: ${_currentUser?.email}');
+        print(
+          'AuthProvider: User personalQRCode: ${_currentUser?.personalQRCode}',
+        );
       } else {
         _isAuthenticated = false;
-        _isLoading = false;
-        notifyListeners();
+        _currentUser = null;
+        print('AuthProvider: User is not authenticated');
       }
+
+      _isLoading = false;
+      notifyListeners();
     } catch (e) {
       _error = 'Erreur lors de la vérification de l\'authentification';
       _isLoading = false;
@@ -144,15 +117,15 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _authService.signIn(
+      final success = await _authService.signIn(
         email: email,
         password: password,
       );
 
-      if (response.user != null) {
-        // L'état sera mis à jour via l'écoute des changements d'auth
-        _isLoading = false;
-        notifyListeners();
+      if (success) {
+        // Charger les données utilisateur
+        // L'utilisateur est déjà chargé dans l'AuthService
+        // Pas besoin de recharger les données
         return true;
       }
 
@@ -173,23 +146,29 @@ class AuthProvider with ChangeNotifier {
     String lastName,
     String email,
     String password,
+    String phoneNumber,
+    double? latitude,
+    double? longitude,
   ) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final response = await _authService.signUp(
+      final success = await _authService.signUp(
         email: email,
         password: password,
         firstName: firstName,
         lastName: lastName,
+        phoneNumber: phoneNumber,
+        latitude: latitude,
+        longitude: longitude,
       );
 
-      if (response.user != null) {
-        // L'état sera mis à jour via l'écoute des changements d'auth
-        _isLoading = false;
-        notifyListeners();
+      if (success) {
+        // Charger les données utilisateur
+        // L'utilisateur est déjà chargé dans l'AuthService
+        // Pas besoin de recharger les données
         return true;
       }
 
@@ -215,22 +194,7 @@ class AuthProvider with ChangeNotifier {
       // Effectuer la déconnexion
       await _authService.signOut();
 
-      // Forcer une vérification supplémentaire de l'état d'auth
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      // Vérifier que l'utilisateur est bien déconnecté
-      final currentUser = _authService.currentUser;
-      if (currentUser != null) {
-        print(
-          'WARNING: User still authenticated after logout, forcing cleanup',
-        );
-        _clearUserData();
-      } else {
-        print('User successfully logged out');
-      }
-
-      // L'état sera mis à jour via l'écoute des changements d'auth
-      print('Logout completed - user data cleared');
+      print('User successfully logged out');
     } catch (e) {
       print('Error during logout: $e');
       _error = 'Erreur lors de la déconnexion';
@@ -247,15 +211,60 @@ class AuthProvider with ChangeNotifier {
   // Rafraîchir les données utilisateur
   Future<void> refreshUser() async {
     try {
-      if (_authService.isAuthenticated) {
-        final user = _authService.currentUser;
-        if (user != null) {
-          await _loadUserData(user.id);
-        }
+      final user = _authService.currentUser;
+      if (user != null) {
+        // Synchroniser avec les données de l'AuthService
+        _currentUser = user;
+        _isAuthenticated = true;
+        _error = null;
+        notifyListeners();
       }
     } catch (e) {
       _error = 'Erreur lors du rafraîchissement des données utilisateur';
       notifyListeners();
+    }
+  }
+
+  // Rafraîchir les données utilisateur depuis le serveur
+  Future<void> refreshUserData() async {
+    try {
+      print(
+        '🔄 AuthProvider: Rafraîchissement des données utilisateur depuis le serveur...',
+      );
+
+      // Récupérer le profil utilisateur depuis le serveur
+      final updatedUser = await _authService.getUserProfile();
+
+      if (updatedUser != null) {
+        _currentUser = updatedUser;
+        _isAuthenticated = true;
+        _error = null;
+        print(
+          '✅ AuthProvider: Données utilisateur rafraîchies: ${updatedUser.email}, points: ${updatedUser.availablePoints}',
+        );
+        notifyListeners();
+      } else {
+        print('⚠️ AuthProvider: Aucune donnée utilisateur reçue du serveur');
+      }
+    } catch (e) {
+      print('❌ AuthProvider: Erreur lors du rafraîchissement: $e');
+      _error = 'Erreur lors du rafraîchissement des données utilisateur';
+      notifyListeners();
+    }
+  }
+
+  // Mettre à jour l'utilisateur actuel
+  void updateCurrentUser(app_user.User updatedUser) {
+    _currentUser = updatedUser;
+    notifyListeners();
+  }
+
+  // Mettre à jour les points de l'utilisateur
+  void updateUserPoints(int newPoints) {
+    if (_currentUser != null) {
+      _currentUser = _currentUser!.copyWith(availablePoints: newPoints);
+      notifyListeners();
+      print('✅ AuthProvider: Points utilisateur mis à jour: $newPoints');
     }
   }
 

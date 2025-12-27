@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../services/auth_service.dart';
+import '../services/django_auth_service.dart';
 
 class ChangeEmailScreen extends StatefulWidget {
   const ChangeEmailScreen({super.key});
@@ -16,7 +16,7 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
-  final AuthService _authService = AuthService();
+  final DjangoAuthService _authService = DjangoAuthService.instance;
 
   @override
   void initState() {
@@ -113,7 +113,7 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text('Changer l\'email'),
-        backgroundColor: const Color(0xFF4CAF50),
+        backgroundColor: const Color(0xFF488950),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -131,12 +131,12 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
+                    colors: [Color(0xFF488950), Color(0xFF60A066)],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF4CAF50).withOpacity(0.3),
+                      color: const Color(0xFF488950).withOpacity(0.3),
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
@@ -319,7 +319,7 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _changeEmail,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4CAF50),
+                            backgroundColor: const Color(0xFF488950),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(

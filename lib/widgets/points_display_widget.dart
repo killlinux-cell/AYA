@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import 'package:provider/provider.dart';
-import '../providers/user_provider.dart';
+import '../providers/auth_provider.dart';
 import '../screens/exchange_screen.dart';
 
 class PointsDisplayWidget extends StatelessWidget {
@@ -8,9 +9,9 @@ class PointsDisplayWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<UserProvider>(
-      builder: (context, userProvider, child) {
-        final user = userProvider.user;
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final user = authProvider.currentUser;
         if (user == null) {
           return const SizedBox.shrink();
         }
@@ -23,47 +24,47 @@ class PointsDisplayWidget extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF212121),
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 16),
-            
+
             Row(
               children: [
                 // Points disponibles
                 Expanded(
                   child: _buildPointsCard(
-                    title: 'Points disponibles',
+                    title: 'Points',
                     points: user.availablePoints,
                     icon: Icons.stars,
-                    color: const Color(0xFF4CAF50),
+                    color: const Color(0xFF488950),
                     gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
+                      colors: [Color(0xFF488950), Color(0xFF60A066)],
                     ),
                   ),
                 ),
                 const SizedBox(width: 16),
-                
+
                 // Points échangés
                 Expanded(
                   child: _buildPointsCard(
                     title: 'Points échangés',
                     points: user.exchangedPoints,
                     icon: Icons.swap_horiz,
-                    color: const Color(0xFFFF9800),
+                    color: AppColors.accentRed,
                     gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [Color(0xFFFF9800), Color(0xFFFFB74D)],
+                      colors: [Color(0xFFa93236), Color(0xFFC54A4E)],
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Bouton d'échange
             if (user.availablePoints > 0)
               SizedBox(
@@ -80,13 +81,10 @@ class PointsDisplayWidget extends StatelessWidget {
                   icon: const Icon(Icons.swap_horiz),
                   label: const Text(
                     'Échanger des Points',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
+                    backgroundColor: const Color(0xFF488950),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -130,11 +128,7 @@ class PointsDisplayWidget extends StatelessWidget {
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(25),
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 30,
-            ),
+            child: Icon(icon, color: Colors.white, size: 30),
           ),
           const SizedBox(height: 16),
           Text(

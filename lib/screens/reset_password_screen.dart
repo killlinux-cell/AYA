@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
-import '../services/auth_service.dart';
+import '../services/django_auth_service.dart';
 import 'reset_code_input_screen.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
@@ -16,7 +14,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _emailController = TextEditingController();
   bool _isLoading = false;
   bool _emailSent = false;
-  final AuthService _authService = AuthService();
+  String? _resetToken;
+  final DjangoAuthService _authService = DjangoAuthService.instance;
 
   @override
   void dispose() {
@@ -33,13 +32,23 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     try {
       // Utiliser la méthode interne au lieu de l'externe
-      final success = await _authService.resetPasswordInternal(_emailController.text.trim());
-      
+      final token = await _authService.resetPasswordInternal(
+        _emailController.text.trim(),
+      );
+
       if (mounted) {
-        setState(() {
-          _emailSent = true;
-          _isLoading = false;
-        });
+        if (token != null) {
+          setState(() {
+            _emailSent = true;
+            _resetToken = token;
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _isLoading = false;
+          });
+          throw Exception('Échec de la réinitialisation');
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -75,9 +84,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   void _proceedToCodeInput() {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => ResetCodeInputScreen(
-          email: _emailController.text.trim(),
-        ),
+        builder: (context) =>
+            ResetCodeInputScreen(email: _emailController.text.trim()),
       ),
     );
   }
@@ -85,7 +93,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF4CAF50),
+      backgroundColor: const Color(0xFF488950),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -123,7 +131,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     child: const Icon(
                       Icons.lock_reset,
                       size: 40,
-                      color: Color(0xFF4CAF50),
+                      color: Color(0xFF488950),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -138,10 +146,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'Entrez votre adresse email pour recevoir un lien de réinitialisation',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.white70),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -177,7 +182,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 20),
-          
+
           // Champ email
           TextFormField(
             controller: _emailController,
@@ -191,21 +196,22 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               if (value == null || value.trim().isEmpty) {
                 return 'Veuillez entrer votre email';
               }
-              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                  .hasMatch(value)) {
+              if (!RegExp(
+                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+              ).hasMatch(value)) {
                 return 'Veuillez entrer un email valide';
               }
               return null;
             },
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           // Bouton de réinitialisation
           ElevatedButton(
             onPressed: _isLoading ? null : _resetPassword,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4CAF50),
+              backgroundColor: const Color(0xFF488950),
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             child: _isLoading
@@ -222,16 +228,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Lien de retour à la connexion
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text(
               'Retour à la connexion',
               style: TextStyle(
-                color: Color(0xFF4CAF50),
+                color: Color(0xFF488950),
                 decoration: TextDecoration.underline,
               ),
             ),
@@ -245,34 +251,71 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(
-          Icons.check_circle,
-          color: Color(0xFF4CAF50),
-          size: 80,
-        ),
+        const Icon(Icons.check_circle, color: Color(0xFF488950), size: 80),
         const SizedBox(height: 24),
         const Text(
           'Email envoyé !',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF4CAF50),
+            color: Color(0xFF488950),
           ),
         ),
         const SizedBox(height: 16),
         const Text(
           'Un lien de réinitialisation a été envoyé à votre adresse email. Vérifiez votre boîte de réception et suivez les instructions.',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey,
-          ),
+          style: TextStyle(fontSize: 16, color: Colors.grey),
           textAlign: TextAlign.center,
         ),
+        if (_resetToken != null) ...[
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Column(
+              children: [
+                const Text(
+                  '🔧 MODE DÉVELOPPEMENT',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Code de réinitialisation :',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 4),
+                SelectableText(
+                  _resetToken!,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Copiez ce code et collez-le dans l\'écran suivant',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 32),
         ElevatedButton(
           onPressed: _proceedToCodeInput,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF4CAF50),
+            backgroundColor: const Color(0xFF488950),
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           ),
           child: const Text(

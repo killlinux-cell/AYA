@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- Splash screen personnalisé pour Aya+ (API 21+) -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="?android:colorBackground" />
+    <!-- Fond vert Aya+ -->
+    <item android:drawable="@color/aya_primary_green" />
 
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
+    <!-- Logo univers.png centré avec taille appropriée -->
+    <item>
         <bitmap
             android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+            android:src="@mipmap/univers"
+            android:width="120dp"
+            android:height="120dp" />
+    </item>
 </layer-list>

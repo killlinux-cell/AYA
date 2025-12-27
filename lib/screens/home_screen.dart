@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/user_provider.dart';
 import '../widgets/header_widget.dart';
 import '../widgets/points_display_widget.dart';
 import '../widgets/collected_qr_display_widget.dart';
 import '../widgets/bonus_section_widget.dart';
 import '../widgets/navigation_bar_widget.dart';
-import '../widgets/personal_qr_card_widget.dart';
+import '../widgets/vendors_card_widget.dart';
+import '../widgets/api_video_widget.dart';
+import '../widgets/home_banner_widget.dart';
+import '../utils/loading_mixin.dart';
+import '../theme/app_colors.dart';
 import 'games_screen.dart';
 import 'qr_scanner_screen.dart';
-import 'personal_qr_screen.dart';
 import 'profile_screen.dart';
 import 'auth_screen.dart';
-import 'vendor_screen.dart';
+import 'vendor_login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,7 +24,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with LoadingMixin {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
@@ -76,25 +78,60 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _HomeContent extends StatelessWidget {
+class _HomeContent extends StatefulWidget {
   const _HomeContent();
+
+  @override
+  State<_HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<_HomeContent>
+    with WidgetsBindingObserver, LoadingMixin {
+  bool _isRefreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Rafraîchir les données quand l'app revient au premier plan
+      print('🔄 HomeScreen: App resumed, rafraîchissement des données...');
+      BonusSectionWidget.refresh(context);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header avec logo et heure
-            const HeaderWidget(),
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          // Header avec logo et heure - commence tout en haut
+          const HeaderWidget(),
 
-            Expanded(
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _refreshData,
+              color: AppColors.primaryGreen,
               child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Bannière publicitaire pilotée par l'API
+                    const HomeBannerWidget(),
+
                     // Affichage des points
                     const PointsDisplayWidget(),
                     const SizedBox(height: 20),
@@ -111,16 +148,85 @@ class _HomeContent extends StatelessWidget {
                     _buildQuickActions(context),
                     const SizedBox(height: 20),
 
-                    // Carte QR Personnel stylée
-                    const PersonalQRCardWidget(),
+                    // Carte des vendeurs disponibles
+                    const VendorsCardWidget(),
+
+                    // Vidéo publicitaire de l'API (lecture aléatoire)
+                    const ApiVideoWidget(),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+
+  /// Rafraîchir les données de l'utilisateur
+  Future<void> _refreshData() async {
+    if (_isRefreshing) return;
+
+    setState(() {
+      _isRefreshing = true;
+    });
+
+    try {
+      print('🔄 HomeScreen: Rafraîchissement des données utilisateur...');
+
+      // Rafraîchir les données via AuthProvider
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.refreshUserData();
+
+      // Rafraîchir la section bonus
+      BonusSectionWidget.refresh(context);
+
+      print('✅ HomeScreen: Données rafraîchies avec succès');
+
+      // Afficher un message de succès
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Données actualisées !'),
+              ],
+            ),
+            backgroundColor: AppColors.primaryGreen,
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ HomeScreen: Erreur lors du rafraîchissement: $e');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('Erreur lors de l\'actualisation: $e'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    }
   }
 
   Widget _buildQuickActions(BuildContext context) {
@@ -132,7 +238,7 @@ class _HomeContent extends StatelessWidget {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF212121),
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 16),
@@ -141,18 +247,19 @@ class _HomeContent extends StatelessWidget {
           children: [
             Expanded(
               child: _buildActionCard(
-            context,
-            icon: Icons.store,
-            title: 'Mode Vendeur',
-            subtitle: 'Scanner les échanges clients',
-            color: const Color(0xFF9C27B0),
-            onTap: () {
-              // Navigation vers l'interface vendeur
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const VendorScreen()),
-              );
-            },
-        ),
+                context,
+                icon: Icons.store,
+                title: 'Mode Vendeur',
+                subtitle: 'Scanner les échanges clients',
+                color: AppColors.accentRed,
+                onTap: () {
+                  // Navigation vers l'écran de connexion vendeur avec chargement
+                  navigateWithLoading(
+                    const VendorLoginScreen(),
+                    message: 'Chargement de la connexion vendeur...',
+                  );
+                },
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -161,13 +268,12 @@ class _HomeContent extends StatelessWidget {
                 icon: Icons.games,
                 title: 'Jouer',
                 subtitle: 'Gagner des points',
-                color: const Color(0xFFFF9800),
+                color: AppColors.accentYellow,
                 onTap: () {
-                  // Navigation vers les jeux
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const GamesScreen(),
-                    ),
+                  // Navigation vers les jeux avec chargement
+                  navigateWithLoading(
+                    const GamesScreen(),
+                    message: 'Chargement des jeux...',
                   );
                 },
               ),
@@ -178,21 +284,20 @@ class _HomeContent extends StatelessWidget {
         const SizedBox(height: 16),
 
         // Carte pour voir son QR code personnel
-      /*  _buildActionCard(
+        /*  _buildActionCard(
           context,
           icon: Icons.qr_code,
           title: 'Mon QR Code',
           subtitle: 'Voir mon identifiant personnel',
-          color: const Color(0xFF2196F3),
+          color: AppColors.primaryGreen,
           onTap: () {
-            // Navigation vers le QR code personnel
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const PersonalQRScreen()),
+            // Navigation vers le QR code personnel avec chargement
+            navigateWithLoading(
+              const PersonalQRScreen(),
+              message: 'Chargement du QR personnel...',
             );
           },
         ), */
-
-
       ],
     );
   }
@@ -237,7 +342,7 @@ class _HomeContent extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF212121),
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 4),

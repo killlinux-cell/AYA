@@ -1,0 +1,22 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "TEAMID.com.example.aya"
+        ],
+        "components": [
+          {
+            "/": "/scan*",
+            "comment": "Matches any URL whose path starts with /scan"
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "TEAMID.com.example.aya"
+    ]
+  }
+}

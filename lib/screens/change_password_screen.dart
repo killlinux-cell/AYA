@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
-import '../services/auth_service.dart';
+import '../services/django_auth_service.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -19,7 +17,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
-  final AuthService _authService = AuthService();
+  final DjangoAuthService _authService = DjangoAuthService.instance;
 
   @override
   void dispose() {
@@ -38,7 +36,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     try {
       // Mettre à jour le mot de passe
-      await _authService.updateUserPassword(_newPasswordController.text.trim());
+      await _authService.updatePassword(_newPasswordController.text.trim());
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -91,7 +89,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text('Changer le mot de passe'),
-        backgroundColor: const Color(0xFF4CAF50),
+        backgroundColor: const Color(0xFF488950),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -109,12 +107,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
+                    colors: [Color(0xFF488950), Color(0xFF60A066)],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF4CAF50).withOpacity(0.3),
+                      color: const Color(0xFF488950).withOpacity(0.3),
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
@@ -310,7 +308,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _changePassword,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4CAF50),
+                            backgroundColor: const Color(0xFF488950),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(

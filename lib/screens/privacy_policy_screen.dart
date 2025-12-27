@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../theme/app_colors.dart';
+import '../config/fonts.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
@@ -6,263 +9,365 @@ class PrivacyPolicyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Politique de confidentialité'),
-        backgroundColor: const Color(0xFF4CAF50),
-        foregroundColor: Colors.white,
+        title: const Text(
+          'Politique de Confidentialité',
+          style: TextStyle(
+            fontFamily: AppFonts.helvetica,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: AppColors.primaryGreen,
+        foregroundColor: AppColors.white,
         elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // En-tête
             Container(
-              padding: const EdgeInsets.all(24),
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
+                  colors: [AppColors.primaryGreen, AppColors.primaryGreenLight],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
                 ),
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF4CAF50).withOpacity(0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
               ),
               child: Column(
                 children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(40),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 2,
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.privacy_tip,
-                      color: Colors.white,
-                      size: 40,
+                  Icon(Icons.security, color: AppColors.white, size: 32),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Mon univers AYA',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.white,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Politique de confidentialité',
+                  const SizedBox(height: 4),
+                  Text(
+                    'Politique de Confidentialité',
+                    style: TextStyle(fontSize: 16, color: AppColors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Dernière mise à jour : ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      fontSize: 12,
+                      color: AppColors.white.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Introduction
+            _buildSection(
+              title: 'Introduction',
+              content:
+                  'Chez Aya, nous respectons votre vie privée et nous nous engageons à protéger vos informations personnelles. Cette politique explique quelles données nous collectons, comment nous les utilisons et vos droits.',
+            ),
+
+            const SizedBox(height: 20),
+
+            // Section 1: Informations collectées
+            _buildSection(
+              title: '1. Informations collectées',
+              content:
+                  'Lorsque vous utilisez notre application, nous collectons :',
+              children: [
+                _buildListItem(
+                  'Votre nom, adresse e-mail et numéro de téléphone lors de l\'inscription.',
+                ),
+                _buildListItem(
+                  'Vos points et activités dans l\'application (scans de QR code, participation aux jeux).',
+                ),
+                _buildListItem(
+                  'Informations techniques de votre appareil (type d\'appareil, version du système d\'exploitation).',
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Section 2: Utilisation des informations
+            _buildSection(
+              title: '2. Utilisation des informations',
+              content: 'Nous utilisons vos données pour :',
+              children: [
+                _buildListItem(
+                  'Gérer votre compte, suivre vos points et récompenses.',
+                ),
+                _buildListItem(
+                  'Faciliter votre participation aux jeux et aux concours.',
+                ),
+                _buildListItem(
+                  'Vous envoyer des communications importantes liées à l\'application et nos produits.',
+                ),
+                _buildListItem(
+                  'Améliorer notre application et votre expérience utilisateur.',
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Section 3: Partage des informations
+            _buildSection(
+              title: '3. Partage des informations',
+              content:
+                  'Nous ne vendons ni ne louons vos informations personnelles. Vos données peuvent être partagées avec :',
+              children: [
+                _buildListItem(
+                  'Nos prestataires techniques pour le bon fonctionnement de l\'application.',
+                ),
+                _buildListItem('Les autorités si la loi l\'exige.'),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Section 4: Sécurité des données
+            _buildSection(
+              title: '4. Sécurité des données',
+              content:
+                  'Nous mettons en place des mesures techniques et organisationnelles pour protéger vos données contre tout accès non autorisé, perte ou divulgation.',
+            ),
+
+            const SizedBox(height: 20),
+
+            // Section 5: Vos droits
+            _buildSection(
+              title: '5. Vos droits',
+              content: 'Vous pouvez :',
+              children: [
+                _buildListItem('Accéder à vos données et demander une copie.'),
+                _buildListItem(
+                  'Demander la correction ou la suppression de vos données.',
+                ),
+                _buildListItem(
+                  'Vous désinscrire des communications marketing (si applicable).',
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Section 6: Contact
+            _buildSection(
+              title: '6. Contact',
+              content: 'Pour exercer vos droits, contactez-nous à :',
+              children: [
+                _buildContactInfo(
+                  'Email',
+                  'sarci@sarci.ci',
+                  Icons.email,
+                  () => _sendEmail('sarci@sarci.ci'),
+                ),
+                _buildContactInfo(
+                  'Téléphone',
+                  '+225 2723467139',
+                  Icons.phone,
+                  () => _makePhoneCall('+2252723467139'),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Section 7: Modifications
+            _buildSection(
+              title: '7. Modifications de la politique',
+              content:
+                  'Nous pouvons mettre à jour cette politique de confidentialité de temps en temps. La version la plus récente sera toujours disponible dans l\'application.',
+            ),
+
+            const SizedBox(height: 32),
+
+            // Footer
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.borderPrimary),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Mon univers AYA par SARCI SA',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Protection de vos données personnelles',
-                    style: TextStyle(fontSize: 14, color: Colors.white70),
+                  Text(
+                    'Yopougon Zone Industrielle, Abidjan, Côte d\'Ivoire',
                     textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Contenu de la politique
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSection(
-                    '1. Collecte des données',
-                    'Nous collectons uniquement les informations nécessaires au fonctionnement de l\'application :\n\n'
-                        '• Informations de profil (nom, email)\n'
-                        '• Données de connexion\n'
-                        '• Historique des points et codes QR scannés\n'
-                        '• Données techniques de l\'appareil',
-                  ),
-                  _buildSection(
-                    '2. Utilisation des données',
-                    'Vos données sont utilisées pour :\n\n'
-                        '• Gérer votre compte utilisateur\n'
-                        '• Tracker vos points et récompenses\n'
-                        '• Améliorer l\'expérience utilisateur\n'
-                        '• Assurer la sécurité de l\'application',
-                  ),
-                  _buildSection(
-                    '3. Protection des données',
-                    'Nous mettons en place des mesures de sécurité pour protéger vos données :\n\n'
-                        '• Chiffrement des données sensibles\n'
-                        '• Accès restreint aux données\n'
-                        '• Sauvegarde sécurisée\n'
-                        '• Mise à jour régulière des systèmes',
-                  ),
-                  _buildSection(
-                    '4. Partage des données',
-                    'Nous ne partageons vos données qu\'avec :\n\n'
-                        '• Les services techniques nécessaires\n'
-                        '• Les autorités si requis par la loi\n'
-                        '• Votre consentement explicite',
-                  ),
-                  _buildSection(
-                    '5. Vos droits',
-                    'Vous avez le droit de :\n\n'
-                        '• Accéder à vos données personnelles\n'
-                        '• Corriger vos informations\n'
-                        '• Supprimer votre compte\n'
-                        '• Exporter vos données\n'
-                        '• Retirer votre consentement',
-                  ),
-                  _buildSection(
-                    '6. Conservation des données',
-                    'Vos données sont conservées :\n\n'
-                        '• Pendant la durée de votre compte\n'
-                        '• Maximum 2 ans après suppression\n'
-                        '• Selon les obligations légales',
-                  ),
-                  _buildSection(
-                    '7. Cookies et traceurs',
-                    'Notre application utilise :\n\n'
-                        '• Des cookies de session\n'
-                        '• Des traceurs de performance\n'
-                        '• Des outils d\'analyse anonymisés',
-                  ),
-                  _buildSection(
-                    '8. Modifications',
-                    'Cette politique peut être mise à jour. Nous vous informerons de tout changement important.',
-                  ),
-                  _buildSection(
-                    '9. Contact',
-                    'Pour toute question sur cette politique :\n\n'
-                        'Email : privacy@aya-huiles.com\n'
-                        'Adresse : Aya Huiles Team\n'
-                        'Site web : orapide.shop',
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Informations légales
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.info, color: Colors.blue.shade700, size: 24),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Informations légales',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Cette politique de confidentialité est conforme au RGPD (Règlement Général sur la Protection des Données) et aux lois françaises en vigueur.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.blue.shade700,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Dernière mise à jour : Décembre 2024',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.blue.shade600,
-                      fontStyle: FontStyle.italic,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 24),
-
-            // Bouton de retour
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4CAF50),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Retour au profil',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSection(String title, String content) {
+  Widget _buildSection({
+    required String title,
+    required String content,
+    List<Widget>? children,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppColors.primaryGreen,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          content,
+          style: TextStyle(
+            fontSize: 14,
+            color: AppColors.textPrimary,
+            height: 1.5,
+          ),
+        ),
+        if (children != null) ...[const SizedBox(height: 12), ...children],
+      ],
+    );
+  }
+
+  Widget _buildListItem(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
+      padding: const EdgeInsets.only(left: 16, bottom: 8),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF212121),
+          Container(
+            width: 6,
+            height: 6,
+            margin: const EdgeInsets.only(top: 6),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen,
+              shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            content,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF424242),
-              height: 1.5,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textPrimary,
+                height: 1.4,
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildContactInfo(
+    String label,
+    String value,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.borderPrimary),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: AppColors.primaryGreen, size: 18),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        value,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: AppColors.textSecondary,
+                  size: 14,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Fonctions pour les actions
+  Future<void> _sendEmail(String email) async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: email,
+      query: 'subject=Politique de Confidentialité Aya+',
+    );
+    if (await canLaunchUrl(emailUri)) {
+      await launchUrl(emailUri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+    if (await canLaunchUrl(phoneUri)) {
+      await launchUrl(phoneUri, mode: LaunchMode.externalApplication);
+    }
   }
 }

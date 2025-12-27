@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 class NavigationBarWidget extends StatelessWidget {
   final int currentIndex;
@@ -72,7 +73,7 @@ class NavigationBarWidget extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF4CAF50).withOpacity(0.1)
+              ? AppColors.primaryGreen.withOpacity(0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
@@ -82,7 +83,7 @@ class NavigationBarWidget extends StatelessWidget {
             Icon(
               icon,
               color: isSelected
-                  ? const Color(0xFF4CAF50)
+                  ? const Color(0xFF488950)
                   : Colors.grey.shade600,
               size: 24,
             ),
@@ -93,7 +94,7 @@ class NavigationBarWidget extends StatelessWidget {
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
-                    ? const Color(0xFF4CAF50)
+                    ? const Color(0xFF488950)
                     : Colors.grey.shade600,
               ),
             ),

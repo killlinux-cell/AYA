@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/user.dart' as app_user;
 import '../models/qr_code.dart';
 
 class ApiService {
