@@ -397,7 +397,7 @@ class _SpinWheelGameScreenState extends State<SpinWheelGameScreen> {
   Future<Map<String, dynamic>?> _playGameAPI() async {
     try {
       final response = await http.post(
-        Uri.parse('${DjangoConfig.baseUrl}/games/play/'),
+        Uri.parse('${DjangoConfig.baseUrl}/api/games/play/'),
         headers: {
           'Content-Type': 'application/json',
           if (_authService.accessToken != null)

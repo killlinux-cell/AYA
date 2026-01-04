@@ -455,13 +455,13 @@ class _ScratchAndWinGameScreenState extends State<ScratchAndWinGameScreen>
 
   Future<Map<String, dynamic>?> _playGameAPI() async {
     try {
-      print('🎮 Appel API: ${DjangoConfig.baseUrl}/games/play/');
+      print('🎮 Appel API: ${DjangoConfig.baseUrl}/api/games/play/');
       print(
         '🎮 Token: ${_authService.accessToken != null ? "Présent" : "Absent"}',
       );
 
       final response = await http.post(
-        Uri.parse('${DjangoConfig.baseUrl}/games/play/'),
+        Uri.parse('${DjangoConfig.baseUrl}/api/games/play/'),
         headers: {
           'Content-Type': 'application/json',
           if (_authService.accessToken != null)
