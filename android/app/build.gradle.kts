@@ -18,7 +18,7 @@ plugins {
 android {
     namespace = "com.example.aya"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "27.0.12077973" // NDK r27 (r28 peut être installé plus tard si nécessaire)
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -38,6 +38,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        
+        // Support pour les pages mémoire de 16 KB - alignement ELF requis
+        ndk {
+            // NDK r28+ supporte l'alignement 16 KB par défaut
+        }
     }
     signingConfigs {
         if (keystorePropertiesFile.exists()) {
@@ -64,6 +69,13 @@ android {
             isShrinkResources = false
         }
         // signingConfig = signingConfigs.getByName("debug")
+    }
+    
+    // Support pour les pages mémoire de 16 KB (exigence Google Play depuis nov. 2025)
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
     }
 }
 
