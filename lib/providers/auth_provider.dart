@@ -55,6 +55,14 @@ class AuthProvider with ChangeNotifier {
           _isLoading = false;
           notifyListeners();
           break;
+        case 'ACCOUNT_DELETED':
+          _currentUser = null;
+          _isAuthenticated = false;
+          _error = null;
+          _isLoading = false;
+          print('AuthProvider: ACCOUNT_DELETED event received');
+          notifyListeners();
+          break;
       }
     });
   }
@@ -146,7 +154,7 @@ class AuthProvider with ChangeNotifier {
     String lastName,
     String email,
     String password,
-    String phoneNumber,
+    String? phoneNumber, // ✅ Rendu optionnel
     double? latitude,
     double? longitude,
   ) async {
@@ -265,6 +273,34 @@ class AuthProvider with ChangeNotifier {
       _currentUser = _currentUser!.copyWith(availablePoints: newPoints);
       notifyListeners();
       print('✅ AuthProvider: Points utilisateur mis à jour: $newPoints');
+    }
+  }
+
+  /// Supprimer définitivement le compte utilisateur
+  /// Cette action est irréversible
+  Future<bool> deleteAccount() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final success = await _authService.deleteAccount();
+
+      if (success) {
+        // Nettoyer les données utilisateur
+        _clearUserData();
+        return true;
+      }
+
+      _error = 'Erreur lors de la suppression du compte';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Erreur lors de la suppression: ${e.toString()}';
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
   }
 

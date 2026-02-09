@@ -113,7 +113,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Aya est une marque qui valorise le patrimoine ivoirien et offre des produits de qualité. Avec Aya, chaque achat compte ! Scannez vos produits, gagnez des points et profitez d’avantages exclusifs pour nos clients fidèles.',
+                    "Mon univers AYA est le programme de fidélité officiel développé par SARCI SA. AYA est une marque qui valorise le patrimoine ivoirien et offre des produits de qualité. Avec AYA, chaque achat compte ! Scannez vos produits, gagnez des points et profitez d'avantages exclusifs pour nos clients fidèles.",
                     style: TextStyle(
                       fontSize: 16,
                       color: Color(0xFF424242),
@@ -168,8 +168,8 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   _buildInfoItem('Version', '1.0.0'),
-                  _buildInfoItem('Dernière mise à jour', 'Décembre 2024'),
-                  _buildInfoItem('Développeur', 'Aya+ Team'),
+                  _buildInfoItem('Dernière mise à jour', 'Janvier 2026'),
+                  _buildInfoItem('Développeur', 'SARCI SA'),
                   _buildInfoItem('Plateforme', 'Android & iOS'),
                   _buildInfoItem('Langue', 'Français'),
                 ],

@@ -197,7 +197,7 @@ class DjangoAuthService {
     required String password,
     required String firstName,
     required String lastName,
-    required String phoneNumber,
+    String? phoneNumber, // ✅ Rendu optionnel
     double? latitude,
     double? longitude,
   }) async {
@@ -208,7 +208,9 @@ class DjangoAuthService {
         'password_confirm': password,
         'first_name': firstName,
         'last_name': lastName,
-        'phone_number': phoneNumber,
+        // Envoyer le téléphone seulement s'il est fourni et non vide
+        if (phoneNumber != null && phoneNumber.trim().isNotEmpty)
+          'phone_number': phoneNumber.trim(),
         if (latitude != null) 'latitude': latitude,
         if (longitude != null) 'longitude': longitude,
       };
@@ -290,6 +292,60 @@ class DjangoAuthService {
       await _clearPersistedData();
 
       _authStateController.add({'event': 'SIGNED_OUT', 'user': null});
+    }
+  }
+
+  /// Supprimer définitivement le compte utilisateur
+  /// Cette action est irréversible et supprime toutes les données utilisateur
+  Future<bool> deleteAccount() async {
+    if (!isAuthenticated) {
+      throw Exception('Vous devez être connecté pour supprimer votre compte');
+    }
+
+    try {
+      print('🗑️ Tentative de suppression du compte...');
+      
+      final response = await http.delete(
+        Uri.parse(DjangoConfig.deleteAccountEndpoint),
+        headers: _authHeaders,
+      );
+
+      print('Réponse suppression - Status: ${response.statusCode}');
+      print('Réponse suppression - Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // Nettoyer les données locales
+        _accessToken = null;
+        _refreshToken = null;
+        _currentUser = null;
+
+        // Nettoyer les données persistées
+        await _clearPersistedData();
+
+        // Notifier la suppression
+        _authStateController.add({
+          'event': 'ACCOUNT_DELETED',
+          'user': null,
+          'message': 'Compte supprimé avec succès',
+        });
+
+        print('✅ Compte supprimé avec succès');
+        return true;
+      } else {
+        try {
+          final errorData = jsonDecode(response.body);
+          throw Exception(
+            errorData['message'] ?? 
+            errorData['detail'] ?? 
+            'Erreur lors de la suppression du compte',
+          );
+        } catch (e) {
+          throw Exception('Erreur lors de la suppression: ${response.body}');
+        }
+      }
+    } catch (e) {
+      print('❌ Erreur lors de la suppression du compte: $e');
+      throw _handleConnectionError(e);
     }
   }
 

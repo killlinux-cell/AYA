@@ -116,7 +116,9 @@ class _AuthFormState extends State<AuthForm> {
           _lastNameController.text.trim(),
           _emailController.text.trim(),
           _passwordController.text,
-          _phoneController.text.trim(),
+          _phoneController.text.trim().isEmpty
+              ? null
+              : _phoneController.text.trim(), // ✅ Envoyer null si vide
           _currentPosition?.latitude,
           _currentPosition?.longitude,
         );
@@ -236,18 +238,19 @@ class _AuthFormState extends State<AuthForm> {
                 },
               ),
               const SizedBox(height: 20),
-              // Champ numéro de téléphone
+              // Champ numéro de téléphone (optionnel)
               _buildStyledTextField(
                 controller: _phoneController,
-                labelText: 'Numéro de téléphone',
-                hintText: 'Entrez votre numéro de téléphone',
+                labelText: 'Numéro de téléphone (optionnel)',
+                hintText: 'Entrez votre numéro de téléphone (facultatif)',
                 icon: Icons.phone_outlined,
                 keyboardType: TextInputType.phone,
                 validator: (value) {
+                  // Le téléphone est optionnel - accepter les valeurs vides
                   if (value == null || value.trim().isEmpty) {
-                    return 'Veuillez entrer votre numéro de téléphone';
+                    return null; // ✅ Accepte les valeurs vides
                   }
-                  // Validation basique du numéro de téléphone
+                  // Si fourni, valider le format
                   if (!RegExp(
                     r'^[\+]?[0-9\s\-\(\)]{8,15}$',
                   ).hasMatch(value.trim())) {

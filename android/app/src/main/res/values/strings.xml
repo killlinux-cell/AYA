@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Clé API Google Maps -->
+    <!-- 
+    IMPORTANT : Remplacez "YOUR_GOOGLE_MAPS_API_KEY" par votre vraie clé API Google Maps.
+    
+    Pour obtenir une clé API :
+    1. Allez sur https://console.cloud.google.com/
+    2. Créez un projet ou sélectionnez un projet existant
+    3. Activez l'API "Maps SDK for Android"
+    4. Créez une clé API dans "Identifiants"
+    5. Restreignez la clé à "Maps SDK for Android" et à votre package Android
+    6. Remplacez la clé ci-dessous
+    -->
+    <string name="google_maps_api_key">YOUR_GOOGLE_MAPS_API_KEY</string>
+</resources>
