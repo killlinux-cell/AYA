@@ -15,7 +15,6 @@ import 'games_screen.dart';
 import 'qr_scanner_screen.dart';
 import 'profile_screen.dart';
 import 'auth_screen.dart';
-import 'vendor_login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -248,29 +247,11 @@ class _HomeContentState extends State<_HomeContent>
             Expanded(
               child: _buildActionCard(
                 context,
-                icon: Icons.store,
-                title: 'Mode Vendeur',
-                subtitle: 'Scanner les échanges clients',
-                color: AppColors.accentRed,
-                onTap: () {
-                  // Navigation vers l'écran de connexion vendeur avec chargement
-                  navigateWithLoading(
-                    const VendorLoginScreen(),
-                    message: 'Chargement de la connexion vendeur...',
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildActionCard(
-                context,
                 icon: Icons.games,
                 title: 'Jouer',
                 subtitle: 'Gagner des points',
                 color: AppColors.accentYellow,
                 onTap: () {
-                  // Navigation vers les jeux avec chargement
                   navigateWithLoading(
                     const GamesScreen(),
                     message: 'Chargement des jeux...',

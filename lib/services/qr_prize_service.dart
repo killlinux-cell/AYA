@@ -89,11 +89,30 @@ class QRPrizeService {
           );
         }
       } else {
-        final errorData = jsonDecode(response.body);
+        Map<String, dynamic> errorData = {};
+        try {
+          errorData = jsonDecode(response.body) as Map<String, dynamic>? ?? {};
+        } catch (_) {}
+        // DRF/JWT utilise 'detail' pour 401/403, le backend utilise 'error'
+        final detail = errorData['detail'];
+        final errorMsg = errorData['error'] ??
+            (detail is String
+                ? detail
+                : (detail is List
+                    ? detail.join(', ')
+                    : null)) ??
+            'Erreur de validation';
+        final errStr = errorMsg is String ? errorMsg : errorMsg.toString();
+        // 401 = non authentifié
+        final is401 = response.statusCode == 401;
         return QRPrizeResult(
           success: false,
-          error: errorData['error'] ?? 'Erreur de validation',
-          errorType: QRPrizeError.serverError,
+          error: is401
+              ? 'Session expirée. Veuillez vous reconnecter.'
+              : errStr,
+          errorType: is401
+              ? QRPrizeError.notAuthenticated
+              : QRPrizeError.serverError,
         );
       }
     } catch (e) {

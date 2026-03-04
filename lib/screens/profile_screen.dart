@@ -12,6 +12,7 @@ import 'about_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'contact_screen.dart';
 import 'qr_generator_screen.dart';
+import 'user_exchange_history_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -350,6 +351,19 @@ class ProfileScreen extends StatelessWidget {
                 _buildProfileSection(
                   title: 'Informations du compte',
                   children: [
+                    _buildProfileOption(
+                      icon: Icons.swap_horiz,
+                      title: 'Mes échanges',
+                      subtitle: 'Voir l\'historique et les récompenses gagnées',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const UserExchangeHistoryScreen(),
+                          ),
+                        );
+                      },
+                    ),
                     _buildProfileOption(
                       icon: Icons.qr_code,
                       title: 'Mon QR Code Personnel',

@@ -4,8 +4,10 @@ import 'package:geolocator/geolocator.dart';
 import '../providers/auth_provider.dart';
 import '../providers/user_provider.dart';
 import '../screens/home_screen.dart';
+import '../screens/vendor_screen.dart';
 import '../screens/reset_password_screen.dart';
 import '../widgets/auth_notification.dart';
+import '../services/vendor_auth_service.dart';
 
 class AuthForm extends StatefulWidget {
   final bool isLogin;
@@ -106,6 +108,35 @@ class _AuthFormState extends State<AuthForm> {
       bool success;
 
       if (widget.isLogin) {
+        // Essayer D'ABORD la connexion vendeur (les vendeurs ont aussi un User,
+        // donc la connexion client réussirait et redirigerait vers l'accueil client)
+        final vendorAuthService = VendorAuthService();
+        final vendorResult = await vendorAuthService.login(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+        
+        if (vendorResult.success) {
+          // Connexion vendeur réussie - rediriger vers l'écran vendeur
+          if (mounted) {
+            showAuthNotification(
+              context,
+              message: 'Connexion vendeur réussie !',
+              isSuccess: true,
+              duration: const Duration(seconds: 2),
+            );
+            
+            await Future.delayed(const Duration(milliseconds: 1000));
+            
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const VendorScreen()),
+            );
+            return; // Sortir de la fonction car on a déjà navigué
+          // Si la connexion vendeur échoue aussi, on garde l'erreur client
+          }
+        }
+        
+        // Sinon, essayer la connexion client
         success = await authProvider.login(
           _emailController.text.trim(),
           _passwordController.text,

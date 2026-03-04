@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/vendor_exchange_history_service.dart';
-import '../services/django_auth_service.dart';
 import '../services/pdf_receipt_service.dart';
 import '../services/vendor_auth_service.dart';
+import '../constants/exchange_catalog.dart';
 import '../config/fonts.dart';
 
 class VendorExchangeHistoryWidget extends StatefulWidget {
@@ -26,7 +26,7 @@ extension VendorExchangeHistoryWidgetExtension
 class _VendorExchangeHistoryWidgetState
     extends State<VendorExchangeHistoryWidget> {
   final VendorExchangeHistoryService _historyService =
-      VendorExchangeHistoryService(DjangoAuthService.instance);
+      VendorExchangeHistoryService(VendorAuthService());
   final PDFReceiptService _pdfService = PDFReceiptService();
   final VendorAuthService _vendorAuthService = VendorAuthService();
   List<VendorExchange> _exchanges = [];
@@ -128,33 +128,83 @@ class _VendorExchangeHistoryWidgetState
       body: RefreshIndicator(
         onRefresh: _loadExchangeHistory,
         color: const Color(0xFF488950),
-        child: Column(
-          children: [
-            // Statistiques
-            if (_stats != null) _buildStatsCard(),
+        child: _isLoading
+            ? _buildLoadingWidget()
+            : _error.isNotEmpty
+                ? _buildErrorWidget()
+                : CustomScrollView(
+                    slivers: [
+                      // Statistiques
+                      if (_stats != null)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              left: 16,
+                              right: 16,
+                              top: 16,
+                              bottom: 8,
+                            ),
+                            child: _buildStatsCard(),
+                          ),
+                        ),
 
-            // Tokens en attente
-            if (_pendingTokens.isNotEmpty) _buildPendingTokensSection(),
+                      // Tokens en attente
+                      if (_pendingTokens.isNotEmpty)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            child: _buildPendingTokensSection(),
+                          ),
+                        ),
 
-            // Liste des échanges
-            Expanded(
-              child: _isLoading
-                  ? _buildLoadingWidget()
-                  : _error.isNotEmpty
-                  ? _buildErrorWidget()
-                  : _exchanges.isEmpty
-                  ? _buildEmptyWidget()
-                  : _buildExchangesList(),
-            ),
-          ],
-        ),
+                      // Titre section transactions
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                          child: Text(
+                            'Transactions',
+                            style: TextStyle(
+                              fontFamily: AppFonts.helvetica,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Liste des échanges
+                      if (_exchanges.isEmpty)
+                        SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: _buildEmptyWidget(),
+                        )
+                      else
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: _buildExchangeCard(_exchanges[index]),
+                                );
+                              },
+                              childCount: _exchanges.length,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
       ),
     );
   }
 
   Widget _buildStatsCard() {
     return Container(
-      margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -343,17 +393,6 @@ class _VendorExchangeHistoryWidgetState
     );
   }
 
-  Widget _buildExchangesList() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _exchanges.length,
-      itemBuilder: (context, index) {
-        final exchange = _exchanges[index];
-        return _buildExchangeCard(exchange);
-      },
-    );
-  }
-
   /// Exporter l'historique en PDF
   Future<void> _exportToPDF() async {
     if (_exchanges.isEmpty) {
@@ -420,7 +459,6 @@ class _VendorExchangeHistoryWidgetState
 
   Widget _buildExchangeCard(VendorExchange exchange) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -522,6 +560,41 @@ class _VendorExchangeHistoryWidgetState
               ],
             ),
 
+            if (getRewardForPoints(exchange.points) != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.card_giftcard, size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Récompense:',
+                          style: TextStyle(
+                            fontFamily: AppFonts.helveticaNow,
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                        Text(
+                          getRewardForPoints(exchange.points)!,
+                          style: TextStyle(
+                            fontFamily: AppFonts.helvetica,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF488950),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
             const SizedBox(height: 12),
 
             // Code d'échange et date
@@ -582,7 +655,6 @@ class _VendorExchangeHistoryWidgetState
 
   Widget _buildPendingTokensSection() {
     return Container(
-      margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.orange.shade50,

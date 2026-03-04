@@ -18,7 +18,7 @@ plugins {
 android {
     namespace = "com.example.aya"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973" // NDK r27 (r28 peut être installé plus tard si nécessaire)
+    ndkVersion = "28.0.12674087" // NDK r28 requis par Google Play pour le support des pages mémoire 16 Ko
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

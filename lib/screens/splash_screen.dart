@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../services/vendor_auth_service.dart';
 import '../widgets/loading_widget.dart';
 import '../theme/app_colors.dart';
 import 'auth_screen.dart';
 import 'home_screen.dart';
+import 'vendor_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -44,9 +46,15 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(seconds: 3));
 
     if (mounted) {
+      final vendorAuthService = VendorAuthService();
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      if (authProvider.isAuthenticated) {
+      // Vendeur connecté → écran vendeur
+      if (vendorAuthService.isAuthenticated) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const VendorScreen()),
+        );
+      } else if (authProvider.isAuthenticated) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
@@ -79,28 +87,15 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(60),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.black.withOpacity(0.2),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
                       child: Image.asset(
                         'assets/icons/univers.png',
-                        width: 60,
-                        height: 60,
+                        height: 200,
                         fit: BoxFit.contain,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     const Text(
                       'Mon univers AYA',
                       style: TextStyle(

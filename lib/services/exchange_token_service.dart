@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/django_config.dart';
 import 'django_auth_service.dart';
+import 'vendor_auth_service.dart';
 
 class ExchangeTokenService {
   static final ExchangeTokenService _instance =
@@ -10,9 +11,10 @@ class ExchangeTokenService {
   ExchangeTokenService._internal();
 
   final DjangoAuthService _authService = DjangoAuthService.instance;
+  final VendorAuthService _vendorAuthService = VendorAuthService();
   static const String _baseUrl = DjangoConfig.qrUrl;
 
-  /// Créer un token d'échange temporaire
+  /// Créer un token d'échange temporaire (utilisé par le client)
   Future<ExchangeTokenResult> createExchangeToken(int points) async {
     try {
       final response = await http.post(
@@ -45,16 +47,23 @@ class ExchangeTokenService {
     }
   }
 
-  /// Valider un token d'échange
+  /// Valider un token d'échange (utilisé par le vendeur)
+  /// Utilise l'authentification vendeur car seul un vendeur peut valider un échange
   Future<ExchangeValidationResult> validateExchangeToken(String token) async {
     try {
+      // Utiliser le token vendeur pour l'authentification (les vendeurs ne sont pas authentifiés via DjangoAuthService)
+      await _vendorAuthService.initialize();
+      final headers = _vendorAuthService.getAuthHeaders();
+
+      if (headers['Authorization'] == null) {
+        return ExchangeValidationResult.error(
+          error: 'Session vendeur expirée. Veuillez vous reconnecter.',
+        );
+      }
+
       final response = await http.post(
         Uri.parse('$_baseUrl/exchange-tokens/validate/'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_authService.accessToken != null)
-            'Authorization': 'Bearer ${_authService.accessToken}',
-        },
+        headers: headers,
         body: jsonEncode({'token': token}),
       );
 
@@ -65,13 +74,25 @@ class ExchangeTokenService {
           message: data['message'],
         );
       } else {
-        final errorData = jsonDecode(response.body);
-        return ExchangeValidationResult.error(
-          error: errorData['error'] ?? 'Erreur lors de la validation du token',
-        );
+        String errorMessage = 'Erreur lors de la validation du token';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['error'] ?? errorData['detail'] ?? errorMessage;
+        } catch (_) {
+          if (response.statusCode == 401) {
+            errorMessage = 'Session vendeur expirée. Veuillez vous reconnecter.';
+          } else if (response.statusCode == 403) {
+            errorMessage = 'Accès refusé. Vérifiez vos droits vendeur.';
+          } else if (response.statusCode == 404) {
+            errorMessage = 'Token invalide ou expiré. Le client doit générer un nouveau QR code.';
+          }
+        }
+        return ExchangeValidationResult.error(error: errorMessage);
       }
     } catch (e) {
-      return ExchangeValidationResult.error(error: 'Erreur de connexion: $e');
+      return ExchangeValidationResult.error(
+        error: 'Erreur de connexion: ${e.toString().replaceAll('Exception: ', '')}',
+      );
     }
   }
 }

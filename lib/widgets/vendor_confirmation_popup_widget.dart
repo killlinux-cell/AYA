@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../services/pdf_receipt_service.dart';
-import '../services/vendor_exchange_history_service.dart';
-import '../services/django_auth_service.dart';
+import '../constants/exchange_catalog.dart';
 
 class VendorConfirmationPopupWidget extends StatefulWidget {
   final Map<String, dynamic> exchangeRequest;
@@ -46,8 +45,6 @@ class _VendorConfirmationPopupWidgetState
   late Animation<double> _particleAnimation;
 
   final PDFReceiptService _pdfService = PDFReceiptService();
-  final VendorExchangeHistoryService _historyService =
-      VendorExchangeHistoryService(DjangoAuthService.instance);
   bool _isGeneratingPDF = false;
 
   @override
@@ -201,6 +198,66 @@ class _VendorConfirmationPopupWidgetState
 
                     const SizedBox(height: 24),
 
+                    // Informations client
+                    if (widget.clientName != null || widget.clientEmail != null)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (widget.clientName != null)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.person,
+                                      color: Colors.white70,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        widget.clientName!,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (widget.clientEmail != null)
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.email,
+                                    color: Colors.white70,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      widget.clientEmail!,
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+
                     // Détails de l'échange
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -275,6 +332,45 @@ class _VendorConfirmationPopupWidgetState
                               ),
                             ],
                           ),
+                          if (getRewardForPoints(points) != null) ...[
+                            const SizedBox(height: 12),
+                            const Divider(color: Colors.white38),
+                            const SizedBox(height: 8),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(
+                                  Icons.card_giftcard,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Récompense:',
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        getRewardForPoints(points)!,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),

@@ -1,24 +1,57 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/django_config.dart';
-import 'django_auth_service.dart';
+import 'vendor_auth_service.dart';
 
 class VendorExchangeHistoryService {
   static const String baseUrl = '${DjangoConfig.baseUrl}/api';
-  final DjangoAuthService _authService;
+  final VendorAuthService _vendorAuthService;
 
-  VendorExchangeHistoryService(this._authService);
+  VendorExchangeHistoryService(this._vendorAuthService);
 
-  // Headers pour les requêtes authentifiées
-  Map<String, String> get _authHeaders => {
-    'Content-Type': 'application/json',
-    if (_authService.accessToken != null)
-      'Authorization': 'Bearer ${_authService.accessToken}',
-  };
+  // Headers pour les requêtes authentifiées (utilise le token vendeur)
+  Map<String, String> get _authHeaders =>
+      _vendorAuthService.getAuthHeaders();
+
+  /// Déduplique les échanges (le backend peut créer 2 enregistrements par validation)
+  List<VendorExchange> _deduplicateExchanges(List<VendorExchange> exchanges) {
+    if (exchanges.isEmpty) return exchanges;
+
+    final seen = <String>{};
+    final result = <VendorExchange>[];
+
+    // Trier par date décroissante pour garder le plus récent en cas de doublon
+    final sorted = List<VendorExchange>.from(exchanges)
+      ..sort((a, b) => (b.completedAt ?? b.createdAt)
+          .compareTo(a.completedAt ?? a.createdAt));
+
+    for (final e in sorted) {
+      // Fenêtre de 30 secondes : même user + points + créé à <30s = doublon
+      final timeSlot = e.createdAt.millisecondsSinceEpoch ~/ 30000;
+      final key = '${e.userId}_${e.points}_$timeSlot';
+
+      if (!seen.contains(key)) {
+        seen.add(key);
+        result.add(e);
+      }
+    }
+
+    // Remettre en ordre chronologique (plus récent en premier)
+    result.sort((a, b) => (b.completedAt ?? b.createdAt)
+        .compareTo(a.completedAt ?? a.createdAt));
+
+    if (result.length < exchanges.length) {
+      print(
+        '📌 Déduplication: ${exchanges.length} → ${result.length} échanges',
+      );
+    }
+    return result;
+  }
 
   /// Récupérer l'historique des échanges d'un vendeur
   Future<List<VendorExchange>> getExchangeHistory() async {
     try {
+      await _vendorAuthService.initialize();
       print(
         '🔄 VendorExchangeHistoryService: Récupération de l\'historique des échanges...',
       );
@@ -47,7 +80,7 @@ class VendorExchangeHistoryService {
           '📋 VendorExchangeHistoryService: Nombre de tokens en attente: ${pendingTokensData.length}',
         );
 
-        final exchanges = exchangesData
+        var exchanges = exchangesData
             .map(
               (exchangeData) => VendorExchange(
                 id: exchangeData['id'] ?? '',
@@ -70,6 +103,9 @@ class VendorExchangeHistoryService {
               ),
             )
             .toList();
+
+        // Déduplication : le backend peut créer 2 enregistrements pour le même échange
+        exchanges = _deduplicateExchanges(exchanges);
 
         print(
           '✅ VendorExchangeHistoryService: Historique récupéré avec succès: ${exchanges.length} échanges',
@@ -99,6 +135,7 @@ class VendorExchangeHistoryService {
   /// Récupérer les tokens d'échange en attente
   Future<List<VendorExchange>> getPendingTokens() async {
     try {
+      await _vendorAuthService.initialize();
       print(
         '🔄 VendorExchangeHistoryService: Récupération des tokens en attente...',
       );

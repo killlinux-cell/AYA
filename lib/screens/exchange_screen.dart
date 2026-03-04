@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/user_provider.dart';
+import '../constants/exchange_catalog.dart';
 import '../services/exchange_token_service.dart';
 import '../widgets/exchange_qr_popup_widget.dart';
 
@@ -14,7 +15,7 @@ class ExchangeScreen extends StatefulWidget {
 
 class _ExchangeScreenState extends State<ExchangeScreen> {
   int _selectedPoints = 0;
-  final List<int> _pointOptions = [50, 100, 200, 500, 1000];
+  final List<int> _pointOptions = [50, 150, 300, 500, 1000, 2000, 5000];
   bool _isGenerating = false;
   final TextEditingController _customPointsController = TextEditingController();
   bool _isCustomInput = false;
@@ -59,6 +60,11 @@ class _ExchangeScreenState extends State<ExchangeScreen> {
 
                 // Sélection du montant
                 _buildAmountSelection(),
+
+                const SizedBox(height: 20),
+
+                // Ce que vous obtiendrez (catalogue)
+                if (_selectedPoints > 0) _buildRewardPreview(),
 
                 const SizedBox(height: 30),
 
@@ -133,6 +139,157 @@ class _ExchangeScreenState extends State<ExchangeScreen> {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Retourne le prochain palier si l'utilisateur n'a pas atteint un palier du catalogue
+  String? _getNextTierHint(int points) {
+    if (points <= 0) return null;
+    for (final tier in exchangeCatalog) {
+      final tierPoints = tier['points'] as int;
+      if (tierPoints > points) {
+        return 'Prochain palier : $tierPoints pts → ${tier['reward']}';
+      }
+    }
+    return null;
+  }
+
+  Widget _buildRewardPreview() {
+    final reward = getRewardForPoints(_selectedPoints);
+    final nextTier = _getNextTierHint(_selectedPoints);
+    final isExactTier =
+        exchangeCatalog.any((t) => t['points'] == _selectedPoints);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF488950).withOpacity(0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+        border: Border.all(
+          color: const Color(0xFF488950).withOpacity(0.3),
+          width: 2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.card_giftcard, color: const Color(0xFF488950), size: 28),
+              const SizedBox(width: 12),
+              const Text(
+                'Ce que vous obtiendrez',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF488950),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (reward != null) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF488950).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF488950).withOpacity(0.2),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Color(0xFF488950), size: 32),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          reward,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF2E7D32),
+                          ),
+                        ),
+                        if (!isExactTier)
+                          Text(
+                            'Palier le plus proche pour $_selectedPoints pts',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (nextTier != null && reward != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              nextTier,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade600,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          const Text(
+            'Catalogue d\'échange',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...exchangeCatalog.map((tier) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 50,
+                      child: Text(
+                        '${tier['points']} pts',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: tier['points'] == _selectedPoints
+                              ? FontWeight.bold
+                              : FontWeight.w500,
+                          color: tier['points'] == _selectedPoints
+                              ? const Color(0xFF488950)
+                              : Colors.grey.shade700,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '→ ${tier['reward']}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              )),
         ],
       ),
     );

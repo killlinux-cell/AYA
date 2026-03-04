@@ -376,6 +376,11 @@ class _QRScannerState extends State<QRScannerScreen> {
         } else if (prizeResult.errorType == QRPrizeError.networkError) {
           errorMessage =
               'Problème de connexion. Vérifiez votre internet et réessayez.';
+        } else if (prizeResult.errorType == QRPrizeError.notAuthenticated) {
+          errorMessage = prizeResult.error ??
+              'Session expirée. Veuillez vous reconnecter pour scanner.';
+        } else if (prizeResult.errorType == QRPrizeError.serverError) {
+          errorMessage = prizeResult.error ?? 'Erreur du serveur. Réessayez plus tard.';
         }
 
         _showErrorDialog(errorMessage);

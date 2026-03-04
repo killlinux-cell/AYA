@@ -89,8 +89,12 @@ class ClientInfoService {
     Map<String, dynamic> exchangeRequest,
   ) async {
     try {
+      await _vendorAuthService.initialize();
+
       // Essayer d'abord l'API normale
-      final userId = exchangeRequest['user_id'];
+      final userId = exchangeRequest['user_id'] ??
+          exchangeRequest['user']?['id'] ??
+          exchangeRequest['client']?['id'];
       if (userId != null) {
         final userIdInt = int.tryParse(userId.toString()) ?? 0;
         if (userIdInt > 0) {
@@ -101,18 +105,25 @@ class ClientInfoService {
         }
       }
 
-      // Si l'API échoue, essayer d'extraire les infos depuis l'échange
-      final userInfo = exchangeRequest['user_info'];
+      // Extraire les infos depuis user_info, user ou client
+      final userInfo = exchangeRequest['user_info'] as Map<String, dynamic>? ??
+          exchangeRequest['user'] as Map<String, dynamic>? ??
+          exchangeRequest['client'] as Map<String, dynamic>?;
       if (userInfo != null) {
+        final firstName = userInfo['first_name'] ?? userInfo['firstname'] ?? 'Client';
+        final lastName = userInfo['last_name'] ?? userInfo['lastname'] ?? 'Aya+';
+        final fullName = userInfo['full_name'] ?? userInfo['fullname'] ??
+            '$firstName $lastName'.trim();
+        final email = userInfo['email'] ?? 'client@aya.com';
         return ClientInfo(
-          id: int.tryParse(exchangeRequest['user_id']?.toString() ?? '0') ?? 0,
-          email: userInfo['email'] ?? 'client@aya.com',
-          firstName: userInfo['first_name'] ?? 'Client',
-          lastName: userInfo['last_name'] ?? 'Aya+',
-          fullName:
-              userInfo['full_name'] ??
-              '${userInfo['first_name'] ?? 'Client'} ${userInfo['last_name'] ?? 'Aya+'}' ??
-              'Client Aya+',
+          id: int.tryParse(exchangeRequest['user_id']?.toString() ??
+                  userInfo['id']?.toString() ??
+                  '0') ??
+              0,
+          email: email,
+          firstName: firstName,
+          lastName: lastName,
+          fullName: fullName.isNotEmpty ? fullName : 'Client Aya+',
           dateJoined:
               userInfo['date_joined'] ?? DateTime.now().toIso8601String(),
         );

@@ -5,6 +5,7 @@ import '../services/exchange_token_service.dart';
 import '../services/client_info_service.dart';
 import '../widgets/vendor_confirmation_popup_widget.dart';
 import '../widgets/vendor_exchange_history_widget.dart';
+import 'vendor_login_screen.dart';
 
 class VendorScreen extends StatefulWidget {
   const VendorScreen({super.key});
@@ -19,6 +20,7 @@ class _VendorScreenState extends State<VendorScreen>
   bool _isScanning = false;
   bool _isProcessing = false;
   Map<String, dynamic>? _scannedTokenData;
+  String? _lastValidatedToken; // Empêche la double validation du même token
   late TabController _tabController;
   int _historyRefreshKey =
       0; // Clé pour forcer le rafraîchissement de l'historique
@@ -490,6 +492,10 @@ class _VendorScreenState extends State<VendorScreen>
   void _onTokenDetected(BarcodeCapture capture) {
     final code = capture.barcodes.first.rawValue;
     if (code == null) return;
+    // Éviter les détections multiples du même code
+    if (_scannedTokenData != null && _scannedTokenData!['raw_code'] == code) {
+      return;
+    }
 
     // Parser le code QR d'échange temporaire
     try {
@@ -533,15 +539,21 @@ class _VendorScreenState extends State<VendorScreen>
   Future<void> _confirmExchange() async {
     if (_scannedTokenData == null) return;
 
+    final token = _scannedTokenData!['token'] as String;
+    // Empêcher la double validation du même token
+    if (_lastValidatedToken == token) {
+      return;
+    }
+
     setState(() {
       _isProcessing = true;
     });
 
     try {
-      final token = _scannedTokenData!['token'] as String;
       final result = await _exchangeTokenService.validateExchangeToken(token);
 
       if (result.success) {
+        _lastValidatedToken = token;
         // Afficher le popup de confirmation
         _showConfirmationPopup(result);
       } else {
@@ -581,6 +593,11 @@ class _VendorScreenState extends State<VendorScreen>
             clientEmail: clientInfo.email,
             onClose: () {
               Navigator.of(context).pop();
+              // Rafraîchir l'historique après fermeture
+              setState(() {
+                _historyRefreshKey++;
+              });
+              _tabController.animateTo(1);
               _resetScan();
             },
             onGenerateReceipt: () {
@@ -661,6 +678,7 @@ class _VendorScreenState extends State<VendorScreen>
     setState(() {
       _scannedTokenData = null;
       _isScanning = true;
+      _lastValidatedToken = null;
     });
     controller.start();
   }
@@ -976,9 +994,16 @@ class _VendorScreenState extends State<VendorScreen>
       ),
     );
 
-    if (confirmed == true) {
+    if (confirmed == true && mounted) {
       await _vendorAuthService.logout();
-      Navigator.of(context).pushReplacementNamed('/vendor-login');
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => const VendorLoginScreen(),
+          ),
+          (route) => false,
+        );
+      }
     }
   }
 

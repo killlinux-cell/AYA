@@ -1,5 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Permissions pour les appels téléphoniques -->
+    <!-- Support tablettes : écrans large et très large -->
+    <supports-screens
+        android:smallScreens="true"
+        android:normalScreens="true"
+        android:largeScreens="true"
+        android:xlargeScreens="true"
+        android:anyDensity="true" />
+
+    <!-- Téléphonie optionnelle : permet l'installation sur tablettes sans module téléphonique -->
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+
+    <!-- Permissions pour les appels téléphoniques (utilisées uniquement sur téléphones) -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     
