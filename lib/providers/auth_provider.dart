@@ -55,6 +55,13 @@ class AuthProvider with ChangeNotifier {
           _isLoading = false;
           notifyListeners();
           break;
+        case 'ACCOUNT_DELETED':
+          _currentUser = null;
+          _isAuthenticated = false;
+          _error = null;
+          _isLoading = false;
+          notifyListeners();
+          break;
       }
     });
   }
@@ -206,6 +213,30 @@ class AuthProvider with ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  /// Supprime définitivement le compte utilisateur
+  Future<bool> deleteAccount() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final success = await _authService.deleteAccount();
+      if (success) {
+        _clearUserData();
+        return true;
+      }
+      _error = 'Erreur lors de la suppression du compte';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Erreur lors de la suppression du compte: ${e.toString()}';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
 
   // Rafraîchir les données utilisateur

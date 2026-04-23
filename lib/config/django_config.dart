@@ -15,6 +15,7 @@ class DjangoConfig {
   static const String profileEndpoint = '$authUrl/profile/';
   static const String refreshTokenEndpoint = '$authUrl/token/refresh/';
   static const String logoutEndpoint = '$authUrl/logout/';
+  static const String deleteAccountEndpoint = '$authUrl/delete-account/';
 
   // Endpoints QR codes et jeux
   static const String qrValidateEndpoint = '$qrUrl/validate/';
