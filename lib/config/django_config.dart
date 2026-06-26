@@ -32,6 +32,13 @@ class DjangoConfig {
   // Endpoints statistiques
   static const String userStatsEndpoint = '$qrUrl/stats/';
 
+  // Endpoints pronostics Coupe du Monde
+  static const String worldCupMatchesEndpoint = '$qrUrl/world-cup/matches/';
+  static const String worldCupPredictionsEndpoint = '$qrUrl/world-cup/predictions/';
+  static const String worldCupMyPredictionsEndpoint =
+      '$qrUrl/world-cup/predictions/me/';
+  static const String worldCupRankingsEndpoint = '$qrUrl/world-cup/rankings/';
+
   // Configuration pour la production
   static const bool isDevelopment = false;
 
