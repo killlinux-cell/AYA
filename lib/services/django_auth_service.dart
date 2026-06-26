@@ -293,6 +293,34 @@ class DjangoAuthService {
     }
   }
 
+  /// Supprime définitivement le compte utilisateur via l'API
+  Future<bool> deleteAccount() async {
+    if (!isAuthenticated) return false;
+
+    try {
+      final response = await http.delete(
+        Uri.parse(DjangoConfig.deleteAccountEndpoint),
+        headers: _authHeaders,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        _accessToken = null;
+        _refreshToken = null;
+        _currentUser = null;
+        await _clearPersistedData();
+        _authStateController.add({'event': 'ACCOUNT_DELETED', 'user': null});
+        return true;
+      } else {
+        print('Erreur suppression compte - Status: ${response.statusCode}');
+        print('Erreur suppression compte - Body: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Erreur lors de la suppression du compte: $e');
+      throw _handleConnectionError(e);
+    }
+  }
+
   Future<bool> updatePassword(String newPassword) async {
     try {
       final response = await http.post(

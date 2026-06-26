@@ -480,6 +480,22 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
 
+                const SizedBox(height: 16),
+
+                // Gestion du compte - Supprimer mon compte (exigence Apple pour app de fidélité)
+                _buildProfileSection(
+                  title: 'Gestion du compte',
+                  children: [
+                    _buildProfileOption(
+                      icon: Icons.delete_forever,
+                      title: 'Supprimer mon compte',
+                      subtitle: 'Suppression définitive et irréversible',
+                      onTap: () => _showDeleteAccountDialog(context),
+                      iconColor: Colors.red,
+                    ),
+                  ],
+                ),
+
                 const SizedBox(height: 24),
 
                 // Bouton de déconnexion
@@ -582,16 +598,18 @@ class ProfileScreen extends StatelessWidget {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Color? iconColor,
   }) {
+    final effectiveIconColor = iconColor ?? const Color(0xFF488950);
     return ListTile(
       leading: Container(
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: const Color(0xFF488950).withOpacity(0.1),
+          color: effectiveIconColor.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Icon(icon, color: const Color(0xFF488950), size: 20),
+        child: Icon(icon, color: effectiveIconColor, size: 20),
       ),
       title: Text(
         title,
@@ -759,6 +777,180 @@ class ProfileScreen extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 28),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Supprimer mon compte',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Text(
+                    '▲ Cette action est irréversible et définitive.',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red.shade800,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildDeleteWarningItem('Tous vos points accumulés'),
+                _buildDeleteWarningItem('Votre historique de codes QR scannés'),
+                _buildDeleteWarningItem('Vos gains aux jeux'),
+                _buildDeleteWarningItem('Vos récompenses non échangées'),
+                _buildDeleteWarningItem('Votre profil et toutes vos données'),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Text(
+                    'Si vous avez des questions ou souhaitez simplement suspendre votre compte, contactez-nous plutôt via la section "Contact".',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.blue.shade900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Annuler',
+                style: TextStyle(
+                  color: const Color(0xFF488950),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                try {
+                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Row(
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                            SizedBox(width: 16),
+                            Text('Suppression du compte en cours...'),
+                          ],
+                        ),
+                        backgroundColor: Colors.blue,
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                  final success = await authProvider.deleteAccount();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    if (success) {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (context) => const AuthScreen()),
+                        (route) => false,
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Votre compte a été supprimé.'),
+                          backgroundColor: Colors.green,
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            authProvider.error ?? 'Erreur lors de la suppression du compte',
+                          ),
+                          backgroundColor: Colors.red,
+                          duration: const Duration(seconds: 4),
+                        ),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erreur: $e'),
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade600,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Supprimer définitivement'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildDeleteWarningItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.close, color: Colors.red.shade600, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(color: Colors.grey.shade800, fontSize: 14),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
