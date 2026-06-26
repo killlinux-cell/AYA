@@ -1,0 +1,598 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Dashboard - Accueil{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-tachometer-alt"></i> Dashboard Aya</h1>
+    <p>Vue d'ensemble de votre application de fidélité</p>
+</div>
+
+<!-- Statistiques principales -->
+<div class="stats-grid mb-4">
+    <div class="stat-card stat-users">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_users }}</div>
+                <div class="stat-label">Utilisateurs</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card stat-qrcodes">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_qr_codes }}</div>
+                <div class="stat-label">QR Codes</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-qrcode"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card stat-scans">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_scans }}</div>
+                <div class="stat-label">Scans Total</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-mobile-alt"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card stat-points">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_points_distributed }}</div>
+                <div class="stat-label">Points Distribués</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-coins"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nouvelles statistiques -->
+<div class="stats-grid mb-4">
+    <div class="stat-card stat-vendors">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_vendors }}</div>
+                <div class="stat-label">Vendeurs</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-store"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card stat-games">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_games_played }}</div>
+                <div class="stat-label">Jeux Joués</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-gamepad"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card stat-tokens">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_exchange_tokens }}</div>
+                <div class="stat-label">Tokens d'Échange</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-ticket-alt"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card stat-vendors-active">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ active_vendors }}</div>
+                <div class="stat-label">Vendeurs Actifs</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques des grands prix -->
+<div class="stats-grid mb-4">
+    <div class="stat-card stat-grandprize">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_grand_prizes }}</div>
+                <div class="stat-label">Grands Prix</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-trophy"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card stat-participations">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_participations }}</div>
+                <div class="stat-label">Participations</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card stat-tokens-active">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ active_exchange_tokens }}</div>
+                <div class="stat-label">Tokens Actifs</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-ticket-alt"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card stat-recent-games">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ recent_games }}</div>
+                <div class="stat-label">Jeux (7j)</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-gamepad"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques récentes -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Activité Récente (7 jours)</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h3 class="text-primary">{{ recent_scans }}</h3>
+                        <p class="text-muted">Nouveaux Scans</p>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-success">{{ recent_users }}</h3>
+                        <p class="text-muted">Nouveaux Utilisateurs</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Actions Requises</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-warning">{{ pending_exchanges }}</h4>
+                        <p class="text-muted mb-0">Demandes d'échange en attente</p>
+                    </div>
+                    <a href="{% url 'dashboard:exchanges' %}" class="btn btn-warning">
+                        <i class="fas fa-eye"></i> Voir
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section Grand Prix -->
+{% if current_grand_prix %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #E91E63, #673AB7); color: white;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-trophy"></i> Grand Prix Actuel</h5>
+                    <a href="{% url 'dashboard:grand_prix' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-eye"></i> Voir tous
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h4 class="text-primary">{{ current_grand_prix.name }}</h4>
+                        <p class="text-muted">{{ current_grand_prix.description }}</p>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-calendar-alt text-primary me-2"></i>
+                                    <div>
+                                        <small class="text-muted">Début</small><br>
+                                        <strong>{{ current_grand_prix.start_date|date:"d/m/Y H:i" }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-calendar-check text-success me-2"></i>
+                                    <div>
+                                        <small class="text-muted">Fin</small><br>
+                                        <strong>{{ current_grand_prix.end_date|date:"d/m/Y H:i" }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-gift text-warning me-2"></i>
+                                    <div>
+                                        <small class="text-muted">Tirage</small><br>
+                                        <strong>{{ current_grand_prix.draw_date|date:"d/m/Y H:i" }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="mb-3">
+                            <h3 class="text-primary">{{ current_grand_prix.participants_count }}</h3>
+                            <p class="text-muted mb-0">Participants</p>
+                        </div>
+                        <div class="mb-3">
+                            <span class="badge bg-warning fs-6">{{ current_grand_prix.participation_cost }} points</span>
+                            <p class="text-muted mb-0">Coût de participation</p>
+                        </div>
+                        <a href="{% url 'dashboard:grand_prix_detail' current_grand_prix.id %}" class="btn btn-primary">
+                            <i class="fas fa-eye"></i> Voir le détail
+                        </a>
+                    </div>
+                </div>
+                
+                {% if current_grand_prix.prizes %}
+                <hr>
+                <h6><i class="fas fa-gift"></i> Récompenses</h6>
+                <div class="row">
+                    {% for prize in current_grand_prix.prizes %}
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <div class="d-flex align-items-center">
+                            {% if prize.position == 1 %}
+                                <i class="fas fa-medal text-warning me-2"></i>
+                            {% elif prize.position == 2 %}
+                                <i class="fas fa-medal text-secondary me-2"></i>
+                            {% elif prize.position == 3 %}
+                                <i class="fas fa-medal me-2" style="color: #CD7F32;"></i>
+                            {% else %}
+                                <i class="fas fa-award text-primary me-2"></i>
+                            {% endif %}
+                            <div>
+                                <strong>{{ prize.name }}</strong>
+                                {% if prize.value %}
+                                <br><small class="text-success">{{ prize.value }}€</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- QR Codes populaires -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-star"></i> QR Codes les Plus Populaires</h5>
+            </div>
+            <div class="card-body">
+                {% if popular_qr_codes %}
+                    <div class="list-group list-group-flush">
+                        {% for qr_code in popular_qr_codes %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ qr_code.code }}</strong>
+                                <br>
+                                <small class="text-muted">{{ qr_code.description }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary">{{ qr_code.scan_count }} scans</span>
+                                <br>
+                                <small class="text-success">{{ qr_code.points }} points</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">Aucun QR code scanné pour le moment</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Utilisateurs actifs -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy"></i> Utilisateurs les Plus Actifs</h5>
+            </div>
+            <div class="card-body">
+                {% if active_users %}
+                    <div class="list-group list-group-flush">
+                        {% for user in active_users %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ user.full_name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ user.email }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success">{{ user.scan_count }} scans</span>
+                                <br>
+                                <small class="text-primary">{{ user.available_points }} points</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">Aucun utilisateur actif pour le moment</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques QR par catégorie -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Statistiques QR par catégorie</h5>
+                <span class="badge bg-light text-success">{{ qr_category_stats|length }} catégories</span>
+            </div>
+            <div class="card-body table-responsive">
+                {% if qr_category_stats %}
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Catégorie</th>
+                            <th>QR générés</th>
+                            <th>Actifs</th>
+                            <th>Scans</th>
+                            <th>Taux d'utilisation</th>
+                            <th>Points générés</th>
+                            <th>Points distribués</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in qr_category_stats %}
+                        <tr>
+                            <td>
+                                <strong>{{ stat.label }}</strong>
+                                <br><small class="text-muted">{{ stat.key }}</small>
+                            </td>
+                            <td>{{ stat.generated|default:0 }}</td>
+                            <td>{{ stat.active|default:0 }}</td>
+                            <td>{{ stat.scans|default:0 }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 8px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ stat.scan_rate }}%;"></div>
+                                    </div>
+                                    <span class="fw-semibold">{{ stat.scan_rate }}%</span>
+                                </div>
+                            </td>
+                            <td>{{ stat.points_generated|default:0 }}</td>
+                            <td>{{ stat.points_distributed|default:0 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted mb-0">Aucune donnée disponible pour l'instant.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions rapides -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt"></i> Actions Rapides</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:qr_codes' %}" class="btn btn-primary btn-lg w-100 mb-3">
+                            <i class="fas fa-plus"></i><br>
+                            Créer QR Code
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:users' %}" class="btn btn-info btn-lg w-100 mb-3">
+                            <i class="fas fa-users"></i><br>
+                            Gérer Utilisateurs
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:analytics' %}" class="btn btn-success btn-lg w-100 mb-3">
+                            <i class="fas fa-chart-bar"></i><br>
+                            Voir Analytics
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:exchanges' %}" class="btn btn-warning btn-lg w-100 mb-3">
+                            <i class="fas fa-exchange-alt"></i><br>
+                            Gérer Échanges
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:vendors' %}" class="btn btn-secondary btn-lg w-100 mb-3">
+                            <i class="fas fa-store"></i><br>
+                            Gérer Vendeurs
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:games' %}" class="btn btn-dark btn-lg w-100 mb-3">
+                            <i class="fas fa-gamepad"></i><br>
+                            Gérer Jeux
+                        </a>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:grand_prix' %}" class="btn btn-warning btn-lg w-100 mb-3">
+                            <i class="fas fa-trophy"></i><br>
+                            Grands Prix
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:advertisements' %}" class="btn btn-info btn-lg w-100 mb-3">
+                            <i class="fas fa-video"></i><br>
+                            Publicités Vidéo
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:home_banner' %}" class="btn btn-success btn-lg w-100 mb-3">
+                            <i class="fas fa-image"></i><br>
+                            Bannière Accueil
+                        </a>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:qr_codes_analytics' %}" class="btn btn-outline-primary btn-lg w-100 mb-3">
+                            <i class="fas fa-chart-line"></i><br>
+                            Analytics QR
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:system_health' %}" class="btn btn-outline-danger btn-lg w-100 mb-3">
+                            <i class="fas fa-heartbeat"></i><br>
+                            Santé Système
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:bulk_operations' %}" class="btn btn-outline-warning btn-lg w-100 mb-3">
+                            <i class="fas fa-tools"></i><br>
+                            Opérations Lot
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Grille moderne et cartes compactes */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0.85rem;
+  }
+
+  .stat-card {
+    background: var(--card-bg, linear-gradient(135deg, #43a047 0%, #66bb6a 100%));
+    color: #fff;
+    border: 0;
+    border-radius: 14px;
+    padding: 14px 16px; /* plus compact */
+    box-shadow: 0 6px 18px rgba(67, 160, 71, 0.25);
+    transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    top: -40%;
+    right: -40%;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(ellipse at center, rgba(255,255,255,0.25), rgba(255,255,255,0));
+    transform: rotate(25deg);
+  }
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 26px rgba(67, 160, 71, 0.35);
+    filter: saturate(1.08);
+  }
+
+  .stat-number {
+    font-size: 28px; /* réduit */
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: .5px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    opacity: .9;
+    margin-top: 6px;
+  }
+
+  .stat-icon i {
+    font-size: 28px; /* réduit */
+    opacity: .9;
+  }
+
+  /* Ajustements responsives subtils */
+  @media (min-width: 1400px) {
+    /* forcer 5 par ligne via row-cols-xxl-5 déjà appliqué */
+  }
+
+  @media (max-width: 575.98px) {
+    .stat-card { padding: 12px; }
+    .stat-number { font-size: 24px; }
+    .stat-icon i { font-size: 24px; }
+  }
+
+  /* Thèmes couleur par tuile */
+  .stat-users { --card-bg: linear-gradient(135deg, #2196F3, #64B5F6); }
+  .stat-qrcodes { --card-bg: linear-gradient(135deg, #9C27B0, #BA68C8); }
+  .stat-scans { --card-bg: linear-gradient(135deg, #00BCD4, #4DD0E1); }
+  .stat-points { --card-bg: linear-gradient(135deg, #FFC107, #FFD54F); color: #222; }
+  .stat-vendors { --card-bg: linear-gradient(135deg, #3F51B5, #7986CB); }
+  .stat-games { --card-bg: linear-gradient(135deg, #673AB7, #9575CD); }
+  .stat-tokens { --card-bg: linear-gradient(135deg, #FF9800, #FFB74D); }
+  .stat-vendors-active { --card-bg: linear-gradient(135deg, #4CAF50, #81C784); }
+  .stat-grandprize { --card-bg: linear-gradient(135deg, #E91E63, #F06292); }
+  .stat-participations { --card-bg: linear-gradient(135deg, #00ACC1, #26C6DA); }
+  .stat-tokens-active { --card-bg: linear-gradient(135deg, #FB8C00, #FFB74D); }
+  .stat-recent-games { --card-bg: linear-gradient(135deg, #8BC34A, #AED581); }
+
+  /* Ajuster lisibilité sur cartes claires (points/tokens-active) */
+  .stat-points .stat-number, .stat-points .stat-label, .stat-points .stat-icon i,
+  .stat-tokens-active .stat-number, .stat-tokens-active .stat-label, .stat-tokens-active .stat-icon i {
+    color: #2b2b2b;
+  }
+</style>
+{% endblock %}

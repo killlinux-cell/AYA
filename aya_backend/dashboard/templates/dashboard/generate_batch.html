@@ -1,0 +1,843 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Génération de Lot de QR Codes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .batch-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .scenario-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stats-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .stats-item:last-child {
+        border-bottom: none;
+    }
+    
+    .points-badge {
+        background: #28a745;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+    
+    .type-badge {
+        background: #6c757d;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+    }
+    
+    .btn-generate {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        border: none;
+        color: white;
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-generate:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(40, 167, 69, 0.3);
+    }
+    
+    .warning-box {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    #mystery_box_lots_section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        border: 2px solid #ffc107;
+    }
+    
+    #mystery_box_lots_section .table {
+        margin-bottom: 0;
+    }
+    
+    #mystery_box_lots_section .table thead th {
+        background-color: #ffc107;
+        color: #000;
+        font-weight: 600;
+        border: 1px solid #ffc107;
+    }
+    
+    #mystery_box_lots_section .table tbody tr:hover {
+        background-color: #fff3cd;
+    }
+    
+    #mystery_box_lots_section .lot-quantity:disabled {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
+    
+    #mystery_box_lots_section .lot-total-cost {
+        font-weight: 600;
+        color: #28a745;
+    }
+    
+    #mystery_box_lots_section tfoot {
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="batch-card">
+                <h2 class="mb-3">
+                    <i class="fas fa-qrcode"></i> Génération de Lot de QR Codes
+                </h2>
+                <p class="mb-0">
+                    Générez automatiquement 50 000 QR codes selon le scénario de bouteilles prédéfini.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs"></i> Configuration du Lot
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="batchForm" method="POST" action="{% url 'dashboard:generate_batch_qr_codes' %}">
+                        {% csrf_token %}
+                        
+                        <div class="warning-box">
+                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                            <strong>Attention :</strong> Cette opération va générer un grand nombre de QR codes. 
+                            Assurez-vous que le numéro de lot n'existe pas déjà.
+                        </div>
+
+                        <!-- Mode de Génération -->
+                        <div class="mb-4">
+                            <h6 class="mb-3"><i class="fas fa-sliders-h"></i> Mode de Génération</h6>
+                            
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="generation_mode" id="mode_standard" value="standard" checked>
+                                <label class="btn btn-outline-success" for="mode_standard">
+                                    <i class="fas fa-magic"></i> Scénario Standard (50 000 QR)
+                                </label>
+
+                                <input type="radio" class="btn-check" name="generation_mode" id="mode_custom" value="custom">
+                                <label class="btn btn-outline-primary" for="mode_custom">
+                                    <i class="fas fa-cog"></i> Personnalisé
+                                </label>
+                            </div>
+
+                            <div class="alert alert-success mt-3" id="standard_info">
+                                <strong><i class="fas fa-info-circle"></i> Scénario Standard :</strong>
+                                Génère automatiquement 50 000 QR codes répartis selon le scénario prédéfini :
+                                25 000 × 10pts, 15 000 × 50pts, 5 000 × 100pts, 4 500 × Try Again, 500 × Special
+                            </div>
+
+                            <div class="alert alert-info mt-3" id="custom_info" style="display:none;">
+                                <strong><i class="fas fa-info-circle"></i> Mode Personnalisé :</strong>
+                                Configurez manuellement : Nombre de QR, Catégorie, Type et Points
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        
+                        <!-- Configuration de Base -->
+                        <div class="mb-4" id="config_section">
+                            <h6 class="mb-3"><i class="fas fa-cog"></i> Configuration du Lot</h6>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="batch_number" class="form-label">
+                                        <i class="fas fa-hashtag"></i> Numéro de Lot *
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control form-control-lg" 
+                                           id="batch_number" 
+                                           name="batch_number" 
+                                           value="4151000"
+                                           placeholder="Ex: 4151000"
+                                           required>
+                                    <div class="form-text">
+                                        Format : 7 chiffres (ex: 4151000)
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="total_qr_codes" class="form-label">
+                                        <i class="fas fa-qrcode"></i> Nombre de QR Codes *
+                                    </label>
+                                    <input type="number" 
+                                           class="form-control form-control-lg" 
+                                           id="total_qr_codes" 
+                                           name="total_qr_codes" 
+                                           value="50000"
+                                           min="1"
+                                           placeholder="Ex: 50000"
+                                           required>
+                                    <div class="form-text">
+                                        Total de QR codes à générer
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Catégorie -->
+                        <div class="mb-4">
+                            <h6 class="mb-3"><i class="fas fa-bottle-water text-primary"></i> Catégorie *</h6>
+                            
+                            <div class="btn-group w-100 flex-wrap" role="group" aria-label="Category selection">
+                                <input type="radio" class="btn-check" name="category" id="category_0_5L" value="0.5L" checked>
+                                <label class="btn btn-outline-primary" for="category_0_5L">
+                                    <i class="fas fa-bottle-water"></i> 0,5 L
+                                </label>
+
+                                <input type="radio" class="btn-check" name="category" id="category_0_9L" value="0.9L">
+                                <label class="btn btn-outline-primary" for="category_0_9L">
+                                    <i class="fas fa-bottle-water"></i> 0,9 L
+                                </label>
+
+                                <input type="radio" class="btn-check" name="category" id="category_3L" value="3L">
+                                <label class="btn btn-outline-primary" for="category_3L">
+                                    <i class="fas fa-wine-bottle"></i> 3 L
+                                </label>
+
+                                <input type="radio" class="btn-check" name="category" id="category_5L" value="5L">
+                                <label class="btn btn-outline-primary" for="category_5L">
+                                    <i class="fas fa-wine-bottle"></i> 5 L
+                                </label>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Type -->
+                        <div class="mb-4">
+                            <h6 class="mb-3"><i class="fas fa-tags text-success"></i> Type *</h6>
+                            
+                            <div class="btn-group w-100 mb-3" role="group" aria-label="Type selection">
+                                <input type="radio" class="btn-check" name="prize_type" id="type_points" value="points" checked>
+                                <label class="btn btn-outline-success" for="type_points">
+                                    <i class="fas fa-trophy"></i> Points
+                                </label>
+
+                                <input type="radio" class="btn-check" name="prize_type" id="type_special" value="special">
+                                <label class="btn btn-outline-warning" for="type_special">
+                                    <i class="fas fa-gift"></i> Special
+                                </label>
+
+                                <input type="radio" class="btn-check" name="prize_type" id="type_try_again" value="try_again">
+                                <label class="btn btn-outline-info" for="type_try_again">
+                                    <i class="fas fa-redo"></i> Try Again
+                                </label>
+                            </div>
+
+                            <!-- Champ Points (affiché si Type = Points) -->
+                            <div id="points_section" class="mt-3">
+                                <label for="points_value" class="form-label">
+                                    <i class="fas fa-coins"></i> Nombre de Points *
+                                </label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="points_value" 
+                                       name="points_value" 
+                                       value="10"
+                                       min="1"
+                                       placeholder="Ex: 10, 50, 100, 200...">
+                                <div class="form-text">
+                                    Nombre de points pour ce lot (ex: 10, 50, 100, 200)
+                                </div>
+                            </div>
+
+                            <!-- Champ Special (affiché si Type = Special) -->
+                            <div id="special_section" class="mt-3" style="display:none;">
+                                <label for="special_type" class="form-label">
+                                    <i class="fas fa-star"></i> Type de Special *
+                                </label>
+                                <select class="form-select" id="special_type" name="special_type">
+                                    <option value="loyalty_bonus">Bonus Fidélité (Jeux Gratuits)</option>
+                                    <option value="mystery_box">Mystery Box (Surprise)</option>
+                                    <option value="scratch_win">Scratch & Win</option>
+                                </select>
+                                
+                                <!-- Section de sélection des lots Mystery Box -->
+                                <div id="mystery_box_lots_section" class="mt-4" style="display:none;">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i> <strong>Sélectionnez les lots à inclure dans la Mystery Box :</strong>
+                                        <p class="mb-0 small mt-2">Choisissez les types de lots et leurs quantités. Le total des gagnants sera utilisé pour générer les QR codes Mystery Box.</p>
+                                    </div>
+                                    
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 40px;">
+                                                        <input type="checkbox" id="select_all_lots" title="Sélectionner tout">
+                                                    </th>
+                                                    <th>Type de lot</th>
+                                                    <th class="text-end">Coût unitaire (FCFA)</th>
+                                                    <th class="text-end">Quantité</th>
+                                                    <th class="text-end">Coût total (FCFA)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="mystery_box_lots_table">
+                                                <!-- Les lots seront générés par JavaScript -->
+                                            </tbody>
+                                            <tfoot class="table-secondary">
+                                                <tr>
+                                                    <td colspan="3" class="text-end"><strong>Total :</strong></td>
+                                                    <td class="text-end"><strong id="total_winners">0</strong></td>
+                                                    <td class="text-end"><strong id="total_cost">0</strong> FCFA</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-generate" id="generateBtn">
+                                <i class="fas fa-rocket"></i> Générer le Lot
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Résumé de Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="scenario-card">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-cog"></i> Configuration Actuelle
+                        </h6>
+                        
+                        <div class="stats-item">
+                            <span>Numéro de Lot</span>
+                            <span class="type-badge" id="summary_batch">4151000</span>
+                        </div>
+                        <div class="stats-item">
+                            <span>Nombre de QR</span>
+                            <span class="points-badge" id="summary_total">50 000</span>
+                        </div>
+                        <div class="stats-item">
+                            <span>Catégorie</span>
+                            <span class="type-badge" id="summary_category">0,5 L</span>
+                        </div>
+                        <div class="stats-item">
+                            <span>Type</span>
+                            <span class="points-badge" id="summary_type">Points</span>
+                        </div>
+                        <div class="stats-item" id="summary_points_row">
+                            <span>Valeur Points</span>
+                            <span class="points-badge" id="summary_points">10</span>
+                        </div>
+                        <div class="stats-item" id="summary_special_row" style="display:none;">
+                            <span>Type Special</span>
+                            <span class="type-badge" id="summary_special">-</span>
+                        </div>
+                        <div class="stats-item" id="summary_mystery_box_row" style="display:none;">
+                            <span>Total Gagnants MB</span>
+                            <span class="points-badge" id="summary_mystery_box_winners">0</span>
+                        </div>
+                        <div class="stats-item" id="summary_mystery_box_cost_row" style="display:none;">
+                            <span>Coût Total MB</span>
+                            <span class="type-badge" id="summary_mystery_box_cost">0 FCFA</span>
+                        </div>
+                    </div>
+                    
+                    <div class="scenario-card">
+                        <h6 class="text-success mb-3">
+                            <i class="fas fa-info-circle"></i> Information
+                        </h6>
+                        
+                        <p class="small mb-2">
+                            <strong>Category :</strong> Définit la taille de la bouteille (0,5L, 0,9L, 3L, 5L)
+                        </p>
+                        <p class="small mb-2">
+                            <strong>Type Points :</strong> QR codes gagnants avec points
+                        </p>
+                        <p class="small mb-2">
+                            <strong>Type Special :</strong> Bonus fidélité, Mystery Box, etc.
+                        </p>
+                        <p class="small mb-0">
+                            <strong>Type Try Again :</strong> Réessayer (0 points)
+                        </p>
+                    </div>
+
+                    <div class="scenario-card">
+                        <h6 class="text-warning mb-3">
+                            <i class="fas fa-lightbulb"></i> Exemple Standard
+                        </h6>
+                        
+                        <p class="small mb-2">
+                            <strong>Lot 4151000</strong> (50 000 QR) :
+                        </p>
+                        <ul class="small mb-0">
+                            <li>25 000 × 10 points (0,5L)</li>
+                            <li>15 000 × 50 points (0,9L)</li>
+                            <li>5 000 × 100 points (5L)</li>
+                            <li>4 000 × Try Again (0,5L)</li>
+                            <li>500 × Loyalty Bonus (3L)</li>
+                            <li>500 × Mystery Box (5L)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Gestion du mode de génération
+function toggleGenerationMode() {
+    const modeRadio = document.querySelector('input[name="generation_mode"]:checked');
+    const mode = modeRadio ? modeRadio.value : 'standard';
+    
+    const configSection = document.getElementById('config_section');
+    const categorySection = document.querySelector('[id*="mb-4"]:has(input[name="category"])').closest('.mb-4');
+    const typeSection = document.querySelector('[id*="mb-4"]:has(input[name="prize_type"])').closest('.mb-4');
+    const standardInfo = document.getElementById('standard_info');
+    const customInfo = document.getElementById('custom_info');
+    
+    if (mode === 'standard') {
+        // Mode Standard : Masquer Category, Type, Points
+        if (categorySection) categorySection.style.display = 'none';
+        if (typeSection) typeSection.style.display = 'none';
+        standardInfo.style.display = 'block';
+        customInfo.style.display = 'none';
+        
+        // Pré-remplir les valeurs pour le scénario standard
+        document.getElementById('total_qr_codes').value = '50000';
+        document.getElementById('total_qr_codes').readOnly = true;
+    } else {
+        // Mode Personnalisé : Afficher tout
+        if (categorySection) categorySection.style.display = 'block';
+        if (typeSection) typeSection.style.display = 'block';
+        standardInfo.style.display = 'none';
+        customInfo.style.display = 'block';
+        
+        document.getElementById('total_qr_codes').readOnly = false;
+    }
+    
+    updateSummary();
+}
+
+// Attacher événement mode
+document.querySelectorAll('input[name="generation_mode"]').forEach(radio => {
+    radio.addEventListener('change', toggleGenerationMode);
+});
+
+// Mise à jour du résumé en temps réel
+function updateSummary() {
+    // Batch Number
+    const batchNumber = document.getElementById('batch_number').value;
+    document.getElementById('summary_batch').textContent = batchNumber || '4151000';
+    
+    // Total QR Codes
+    const totalQR = parseInt(document.getElementById('total_qr_codes').value) || 0;
+    document.getElementById('summary_total').textContent = totalQR.toLocaleString('fr-FR');
+    
+    // Category
+    const categoryRadio = document.querySelector('input[name="category"]:checked');
+    const categoryLabel = categoryRadio ? categoryRadio.nextElementSibling.textContent.trim() : '0,5 L';
+    document.getElementById('summary_category').textContent = categoryLabel.replace('Bouteille ', '').replace('🍾 ', '').replace('🥁 ', '');
+    
+    // Type
+    const typeRadio = document.querySelector('input[name="prize_type"]:checked');
+    const typeValue = typeRadio ? typeRadio.value : 'points';
+    const typeLabels = {
+        'points': 'Points',
+        'special': 'Special',
+        'try_again': 'Try Again'
+    };
+    document.getElementById('summary_type').textContent = typeLabels[typeValue] || 'Points';
+    
+    // Points Value (si Type = Points)
+    if (typeValue === 'points') {
+        const pointsValue = document.getElementById('points_value').value || 10;
+        document.getElementById('summary_points').textContent = pointsValue + ' pts';
+        document.getElementById('summary_points_row').style.display = 'flex';
+        document.getElementById('summary_special_row').style.display = 'none';
+    } else if (typeValue === 'special') {
+        const specialType = document.getElementById('special_type').value;
+        const specialLabels = {
+            'loyalty_bonus': 'Bonus Fidélité',
+            'mystery_box': 'Mystery Box',
+            'scratch_win': 'Scratch & Win'
+        };
+        document.getElementById('summary_special').textContent = specialLabels[specialType] || '-';
+        document.getElementById('summary_points_row').style.display = 'none';
+        document.getElementById('summary_special_row').style.display = 'flex';
+        
+        // Afficher les infos Mystery Box si applicable
+        if (specialType === 'mystery_box') {
+            const totalWinners = document.getElementById('total_winners')?.textContent || '0';
+            const totalCost = document.getElementById('total_cost')?.textContent || '0';
+            document.getElementById('summary_mystery_box_winners').textContent = totalWinners;
+            document.getElementById('summary_mystery_box_cost').textContent = totalCost + ' FCFA';
+            document.getElementById('summary_mystery_box_row').style.display = 'flex';
+            document.getElementById('summary_mystery_box_cost_row').style.display = 'flex';
+        } else {
+            document.getElementById('summary_mystery_box_row').style.display = 'none';
+            document.getElementById('summary_mystery_box_cost_row').style.display = 'none';
+        }
+    } else {
+        document.getElementById('summary_points_row').style.display = 'none';
+        document.getElementById('summary_special_row').style.display = 'none';
+    }
+}
+
+// Données des lots Mystery Box (du tableau fourni)
+const MYSTERY_BOX_LOTS = [
+    { id: 'margarine_250g', name: 'Margarine 250g', unitCost: 200, defaultWinners: 8945 },
+    { id: 'huile_0_45L', name: 'Huile 0,45L', unitCost: 300, defaultWinners: 10000 },
+    { id: 'bonus_50pts', name: 'Bonus 50 pts', unitCost: 0, defaultWinners: 0 },
+    { id: 'huile_0_9L', name: 'Huile 0,9L', unitCost: 600, defaultWinners: 2585 },
+    { id: 'huile_3L', name: 'Huile 3L', unitCost: 1800, defaultWinners: 1700 },
+    { id: 'box_aya_mix', name: 'Box Aya mix', unitCost: 3500, defaultWinners: 1200 },
+    { id: 'carton_0_9L_12', name: 'Carton 0,9L (12)', unitCost: 7000, defaultWinners: 300 },
+    { id: '2x5L', name: '2×5L', unitCost: 6000, defaultWinners: 200 },
+    { id: 'carton_5L_4', name: 'Carton 5L (4)', unitCost: 12000, defaultWinners: 50 },
+    { id: 'electromenager', name: 'Électroménager', unitCost: 25000, defaultWinners: 20 }
+];
+
+// Générer le tableau des lots Mystery Box
+function generateMysteryBoxLotsTable() {
+    const tbody = document.getElementById('mystery_box_lots_table');
+    tbody.innerHTML = '';
+    
+    MYSTERY_BOX_LOTS.forEach(lot => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <input type="checkbox" class="lot-checkbox" 
+                       data-lot-id="${lot.id}" 
+                       id="checkbox_${lot.id}"
+                       onchange="updateMysteryBoxTotals()">
+            </td>
+            <td>
+                <label for="checkbox_${lot.id}" class="mb-0" style="cursor: pointer;">
+                    ${lot.name}
+                </label>
+            </td>
+            <td class="text-end">${lot.unitCost.toLocaleString('fr-FR')}</td>
+            <td class="text-end">
+                <input type="number" 
+                       class="form-control form-control-sm lot-quantity" 
+                       id="qty_${lot.id}"
+                       name="mystery_box_lot_${lot.id}"
+                       data-lot-id="${lot.id}"
+                       data-unit-cost="${lot.unitCost}"
+                       value="${lot.defaultWinners}"
+                       min="0"
+                       style="width: 120px; text-align: right;"
+                       onchange="updateMysteryBoxTotals()"
+                       disabled>
+            </td>
+            <td class="text-end">
+                <span id="cost_${lot.id}" class="lot-total-cost">0</span> FCFA
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    updateMysteryBoxTotals();
+}
+
+// Mettre à jour les totaux des lots Mystery Box
+function updateMysteryBoxTotals() {
+    let totalWinners = 0;
+    let totalCost = 0;
+    
+    MYSTERY_BOX_LOTS.forEach(lot => {
+        const checkbox = document.getElementById(`checkbox_${lot.id}`);
+        const quantityInput = document.getElementById(`qty_${lot.id}`);
+        const costSpan = document.getElementById(`cost_${lot.id}`);
+        
+        if (checkbox && checkbox.checked && quantityInput) {
+            const quantity = parseInt(quantityInput.value) || 0;
+            const cost = quantity * lot.unitCost;
+            
+            totalWinners += quantity;
+            totalCost += cost;
+            
+            if (costSpan) {
+                costSpan.textContent = cost.toLocaleString('fr-FR');
+            }
+        } else {
+            if (costSpan) {
+                costSpan.textContent = '0';
+            }
+        }
+    });
+    
+    document.getElementById('total_winners').textContent = totalWinners.toLocaleString('fr-FR');
+    document.getElementById('total_cost').textContent = totalCost.toLocaleString('fr-FR');
+    
+    // Mettre à jour le résumé
+    if (document.getElementById('summary_mystery_box_winners')) {
+        document.getElementById('summary_mystery_box_winners').textContent = totalWinners.toLocaleString('fr-FR');
+    }
+    if (document.getElementById('summary_mystery_box_cost')) {
+        document.getElementById('summary_mystery_box_cost').textContent = totalCost.toLocaleString('fr-FR') + ' FCFA';
+    }
+}
+
+// Gérer la sélection/désélection de tous les lots
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('select_all_lots');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.lot-checkbox');
+            const quantityInputs = document.querySelectorAll('.lot-quantity');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+            
+            quantityInputs.forEach(input => {
+                input.disabled = !selectAllCheckbox.checked;
+            });
+            
+            updateMysteryBoxTotals();
+        });
+    }
+    
+    // Activer/désactiver les inputs selon la checkbox
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('lot-checkbox')) {
+            const lotId = e.target.dataset.lotId;
+            const quantityInput = document.getElementById(`qty_${lotId}`);
+            if (quantityInput) {
+                quantityInput.disabled = !e.target.checked;
+                if (!e.target.checked) {
+                    quantityInput.value = '0';
+                }
+            }
+            updateMysteryBoxTotals();
+        }
+    });
+});
+
+// Affichage conditionnel selon le Type sélectionné
+function toggleTypeSections() {
+    const typeRadio = document.querySelector('input[name="prize_type"]:checked');
+    const typeValue = typeRadio ? typeRadio.value : 'points';
+    
+    const pointsSection = document.getElementById('points_section');
+    const specialSection = document.getElementById('special_section');
+    const mysteryBoxLotsSection = document.getElementById('mystery_box_lots_section');
+    
+    if (typeValue === 'points') {
+        pointsSection.style.display = 'block';
+        specialSection.style.display = 'none';
+        if (mysteryBoxLotsSection) mysteryBoxLotsSection.style.display = 'none';
+        document.getElementById('points_value').required = true;
+        document.getElementById('special_type').required = false;
+    } else if (typeValue === 'special') {
+        pointsSection.style.display = 'none';
+        specialSection.style.display = 'block';
+        document.getElementById('points_value').required = false;
+        document.getElementById('special_type').required = true;
+        
+        // Vérifier si Mystery Box est sélectionné
+        const specialType = document.getElementById('special_type').value;
+        if (specialType === 'mystery_box' && mysteryBoxLotsSection) {
+            mysteryBoxLotsSection.style.display = 'block';
+            if (document.getElementById('mystery_box_lots_table').children.length === 0) {
+                generateMysteryBoxLotsTable();
+            }
+        } else if (mysteryBoxLotsSection) {
+            mysteryBoxLotsSection.style.display = 'none';
+        }
+    } else { // try_again
+        pointsSection.style.display = 'none';
+        specialSection.style.display = 'none';
+        if (mysteryBoxLotsSection) mysteryBoxLotsSection.style.display = 'none';
+        document.getElementById('points_value').required = false;
+        document.getElementById('special_type').required = false;
+    }
+    
+    updateSummary();
+}
+
+// Gérer le changement du type de Special
+function handleSpecialTypeChange() {
+    const specialType = document.getElementById('special_type').value;
+    const mysteryBoxLotsSection = document.getElementById('mystery_box_lots_section');
+    
+    if (specialType === 'mystery_box' && mysteryBoxLotsSection) {
+        mysteryBoxLotsSection.style.display = 'block';
+        if (document.getElementById('mystery_box_lots_table').children.length === 0) {
+            generateMysteryBoxLotsTable();
+        }
+    } else if (mysteryBoxLotsSection) {
+        mysteryBoxLotsSection.style.display = 'none';
+    }
+    
+    updateSummary();
+}
+
+// Attacher les événements
+document.querySelectorAll('input[name="prize_type"]').forEach(radio => {
+    radio.addEventListener('change', toggleTypeSections);
+});
+
+document.querySelectorAll('input[name="category"]').forEach(radio => {
+    radio.addEventListener('change', updateSummary);
+});
+
+document.getElementById('batch_number').addEventListener('input', updateSummary);
+document.getElementById('total_qr_codes').addEventListener('input', updateSummary);
+document.getElementById('points_value').addEventListener('input', updateSummary);
+document.getElementById('special_type').addEventListener('change', function() {
+    handleSpecialTypeChange();
+    updateSummary();
+});
+
+// Initialisation
+toggleGenerationMode();
+toggleTypeSections();
+updateSummary();
+
+// Vérifier si Mystery Box est déjà sélectionné au chargement
+document.addEventListener('DOMContentLoaded', function() {
+    const specialType = document.getElementById('special_type');
+    if (specialType && specialType.value === 'mystery_box') {
+        const typeRadio = document.querySelector('input[name="prize_type"]:checked');
+        if (typeRadio && typeRadio.value === 'special') {
+            handleSpecialTypeChange();
+        }
+    }
+});
+
+document.getElementById('batchForm').addEventListener('submit', function(e) {
+    const generateBtn = document.getElementById('generateBtn');
+    const batchNumber = document.getElementById('batch_number').value;
+    const totalQR = parseInt(document.getElementById('total_qr_codes').value) || 0;
+    const category = document.querySelector('input[name="category"]:checked').value;
+    const prizeType = document.querySelector('input[name="prize_type"]:checked').value;
+    
+    // Vérifier qu'il y a au moins 1 QR code
+    if (totalQR === 0) {
+        alert('Veuillez spécifier au moins 1 QR code !');
+        e.preventDefault();
+        return;
+    }
+    
+    // Vérifier les lots Mystery Box si applicable
+    if (prizeType === 'special') {
+        const specialType = document.getElementById('special_type').value;
+        if (specialType === 'mystery_box') {
+            const checkedLots = document.querySelectorAll('.lot-checkbox:checked');
+            if (checkedLots.length === 0) {
+                alert('Veuillez sélectionner au moins un lot pour la Mystery Box !');
+                e.preventDefault();
+                return;
+            }
+            
+            let totalMysteryBoxWinners = 0;
+            checkedLots.forEach(checkbox => {
+                const lotId = checkbox.dataset.lotId;
+                const quantityInput = document.getElementById(`qty_${lotId}`);
+                if (quantityInput) {
+                    totalMysteryBoxWinners += parseInt(quantityInput.value) || 0;
+                }
+            });
+            
+            if (totalMysteryBoxWinners === 0) {
+                alert('Veuillez spécifier au moins une quantité pour les lots sélectionnés !');
+                e.preventDefault();
+                return;
+            }
+            
+            if (totalMysteryBoxWinners !== totalQR) {
+                const confirmMsg = `Attention : Le total des gagnants Mystery Box (${totalMysteryBoxWinners.toLocaleString('fr-FR')}) ne correspond pas au nombre de QR codes à générer (${totalQR.toLocaleString('fr-FR')}).\n\nVoulez-vous continuer quand même ?`;
+                if (!confirm(confirmMsg)) {
+                    e.preventDefault();
+                    return;
+                }
+            }
+        }
+    }
+    
+    // Construire le message de confirmation
+    let message = `Êtes-vous sûr de vouloir générer le lot ${batchNumber} ?\n\n`;
+    message += `- Nombre de QR : ${totalQR.toLocaleString('fr-FR')}\n`;
+    message += `- Catégorie : ${category}\n`;
+    message += `- Type : ${prizeType}\n`;
+    
+    if (prizeType === 'points') {
+        const pointsValue = document.getElementById('points_value').value;
+        message += `- Points : ${pointsValue}\n`;
+    } else if (prizeType === 'special') {
+        const specialType = document.getElementById('special_type').value;
+        message += `- Special : ${specialType}\n`;
+        
+        if (specialType === 'mystery_box') {
+            const totalWinners = document.getElementById('total_winners').textContent;
+            const totalCost = document.getElementById('total_cost').textContent;
+            message += `- Total gagnants Mystery Box : ${totalWinners}\n`;
+            message += `- Coût total : ${totalCost} FCFA\n`;
+        }
+    }
+    
+    message += `\nCette opération peut prendre plusieurs minutes.`;
+    
+    // Confirmation avant génération
+    if (!confirm(message)) {
+        e.preventDefault();
+        return;
+    }
+    
+    // Désactiver le bouton et afficher le progrès
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Génération en cours...';
+});
+</script>
+{% endblock %}

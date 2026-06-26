@@ -1,0 +1,53 @@
+from django.urls import path
+from django.http import JsonResponse
+from . import views
+from . import world_cup_views
+
+def api_root(request):
+    """Vue racine de l'API qui retourne les endpoints disponibles"""
+    return JsonResponse({
+        'message': 'Aya+ API v1.0.0',
+        'endpoints': {
+            'authentication': '/api/auth/',
+            'qr_codes': '/api/validate/',
+            'games': '/api/games/',
+            'exchanges': '/api/exchanges/',
+            'stats': '/api/stats/',
+            'world_cup': '/api/world-cup/',
+        },
+        'documentation': 'https://monuniversaya.com'
+    })
+
+urlpatterns = [
+    # Vue racine de l'API
+    path('', api_root, name='api_root'),
+    # QR Codes
+    path('validate/', views.QRCodeValidationView.as_view(), name='qr_validate'),
+    path('validate-and-claim/', views.QRCodeValidateAndClaimView.as_view(), name='qr_validate_and_claim'),
+    path('user-codes/', views.UserQRCodesListView.as_view(), name='user_qr_codes'),
+    
+    # Jeux
+    path('games/play/', views.GamePlayView.as_view(), name='game_play'),
+    path('games/history/', views.GameHistoryListView.as_view(), name='game_history'),
+    path('games/available/', views.available_games, name='available_games'),
+    
+    # Échanges
+    path('exchanges/create/', views.ExchangeRequestCreateView.as_view(), name='exchange_create'),
+    path('exchanges/list/', views.ExchangeRequestListView.as_view(), name='exchange_list'),
+    path('exchanges/validate/', views.ExchangeValidationView.as_view(), name='exchange_validate'),
+    path('exchanges/confirm/', views.ExchangeConfirmView.as_view(), name='exchange_confirm'),
+    
+    # Tokens d'échange temporaires
+    path('exchange-tokens/create/', views.ExchangeTokenCreateView.as_view(), name='exchange_token_create'),
+    path('exchange-tokens/validate/', views.ExchangeTokenValidateView.as_view(), name='exchange_token_validate'),
+    path('exchange-tokens/status/', views.ExchangeTokenStatusView.as_view(), name='exchange_token_status'),
+    
+    # Statistiques
+    path('stats/', views.user_stats, name='qr_user_stats'),
+
+    # Pronostics Coupe du Monde
+    path('world-cup/matches/', world_cup_views.world_cup_matches, name='world_cup_matches'),
+    path('world-cup/predictions/', world_cup_views.world_cup_submit_prediction, name='world_cup_predictions'),
+    path('world-cup/predictions/me/', world_cup_views.world_cup_my_predictions, name='world_cup_my_predictions'),
+    path('world-cup/rankings/', world_cup_views.world_cup_rankings, name='world_cup_rankings'),
+]
