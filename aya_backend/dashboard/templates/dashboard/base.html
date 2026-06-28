@@ -300,6 +300,18 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'world_cup' %}active{% endif %}" 
+                           href="{% url 'dashboard:world_cup' %}">
+                            <i class="fas fa-futbol"></i> Coupe du Monde
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'grand_prix' %}active{% endif %}" 
+                           href="{% url 'dashboard:grand_prix' %}">
+                            <i class="fas fa-trophy"></i> Grands Prix
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'advertisements' %}active{% endif %}" 
                            href="{% url 'dashboard:advertisements' %}">
                             <i class="fas fa-video"></i> Publicités Vidéo

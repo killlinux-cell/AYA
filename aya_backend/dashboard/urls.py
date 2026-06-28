@@ -58,6 +58,9 @@ urlpatterns = [
     # Gestion des grands prix
     path('grand-prix/', views.grand_prix_management, name='grand_prix'),
     path('grand-prix/<uuid:grand_prix_id>/', views.grand_prix_detail, name='grand_prix_detail'),
+
+    # Pronostics Coupe du Monde
+    path('world-cup/', views.world_cup_management, name='world_cup'),
     
     # Nouvelles fonctionnalités
     path('qr-codes-analytics/', views.qr_codes_analytics, name='qr_codes_analytics'),

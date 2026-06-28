@@ -1964,3 +1964,40 @@ def update_vendor_location(request, vendor_id):
         messages.error(request, f'Erreur: {str(e)}')
     
     return redirect('dashboard:vendors_map')
+
+
+# ===== PRONOSTICS COUPE DU MONDE =====
+
+@login_required
+@user_passes_test(is_admin)
+def world_cup_management(request):
+    """Gestion des matchs et pronostics Coupe du Monde."""
+
+    from qr_codes.models_world_cup import WorldCupMatch, WorldCupPrediction
+
+    status_filter = request.GET.get('status', 'all')
+    matches = WorldCupMatch.objects.all()
+
+    if status_filter == 'scheduled':
+        matches = matches.filter(status='scheduled')
+    elif status_filter == 'finished':
+        matches = matches.filter(status='finished')
+
+    total_matches = WorldCupMatch.objects.count()
+    scheduled_matches = WorldCupMatch.objects.filter(status='scheduled').count()
+    finished_matches = WorldCupMatch.objects.filter(status='finished').count()
+    total_predictions = WorldCupPrediction.objects.count()
+
+    paginator = Paginator(matches.order_by('kickoff_at'), 15)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    context = {
+        'page_obj': page_obj,
+        'status_filter': status_filter,
+        'total_matches': total_matches,
+        'scheduled_matches': scheduled_matches,
+        'finished_matches': finished_matches,
+        'total_predictions': total_predictions,
+    }
+
+    return render(request, 'dashboard/world_cup.html', context)

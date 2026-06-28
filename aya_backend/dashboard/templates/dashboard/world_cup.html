@@ -1,0 +1,158 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Coupe du Monde — Pronostics{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-futbol"></i> Pronostics Coupe du Monde</h2>
+    <a href="{% url 'admin:qr_codes_worldcupmatch_add' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Nouveau match
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h4>{{ total_matches }}</h4>
+                <p class="mb-0">Matchs</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h4>{{ scheduled_matches }}</h4>
+                <p class="mb-0">À venir</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h4>{{ finished_matches }}</h4>
+                <p class="mb-0">Terminés</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h4>{{ total_predictions }}</h4>
+                <p class="mb-0">Pronostics</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label for="status" class="form-label">Statut</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Tous</option>
+                    <option value="scheduled" {% if status_filter == 'scheduled' %}selected{% endif %}>À venir</option>
+                    <option value="finished" {% if status_filter == 'finished' %}selected{% endif %}>Terminés</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Filtrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Liste des matchs</h5>
+        <a href="{% url 'admin:qr_codes_worldcupprediction_changelist' %}" class="btn btn-sm btn-outline-secondary">
+            Voir tous les pronostics
+        </a>
+    </div>
+    <div class="card-body">
+        {% if page_obj %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Match</th>
+                        <th>Phase / Groupe</th>
+                        <th>Coup d'envoi</th>
+                        <th>Score</th>
+                        <th>Statut</th>
+                        <th>Pronostics</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for match in page_obj %}
+                    <tr>
+                        <td>
+                            <strong>{{ match.home_team }}</strong> vs <strong>{{ match.away_team }}</strong>
+                            {% if match.home_team_code %}
+                            <br><small class="text-muted">{{ match.home_team_code }} — {{ match.away_team_code }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ match.stage }}
+                            {% if match.group_name %}<br><small>{{ match.group_name }}</small>{% endif %}
+                        </td>
+                        <td>{{ match.kickoff_at|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            {% if match.is_finished %}
+                                <span class="badge bg-dark">{{ match.home_score }} - {{ match.away_score }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if match.status == 'finished' %}
+                                <span class="badge bg-warning">Terminé</span>
+                            {% elif match.can_predict %}
+                                <span class="badge bg-success">Pronostics ouverts</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Fermé</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ match.predictions.count }}</td>
+                        <td>
+                            <a href="{% url 'admin:qr_codes_worldcupmatch_change' match.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i> Gérer
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Pagination">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ status_filter }}">Précédent</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ status_filter }}">Suivant</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-futbol fa-3x mb-3"></i>
+            <p>Aucun match. Créez-en un ou lancez <code>python manage.py seed_world_cup</code>.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="alert alert-info mt-4">
+    <strong>Règles de points :</strong> score exact 5 pts · bonne différence 3 pts · bon résultat 2 pts.
+    Pour clôturer un match : renseignez le score et passez le statut à <em>Terminé</em> dans Admin.
+</div>
+{% endblock %}
