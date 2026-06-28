@@ -1,0 +1,75 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Pronostics CDM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-list"></i> Tous les pronostics</h2>
+    <a href="{% url 'dashboard:world_cup' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Matchs
+    </a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Filtrer par match</label>
+                <select name="match" class="form-select">
+                    <option value="">Tous les matchs</option>
+                    {% for m in matches %}
+                    <option value="{{ m.id }}" {% if match_filter == m.id|stringformat:"s" %}selected{% endif %}>
+                        {{ m.home_team }} vs {{ m.away_team }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">Filtrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">{{ total_predictions }} pronostic{{ total_predictions|pluralize }} au total</h5>
+    </div>
+    <div class="card-body">
+        {% if page_obj %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Match</th>
+                        <th>Utilisateur</th>
+                        <th>Pronostic</th>
+                        <th>Points</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in page_obj %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'dashboard:world_cup_match_detail' p.match.id %}">
+                                {{ p.match.home_team }} vs {{ p.match.away_team }}
+                            </a>
+                        </td>
+                        <td>{{ p.user.email }}</td>
+                        <td>{{ p.home_score }} - {{ p.away_score }}</td>
+                        <td>
+                            {% if p.points_earned is not None %}{{ p.points_earned }}{% else %}—{% endif %}
+                        </td>
+                        <td>{{ p.created_at|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center mb-0">Aucun pronostic.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

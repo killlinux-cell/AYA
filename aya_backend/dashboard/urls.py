@@ -61,6 +61,11 @@ urlpatterns = [
 
     # Pronostics Coupe du Monde
     path('world-cup/', views.world_cup_management, name='world_cup'),
+    path('world-cup/create/', views.create_world_cup_match, name='world_cup_create'),
+    path('world-cup/predictions/', views.world_cup_predictions_list, name='world_cup_predictions'),
+    path('world-cup/<uuid:match_id>/', views.world_cup_match_detail, name='world_cup_match_detail'),
+    path('world-cup/<uuid:match_id>/edit/', views.edit_world_cup_match, name='world_cup_edit'),
+    path('world-cup/<uuid:match_id>/delete/', views.delete_world_cup_match, name='world_cup_delete'),
     
     # Nouvelles fonctionnalités
     path('qr-codes-analytics/', views.qr_codes_analytics, name='qr_codes_analytics'),

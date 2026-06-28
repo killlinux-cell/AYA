@@ -5,7 +5,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-futbol"></i> Pronostics Coupe du Monde</h2>
-    <a href="{% url 'admin:qr_codes_worldcupmatch_add' %}" class="btn btn-primary">
+    <a href="{% url 'dashboard:world_cup_create' %}" class="btn btn-primary">
         <i class="fas fa-plus"></i> Nouveau match
     </a>
 </div>
@@ -68,7 +68,7 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Liste des matchs</h5>
-        <a href="{% url 'admin:qr_codes_worldcupprediction_changelist' %}" class="btn btn-sm btn-outline-secondary">
+        <a href="{% url 'dashboard:world_cup_predictions' %}" class="btn btn-sm btn-outline-secondary">
             Voir tous les pronostics
         </a>
     </div>
@@ -119,8 +119,11 @@
                         </td>
                         <td>{{ match.predictions.count }}</td>
                         <td>
-                            <a href="{% url 'admin:qr_codes_worldcupmatch_change' match.id %}" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-edit"></i> Gérer
+                            <a href="{% url 'dashboard:world_cup_match_detail' match.id %}" class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'dashboard:world_cup_edit' match.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i>
                             </a>
                         </td>
                     </tr>
@@ -145,7 +148,8 @@
         {% else %}
         <div class="text-center py-5 text-muted">
             <i class="fas fa-futbol fa-3x mb-3"></i>
-            <p>Aucun match. Créez-en un ou lancez <code>python manage.py seed_world_cup</code>.</p>
+            <p>Aucun match pour le moment.</p>
+            <a href="{% url 'dashboard:world_cup_create' %}" class="btn btn-primary">Créer le premier match</a>
         </div>
         {% endif %}
     </div>
@@ -153,6 +157,6 @@
 
 <div class="alert alert-info mt-4">
     <strong>Règles de points :</strong> score exact 5 pts · bonne différence 3 pts · bon résultat 2 pts.
-    Pour clôturer un match : renseignez le score et passez le statut à <em>Terminé</em> dans Admin.
+    Pour clôturer un match : <strong>Modifier</strong> → statut <em>Terminé</em> + scores → les points sont calculés automatiquement.
 </div>
 {% endblock %}

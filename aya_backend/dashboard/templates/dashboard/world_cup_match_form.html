@@ -1,0 +1,127 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{{ form_title }} — Coupe du Monde{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-futbol"></i> {{ form_title }}</h1>
+    <p>Créez ou modifiez un match pour les pronostics</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Équipe domicile *</label>
+                            <input type="text" name="home_team" class="form-control" required maxlength="100"
+                                   value="{% if form_data %}{{ form_data.home_team }}{% elif match %}{{ match.home_team }}{% endif %}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Équipe extérieur *</label>
+                            <input type="text" name="away_team" class="form-control" required maxlength="100"
+                                   value="{% if form_data %}{{ form_data.away_team }}{% elif match %}{{ match.away_team }}{% endif %}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Code domicile</label>
+                            <input type="text" name="home_team_code" class="form-control" maxlength="8" placeholder="CIV"
+                                   value="{% if form_data %}{{ form_data.home_team_code }}{% elif match %}{{ match.home_team_code }}{% endif %}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Code extérieur</label>
+                            <input type="text" name="away_team_code" class="form-control" maxlength="8" placeholder="MAR"
+                                   value="{% if form_data %}{{ form_data.away_team_code }}{% elif match %}{{ match.away_team_code }}{% endif %}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Phase</label>
+                            <input type="text" name="stage" class="form-control"
+                                   value="{% if form_data %}{{ form_data.stage }}{% elif match %}{{ match.stage }}{% else %}Phase de groupes{% endif %}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Groupe</label>
+                            <input type="text" name="group_name" class="form-control" placeholder="Groupe A"
+                                   value="{% if form_data %}{{ form_data.group_name }}{% elif match %}{{ match.group_name }}{% endif %}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Coup d'envoi *</label>
+                        <input type="datetime-local" name="kickoff_at" class="form-control" required
+                               value="{{ kickoff_value }}">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Statut</label>
+                            <select name="status" class="form-select">
+                                <option value="scheduled" {% if match and match.status == 'scheduled' %}selected{% endif %}>Programmé</option>
+                                <option value="finished" {% if match and match.status == 'finished' %}selected{% endif %}>Terminé</option>
+                                <option value="cancelled" {% if match and match.status == 'cancelled' %}selected{% endif %}>Annulé</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Score domicile</label>
+                            <input type="number" name="home_score" class="form-control" min="0" max="20"
+                                   value="{% if match and match.home_score is not None %}{{ match.home_score }}{% endif %}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Score extérieur</label>
+                            <input type="number" name="away_score" class="form-control" min="0" max="20"
+                                   value="{% if match and match.away_score is not None %}{{ match.away_score }}{% endif %}">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="predictions_open" id="predictions_open"
+                                       {% if not match or match.predictions_open %}checked{% endif %}>
+                                <label class="form-check-label" for="predictions_open">Pronostics ouverts</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="is_active"
+                                       {% if not match or match.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">Match visible dans l'app</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% if match %}{% url 'dashboard:world_cup_match_detail' match.id %}{% else %}{% url 'dashboard:world_cup' %}{% endif %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Retour
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> {{ submit_label }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <h6><i class="fas fa-info-circle"></i> Aide</h6>
+                <ul class="small text-muted mb-0">
+                    <li>Les pronostics se ferment automatiquement au coup d'envoi.</li>
+                    <li>Pour clôturer : statut <strong>Terminé</strong> + scores → points calculés automatiquement.</li>
+                    <li>Score exact : 5 pts · différence : 3 pts · résultat : 2 pts.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

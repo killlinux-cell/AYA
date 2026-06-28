@@ -1968,10 +1968,100 @@ def update_vendor_location(request, vendor_id):
 
 # ===== PRONOSTICS COUPE DU MONDE =====
 
+def _world_cup_kickoff_input_value(match=None):
+    if not match:
+        return ''
+    return timezone.localtime(match.kickoff_at).strftime('%Y-%m-%dT%H:%M')
+
+
+def _parse_world_cup_match_post(request):
+    """Extrait et valide les champs du formulaire match CDM."""
+    from qr_codes.models_world_cup import WorldCupMatch
+
+    home_team = request.POST.get('home_team', '').strip()
+    away_team = request.POST.get('away_team', '').strip()
+    kickoff_raw = request.POST.get('kickoff_at', '').strip()
+
+    if not home_team or not away_team:
+        raise ValueError('Les deux équipes sont obligatoires.')
+    if not kickoff_raw:
+        raise ValueError('La date du coup d\'envoi est obligatoire.')
+
+    try:
+        kickoff_naive = datetime.strptime(kickoff_raw, '%Y-%m-%dT%H:%M')
+        kickoff_at = timezone.make_aware(kickoff_naive)
+    except ValueError:
+        raise ValueError('Date/heure du match invalide.')
+
+    status = request.POST.get('status', 'scheduled')
+    if status not in dict(WorldCupMatch.STATUS_CHOICES):
+        status = 'scheduled'
+
+    home_score = request.POST.get('home_score', '').strip()
+    away_score = request.POST.get('away_score', '').strip()
+    home_score_val = int(home_score) if home_score != '' else None
+    away_score_val = int(away_score) if away_score != '' else None
+
+    if status == 'finished':
+        if home_score_val is None or away_score_val is None:
+            raise ValueError('Score domicile et extérieur requis pour un match terminé.')
+        if home_score_val < 0 or away_score_val < 0:
+            raise ValueError('Les scores doivent être positifs.')
+
+    return {
+        'home_team': home_team,
+        'away_team': away_team,
+        'home_team_code': request.POST.get('home_team_code', '').strip().upper()[:8],
+        'away_team_code': request.POST.get('away_team_code', '').strip().upper()[:8],
+        'kickoff_at': kickoff_at,
+        'stage': request.POST.get('stage', 'Phase de groupes').strip() or 'Phase de groupes',
+        'group_name': request.POST.get('group_name', '').strip(),
+        'status': status,
+        'home_score': home_score_val,
+        'away_score': away_score_val,
+        'predictions_open': request.POST.get('predictions_open') == 'on',
+        'is_active': request.POST.get('is_active') == 'on',
+    }
+
+
+def _apply_world_cup_match_data(match, data):
+    """Applique les données au modèle et recalcule les points si terminé."""
+    from qr_codes.world_cup_scoring import calculate_prediction_points
+
+    match.home_team = data['home_team']
+    match.away_team = data['away_team']
+    match.home_team_code = data['home_team_code']
+    match.away_team_code = data['away_team_code']
+    match.kickoff_at = data['kickoff_at']
+    match.stage = data['stage']
+    match.group_name = data['group_name']
+    match.status = data['status']
+    match.home_score = data['home_score']
+    match.away_score = data['away_score']
+    match.predictions_open = data['predictions_open']
+    match.is_active = data['is_active']
+
+    if match.status == 'finished':
+        match.predictions_open = False
+
+    match.save()
+
+    if match.status == 'finished' and match.home_score is not None and match.away_score is not None:
+        for prediction in match.predictions.select_related('user'):
+            points = calculate_prediction_points(
+                prediction.home_score,
+                prediction.away_score,
+                match.home_score,
+                match.away_score,
+            )
+            prediction.points_earned = points
+            prediction.save(update_fields=['points_earned', 'updated_at'])
+
+
 @login_required
 @user_passes_test(is_admin)
 def world_cup_management(request):
-    """Gestion des matchs et pronostics Coupe du Monde."""
+    """Liste des matchs Coupe du Monde."""
 
     from qr_codes.models_world_cup import WorldCupMatch, WorldCupPrediction
 
@@ -1983,21 +2073,139 @@ def world_cup_management(request):
     elif status_filter == 'finished':
         matches = matches.filter(status='finished')
 
-    total_matches = WorldCupMatch.objects.count()
-    scheduled_matches = WorldCupMatch.objects.filter(status='scheduled').count()
-    finished_matches = WorldCupMatch.objects.filter(status='finished').count()
-    total_predictions = WorldCupPrediction.objects.count()
-
     paginator = Paginator(matches.order_by('kickoff_at'), 15)
     page_obj = paginator.get_page(request.GET.get('page'))
 
     context = {
         'page_obj': page_obj,
         'status_filter': status_filter,
-        'total_matches': total_matches,
-        'scheduled_matches': scheduled_matches,
-        'finished_matches': finished_matches,
-        'total_predictions': total_predictions,
+        'total_matches': WorldCupMatch.objects.count(),
+        'scheduled_matches': WorldCupMatch.objects.filter(status='scheduled').count(),
+        'finished_matches': WorldCupMatch.objects.filter(status='finished').count(),
+        'total_predictions': WorldCupPrediction.objects.count(),
     }
 
     return render(request, 'dashboard/world_cup.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def create_world_cup_match(request):
+    """Créer un match depuis le dashboard."""
+
+    from qr_codes.models_world_cup import WorldCupMatch
+
+    if request.method == 'POST':
+        try:
+            data = _parse_world_cup_match_post(request)
+            match = WorldCupMatch()
+            _apply_world_cup_match_data(match, data)
+            messages.success(request, f'Match {match.home_team} vs {match.away_team} créé.')
+            return redirect('dashboard:world_cup_match_detail', match_id=match.id)
+        except ValueError as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            messages.error(request, f'Erreur: {e}')
+
+    context = {
+        'form_title': 'Nouveau match',
+        'submit_label': 'Créer le match',
+        'kickoff_value': request.POST.get('kickoff_at', ''),
+        'form_data': request.POST if request.method == 'POST' else None,
+    }
+    return render(request, 'dashboard/world_cup_match_form.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def edit_world_cup_match(request, match_id):
+    """Modifier un match depuis le dashboard."""
+
+    from qr_codes.models_world_cup import WorldCupMatch
+
+    match = get_object_or_404(WorldCupMatch, id=match_id)
+
+    if request.method == 'POST':
+        try:
+            data = _parse_world_cup_match_post(request)
+            _apply_world_cup_match_data(match, data)
+            messages.success(request, 'Match mis à jour.')
+            return redirect('dashboard:world_cup_match_detail', match_id=match.id)
+        except ValueError as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            messages.error(request, f'Erreur: {e}')
+
+    context = {
+        'form_title': f'Modifier — {match.home_team} vs {match.away_team}',
+        'submit_label': 'Enregistrer',
+        'match': match,
+        'kickoff_value': _world_cup_kickoff_input_value(match),
+        'form_data': None,
+    }
+    return render(request, 'dashboard/world_cup_match_form.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def world_cup_match_detail(request, match_id):
+    """Détail d'un match et liste des pronostics."""
+
+    from qr_codes.models_world_cup import WorldCupMatch
+
+    match = get_object_or_404(WorldCupMatch, id=match_id)
+    predictions = match.predictions.select_related('user').order_by('-points_earned', '-created_at')
+
+    context = {
+        'match': match,
+        'predictions': predictions,
+        'predictions_count': predictions.count(),
+    }
+    return render(request, 'dashboard/world_cup_match_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def delete_world_cup_match(request, match_id):
+    """Supprimer un match."""
+
+    from qr_codes.models_world_cup import WorldCupMatch
+
+    match = get_object_or_404(WorldCupMatch, id=match_id)
+
+    if request.method == 'POST':
+        label = f'{match.home_team} vs {match.away_team}'
+        match.delete()
+        messages.success(request, f'Match {label} supprimé.')
+        return redirect('dashboard:world_cup')
+
+    return redirect('dashboard:world_cup_match_detail', match_id=match_id)
+
+
+@login_required
+@user_passes_test(is_admin)
+def world_cup_predictions_list(request):
+    """Tous les pronostics CDM."""
+
+    from qr_codes.models_world_cup import WorldCupPrediction
+
+    predictions = WorldCupPrediction.objects.select_related(
+        'user', 'match'
+    ).order_by('-created_at')
+
+    match_filter = request.GET.get('match', '')
+    if match_filter:
+        predictions = predictions.filter(match_id=match_filter)
+
+    paginator = Paginator(predictions, 25)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    from qr_codes.models_world_cup import WorldCupMatch
+
+    context = {
+        'page_obj': page_obj,
+        'match_filter': match_filter,
+        'matches': WorldCupMatch.objects.order_by('kickoff_at'),
+        'total_predictions': WorldCupPrediction.objects.count(),
+    }
+    return render(request, 'dashboard/world_cup_predictions.html', context)
