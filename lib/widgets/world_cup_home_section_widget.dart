@@ -3,6 +3,7 @@ import '../models/world_cup_models.dart';
 import '../services/django_auth_service.dart';
 import '../services/world_cup_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/world_cup_flag.dart';
 import '../screens/world_cup_predictions_screen.dart';
 import '../screens/world_cup_rankings_screen.dart';
 
@@ -209,14 +210,22 @@ class _WorldCupHomeSectionWidgetState extends State<WorldCupHomeSectionWidget> {
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                match.homeTeam,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-                overflow: TextOverflow.ellipsis,
+              child: Row(
+                children: [
+                  WorldCupFlag(countryCode: match.homeTeamCode, width: 28, height: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      match.homeTeam,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             ),
             Padding(
@@ -227,15 +236,24 @@ class _WorldCupHomeSectionWidgetState extends State<WorldCupHomeSectionWidget> {
               ),
             ),
             Expanded(
-              child: Text(
-                match.awayTeam,
-                textAlign: TextAlign.end,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-                overflow: TextOverflow.ellipsis,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Text(
+                      match.awayTeam,
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  WorldCupFlag(countryCode: match.awayTeamCode, width: 28, height: 20),
+                ],
               ),
             ),
           ],

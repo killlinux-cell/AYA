@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/vendor_auth_service.dart';
+import '../services/app_update_service.dart';
 import '../widgets/loading_widget.dart';
 import '../theme/app_colors.dart';
 import 'auth_screen.dart';
@@ -43,7 +44,12 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _checkAuthAndNavigate() async {
-    await Future.delayed(const Duration(seconds: 3));
+    if (mounted) {
+      final blocked = await AppUpdateService().handleStartupUpdate(context);
+      if (!mounted || blocked) return;
+    }
+
+    await Future.delayed(const Duration(seconds: 2));
 
     if (mounted) {
       final vendorAuthService = VendorAuthService();

@@ -31,12 +31,12 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Code domicile</label>
-                            <input type="text" name="home_team_code" class="form-control" maxlength="8" placeholder="CIV"
+                            <input type="text" name="home_team_code" class="form-control" maxlength="8" placeholder="CIV, FRA, MAR..."
                                    value="{% if form_data %}{{ form_data.home_team_code }}{% elif match %}{{ match.home_team_code }}{% endif %}">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Code extérieur</label>
-                            <input type="text" name="away_team_code" class="form-control" maxlength="8" placeholder="MAR"
+                            <input type="text" name="away_team_code" class="form-control" maxlength="8" placeholder="CIV, FRA, MAR..."
                                    value="{% if form_data %}{{ form_data.away_team_code }}{% elif match %}{{ match.away_team_code }}{% endif %}">
                         </div>
                     </div>
@@ -116,7 +116,7 @@
             <div class="card-body">
                 <h6><i class="fas fa-info-circle"></i> Aide</h6>
                 <ul class="small text-muted mb-0">
-                    <li>Les pronostics se ferment automatiquement au coup d'envoi.</li>
+                    <li>Renseignez les <strong>codes pays</strong> (CIV, MAR, FRA…) pour afficher les drapeaux.</li>
                     <li>Pour clôturer : statut <strong>Terminé</strong> + scores → points calculés automatiquement.</li>
                     <li>Score exact : 5 pts · différence : 3 pts · résultat : 2 pts.</li>
                 </ul>

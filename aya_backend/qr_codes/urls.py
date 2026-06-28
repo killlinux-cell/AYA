@@ -14,6 +14,7 @@ def api_root(request):
             'exchanges': '/api/exchanges/',
             'stats': '/api/stats/',
             'world_cup': '/api/world-cup/',
+            'app_version': '/api/app-version/',
         },
         'documentation': 'https://monuniversaya.com'
     })

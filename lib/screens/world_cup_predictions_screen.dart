@@ -4,6 +4,7 @@ import '../models/world_cup_models.dart';
 import '../services/django_auth_service.dart';
 import '../services/world_cup_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/world_cup_flag.dart';
 import 'world_cup_rankings_screen.dart';
 
 class WorldCupPredictionsScreen extends StatefulWidget {
@@ -217,20 +218,36 @@ class _WorldCupPredictionsScreenState extends State<WorldCupPredictionsScreen> {
       crossAxisAlignment:
           alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment:
+              alignEnd ? MainAxisAlignment.end : MainAxisAlignment.start,
+          children: [
+            if (!alignEnd) WorldCupFlag(countryCode: code, width: 32, height: 22),
+            if (!alignEnd) const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                name,
+                textAlign: alignEnd ? TextAlign.end : TextAlign.start,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+            ),
+            if (alignEnd) const SizedBox(width: 8),
+            if (alignEnd) WorldCupFlag(countryCode: code, width: 32, height: 22),
+          ],
+        ),
         if (code != null)
-          Text(
-            code,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey.shade500,
-              fontWeight: FontWeight.bold,
+          Padding(
+            padding: EdgeInsets.only(top: 4, left: alignEnd ? 0 : 40, right: alignEnd ? 40 : 0),
+            child: Text(
+              code,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade500,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-        Text(
-          name,
-          textAlign: alignEnd ? TextAlign.end : TextAlign.start,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-        ),
       ],
     );
   }

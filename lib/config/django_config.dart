@@ -41,6 +41,9 @@ class DjangoConfig {
       '$qrUrl/world-cup/predictions/me/';
   static const String worldCupRankingsEndpoint = '$qrUrl/world-cup/rankings/';
 
+  // Version application (mise à jour)
+  static const String appVersionEndpoint = '$qrUrl/app-version/';
+
   // Configuration pour la production
   static const bool isDevelopment = false;
 

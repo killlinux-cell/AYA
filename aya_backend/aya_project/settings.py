@@ -244,3 +244,23 @@ SECURE_HSTS_PRELOAD = True
 # SECURE_SSL_REDIRECT = True
 # SESSION_COOKIE_SECURE = True
 # CSRF_COOKIE_SECURE = True
+
+# 📱 Version application mobile (mise à jour forcée / In-App Update)
+APP_ANDROID_PACKAGE = config('APP_ANDROID_PACKAGE', default='com.uborasoftware.aya')
+APP_ANDROID_MIN_VERSION_CODE = config('APP_ANDROID_MIN_VERSION_CODE', default=17, cast=int)
+APP_ANDROID_LATEST_VERSION = config('APP_ANDROID_LATEST_VERSION', default='1.2.0')
+APP_ANDROID_FORCE_UPDATE = config('APP_ANDROID_FORCE_UPDATE', default=False, cast=bool)
+APP_ANDROID_IMMEDIATE_UPDATE = config('APP_ANDROID_IMMEDIATE_UPDATE', default=True, cast=bool)
+APP_ANDROID_STORE_URL = config(
+    'APP_ANDROID_STORE_URL',
+    default='https://play.google.com/store/apps/details?id=com.uborasoftware.aya',
+)
+APP_UPDATE_MESSAGE = config(
+    'APP_UPDATE_MESSAGE',
+    default='Une nouvelle version de Mon univers AYA est disponible. Mettez à jour pour continuer.',
+)
+APP_IOS_MIN_VERSION_CODE = config('APP_IOS_MIN_VERSION_CODE', default=1, cast=int)
+APP_IOS_LATEST_VERSION = config('APP_IOS_LATEST_VERSION', default='1.2.0')
+APP_IOS_FORCE_UPDATE = config('APP_IOS_FORCE_UPDATE', default=False, cast=bool)
+APP_IOS_STORE_URL = config('APP_IOS_STORE_URL', default='https://apps.apple.com/app/id000000000')
+APP_IOS_BUNDLE_ID = config('APP_IOS_BUNDLE_ID', default='com.uborasoftware.aya')

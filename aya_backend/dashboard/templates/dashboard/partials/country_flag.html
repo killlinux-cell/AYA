@@ -1,0 +1,4 @@
+{% if flag_url %}
+<img src="{{ flag_url }}" alt="{{ code }}" class="country-flag {{ css_class }}" width="{{ width|default:40 }}" loading="lazy"
+     onerror="this.style.display='none'">
+{% endif %}
