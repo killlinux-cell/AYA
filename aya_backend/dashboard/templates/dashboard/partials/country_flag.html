@@ -1,4 +1,6 @@
 {% if flag_url %}
 <img src="{{ flag_url }}" alt="{{ code }}" class="country-flag {{ css_class }}" width="{{ width|default:40 }}" loading="lazy"
-     onerror="this.style.display='none'">
+     onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('span'),{className:'country-flag-emoji {{ css_class }}',textContent:'{{ flag_emoji|default:code }}',style:'font-size:{{ width|default:40 }}px;line-height:1'}));">
+{% elif flag_emoji %}
+<span class="country-flag-emoji {{ css_class }}" style="font-size:{{ width|default:40 }}px;line-height:1">{{ flag_emoji }}</span>
 {% endif %}

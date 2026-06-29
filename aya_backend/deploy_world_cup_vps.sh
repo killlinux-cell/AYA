@@ -1,5 +1,5 @@
 #!/bin/bash
-# Déploie TOUT le code Coupe du Monde depuis AYA vers /var/www/aya_backend
+# Déploie le code Coupe du Monde (flags + fuseau Abidjan) vers /var/www/aya_backend
 # Usage sur le VPS: bash deploy_world_cup_vps.sh
 
 set -e
@@ -20,36 +20,49 @@ echo "=== 3. API Coupe du Monde ==="
 cp "$AYA/qr_codes/models_world_cup.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/world_cup_scoring.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/world_cup_views.py" "$BACKEND/qr_codes/"
+cp "$AYA/qr_codes/world_cup_flags.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/migrations/0009_world_cup.py" "$BACKEND/qr_codes/migrations/"
 cp "$AYA/qr_codes/urls.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/admin.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/models.py" "$BACKEND/qr_codes/"
 mkdir -p "$BACKEND/qr_codes/management/commands"
-cp "$AYA/qr_codes/management/commands/seed_world_cup.py" "$BACKEND/qr_codes/management/commands/" 2>/dev/null || true
+cp "$AYA/qr_codes/management/commands/"*.py "$BACKEND/qr_codes/management/commands/" 2>/dev/null || true
 touch "$BACKEND/qr_codes/management/__init__.py"
 touch "$BACKEND/qr_codes/management/commands/__init__.py"
 
-echo "=== 4. Dashboard Coupe du Monde (gestion complète) ==="
+echo "=== 4. Dashboard Coupe du Monde ==="
 cp "$AYA/dashboard/views.py" "$BACKEND/dashboard/"
 cp "$AYA/dashboard/urls.py" "$BACKEND/dashboard/"
+cp "$AYA/dashboard/app_version_views.py" "$BACKEND/dashboard/" 2>/dev/null || true
+mkdir -p "$BACKEND/dashboard/templatetags"
+cp "$AYA/dashboard/templatetags/world_cup_tags.py" "$BACKEND/dashboard/templatetags/" 2>/dev/null || true
+touch "$BACKEND/dashboard/templatetags/__init__.py" 2>/dev/null || true
 cp "$AYA/dashboard/templates/dashboard/base.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/world_cup.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/world_cup_match_form.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/world_cup_match_detail.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/world_cup_predictions.html" "$BACKEND/dashboard/templates/dashboard/"
+mkdir -p "$BACKEND/dashboard/templates/dashboard/partials"
+cp "$AYA/dashboard/templates/dashboard/partials/country_flag.html" "$BACKEND/dashboard/templates/dashboard/partials/" 2>/dev/null || true
 
-echo "=== 5. Vérification fichiers copiés ==="
+echo "=== 5. Settings (fuseau Abidjan) ==="
+cp "$AYA/aya_project/settings.py" "$BACKEND/aya_project/settings.py"
+# Restaurer le .env local (settings.py ne doit pas écraser les secrets)
+test -f /root/.env.aya.backup && cp /root/.env.aya.backup "$BACKEND/.env" || true
+
+echo "=== 6. Vérification fichiers copiés ==="
 grep -q "world_cup_create" "$BACKEND/dashboard/urls.py" && echo "OK urls.py" || { echo "ERREUR urls.py"; exit 1; }
-test -f "$BACKEND/dashboard/templates/dashboard/world_cup_match_form.html" && echo "OK formulaire" || { echo "ERREUR template"; exit 1; }
-test -f "$BACKEND/qr_codes/world_cup_views.py" && echo "OK API" || { echo "ERREUR API"; exit 1; }
+test -f "$BACKEND/qr_codes/world_cup_flags.py" && echo "OK flags" || { echo "ERREUR world_cup_flags.py"; exit 1; }
+grep -q "Africa/Abidjan" "$BACKEND/aya_project/settings.py" && echo "OK timezone" || { echo "ERREUR timezone"; exit 1; }
 
-echo "=== 6. Migration ==="
+echo "=== 7. Migration + correction heures ==="
 cd "$BACKEND"
 source venv/bin/activate
 python manage.py migrate qr_codes
-python manage.py seed_world_cup 2>/dev/null || echo "(seed ignoré si matchs existent)"
+python manage.py fix_world_cup_kickoffs --dry-run
+python manage.py fix_world_cup_kickoffs
 
-echo "=== 7. Redémarrage Gunicorn/Django ==="
+echo "=== 8. Redémarrage Gunicorn/Django ==="
 if systemctl list-units --type=service | grep -q aya_backend; then
   systemctl restart aya_backend
   echo "Service aya_backend redémarré"
@@ -57,13 +70,18 @@ elif systemctl list-units --type=service | grep -q gunicorn; then
   systemctl restart gunicorn
   echo "Service gunicorn redémarré"
 else
-  echo "ATTENTION: redémarrez le service Django manuellement"
-  systemctl list-units --type=service | grep -iE "aya|gunicorn|django" || true
+  GUNICORN_PID=$(pgrep -f "gunicorn.*wsgi" | head -1)
+  if [ -n "$GUNICORN_PID" ]; then
+    kill -HUP "$GUNICORN_PID"
+    echo "Gunicorn rechargé (PID $GUNICORN_PID)"
+  else
+    echo "ATTENTION: redémarrez le service Django manuellement"
+  fi
 fi
 
 sleep 3
 
-echo "=== 8. Tests locaux ==="
+echo "=== 9. Tests locaux ==="
 curl -s http://127.0.0.1:8000/api/ | grep -q world_cup && echo "OK: /api/ contient world_cup" || echo "ERREUR: API sans world_cup"
 HTTP=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/dashboard/world-cup/create/)
 echo "HTTP /dashboard/world-cup/create/ = $HTTP (302=login OK, 200=OK, 404=échec)"
@@ -73,4 +91,4 @@ echo ""
 echo "=== TERMINÉ ==="
 echo "1. Ouvrez https://monuniversaya.com/dashboard/world-cup/"
 echo "2. Ctrl+F5 pour vider le cache"
-echo "3. Bouton 'Nouveau match' → /dashboard/world-cup/create/"
+echo "3. Vérifiez drapeaux + heures des matchs"

@@ -1,6 +1,6 @@
 from django import template
 
-from qr_codes.world_cup_flags import get_country_flag_url
+from qr_codes.world_cup_flags import get_country_flag_emoji, get_country_flag_url
 
 register = template.Library()
 
@@ -15,6 +15,7 @@ def country_flag(code, width=40, css_class=''):
     w = int(width)
     return {
         'flag_url': get_country_flag_url(code, w),
+        'flag_emoji': get_country_flag_emoji(code),
         'code': code or '',
         'css_class': css_class,
         'width': w,

@@ -36,8 +36,7 @@ class WorldCupMatch {
       awayTeam: json['away_team'] ?? json['away_team_name'] ?? 'Équipe B',
       homeTeamCode: json['home_team_code'],
       awayTeamCode: json['away_team_code'],
-      kickoffAt: DateTime.tryParse(json['kickoff_at'] ?? '')?.toLocal() ??
-          DateTime.now(),
+      kickoffAt: _parseKickoffAt(json['kickoff_at']),
       stage: json['stage'] ?? json['phase'] ?? 'Groupe',
       groupName: json['group'] ?? json['group_name'],
       homeScore: json['home_score'] as int?,
@@ -54,12 +53,30 @@ class WorldCupMatch {
   }
 
   bool get canPredict =>
-      predictionsOpen && !isFinished && DateTime.now().isBefore(kickoffAt);
+      predictionsOpen &&
+      !isFinished &&
+      DateTime.now().toUtc().isBefore(kickoffAt.toUtc());
 
   String get formattedDate {
-    final d = kickoffAt;
+    final d = kickoffAt.toUtc();
     return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')} '
         '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// Heure Abidjan (GMT+0) — telle que saisie dans le dashboard.
+  static DateTime _parseKickoffAt(dynamic raw) {
+    if (raw == null || raw.toString().isEmpty) return DateTime.now().toUtc();
+    final parsed = DateTime.tryParse(raw.toString());
+    if (parsed == null) return DateTime.now().toUtc();
+    if (parsed.isUtc) return parsed;
+    return DateTime.utc(
+      parsed.year,
+      parsed.month,
+      parsed.day,
+      parsed.hour,
+      parsed.minute,
+      parsed.second,
+    );
   }
 }
 

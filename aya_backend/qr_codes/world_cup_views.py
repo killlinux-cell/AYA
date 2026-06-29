@@ -1,11 +1,21 @@
 from django.db import transaction
 from django.db.models import Count, Q, Sum
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from zoneinfo import ZoneInfo
 
 from .models_world_cup import WorldCupMatch, WorldCupPrediction
+
+ABIDJAN_TZ = ZoneInfo('Africa/Abidjan')
+
+
+def _kickoff_iso_abidjan(dt):
+    """Heure murale Abidjan (GMT+0) pour l'app mobile."""
+    local = timezone.localtime(dt, ABIDJAN_TZ)
+    return local.strftime('%Y-%m-%dT%H:%M:%S') + '+00:00'
 
 
 def _serialize_prediction(prediction):
@@ -26,7 +36,7 @@ def _serialize_match(match, user_prediction=None):
         'away_team': match.away_team,
         'home_team_code': match.home_team_code,
         'away_team_code': match.away_team_code,
-        'kickoff_at': match.kickoff_at.isoformat(),
+        'kickoff_at': _kickoff_iso_abidjan(match.kickoff_at),
         'stage': match.stage,
         'group': match.group_name,
         'group_name': match.group_name,

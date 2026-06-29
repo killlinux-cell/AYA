@@ -125,7 +125,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'fr-fr'
 
-TIME_ZONE = 'Europe/Paris'
+TIME_ZONE = 'Africa/Abidjan'
 
 USE_I18N = True
 
@@ -247,8 +247,8 @@ SECURE_HSTS_PRELOAD = True
 
 # 📱 Version application mobile (mise à jour forcée / In-App Update)
 APP_ANDROID_PACKAGE = config('APP_ANDROID_PACKAGE', default='com.uborasoftware.aya')
-APP_ANDROID_MIN_VERSION_CODE = config('APP_ANDROID_MIN_VERSION_CODE', default=17, cast=int)
-APP_ANDROID_LATEST_VERSION = config('APP_ANDROID_LATEST_VERSION', default='1.2.0')
+APP_ANDROID_MIN_VERSION_CODE = config('APP_ANDROID_MIN_VERSION_CODE', default=19, cast=int)
+APP_ANDROID_LATEST_VERSION = config('APP_ANDROID_LATEST_VERSION', default='1.2.1')
 APP_ANDROID_FORCE_UPDATE = config('APP_ANDROID_FORCE_UPDATE', default=False, cast=bool)
 APP_ANDROID_IMMEDIATE_UPDATE = config('APP_ANDROID_IMMEDIATE_UPDATE', default=True, cast=bool)
 APP_ANDROID_STORE_URL = config(

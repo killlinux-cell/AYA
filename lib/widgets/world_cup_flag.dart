@@ -16,17 +16,10 @@ class WorldCupFlag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = countryFlagUrl(countryCode, width: width.round());
+    final emoji = countryFlagEmoji(countryCode);
 
     if (url == null) {
-      return Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Icon(Icons.flag, size: width * 0.45, color: Colors.grey.shade500),
-      );
+      return _fallbackBox(emoji);
     }
 
     return ClipRRect(
@@ -36,13 +29,38 @@ class WorldCupFlag extends StatelessWidget {
         width: width,
         height: height,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(
-          width: width,
-          height: height,
-          color: Colors.grey.shade200,
-          child: Icon(Icons.flag, size: width * 0.45, color: Colors.grey),
-        ),
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return _fallbackBox(emoji, loading: true);
+        },
+        errorBuilder: (_, __, ___) => _fallbackBox(emoji),
       ),
+    );
+  }
+
+  Widget _fallbackBox(String? emoji, {bool loading = false}) {
+    if (emoji != null && !loading) {
+      return SizedBox(
+        width: width,
+        height: height,
+        child: Center(
+          child: Text(emoji, style: TextStyle(fontSize: height * 0.85)),
+        ),
+      );
+    }
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: loading
+          ? const Padding(
+              padding: EdgeInsets.all(4),
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Icon(Icons.flag, size: width * 0.45, color: Colors.grey.shade500),
     );
   }
 }

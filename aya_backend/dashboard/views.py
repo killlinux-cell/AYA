@@ -5,6 +5,7 @@ from django.http import JsonResponse, HttpResponse
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import json
 import qrcode
 import io
@@ -1968,10 +1969,13 @@ def update_vendor_location(request, vendor_id):
 
 # ===== PRONOSTICS COUPE DU MONDE =====
 
+ABIDJAN_TZ = ZoneInfo('Africa/Abidjan')
+
+
 def _world_cup_kickoff_input_value(match=None):
     if not match:
         return ''
-    return timezone.localtime(match.kickoff_at).strftime('%Y-%m-%dT%H:%M')
+    return timezone.localtime(match.kickoff_at, ABIDJAN_TZ).strftime('%Y-%m-%dT%H:%M')
 
 
 def _parse_world_cup_match_post(request):
@@ -1989,7 +1993,7 @@ def _parse_world_cup_match_post(request):
 
     try:
         kickoff_naive = datetime.strptime(kickoff_raw, '%Y-%m-%dT%H:%M')
-        kickoff_at = timezone.make_aware(kickoff_naive)
+        kickoff_at = timezone.make_aware(kickoff_naive, ABIDJAN_TZ)
     except ValueError:
         raise ValueError('Date/heure du match invalide.')
 
