@@ -4,7 +4,7 @@ import '../services/django_auth_service.dart';
 import '../services/world_cup_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/world_cup_flag.dart';
-import '../screens/world_cup_predictions_screen.dart';
+import '../screens/games_screen.dart';
 import '../screens/world_cup_rankings_screen.dart';
 
 class WorldCupHomeSectionWidget extends StatefulWidget {
@@ -306,9 +306,7 @@ class _WorldCupHomeSectionWidgetState extends State<WorldCupHomeSectionWidget> {
   void _openPredictions(BuildContext context) async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const WorldCupPredictionsScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const GamesScreen()),
     );
     _loadSummary();
   }

@@ -247,8 +247,8 @@ SECURE_HSTS_PRELOAD = True
 
 # 📱 Version application mobile (mise à jour forcée / In-App Update)
 APP_ANDROID_PACKAGE = config('APP_ANDROID_PACKAGE', default='com.uborasoftware.aya')
-APP_ANDROID_MIN_VERSION_CODE = config('APP_ANDROID_MIN_VERSION_CODE', default=20, cast=int)
-APP_ANDROID_LATEST_VERSION = config('APP_ANDROID_LATEST_VERSION', default='1.2.2')
+APP_ANDROID_MIN_VERSION_CODE = config('APP_ANDROID_MIN_VERSION_CODE', default=21, cast=int)
+APP_ANDROID_LATEST_VERSION = config('APP_ANDROID_LATEST_VERSION', default='1.2.3')
 APP_ANDROID_FORCE_UPDATE = config('APP_ANDROID_FORCE_UPDATE', default=False, cast=bool)
 APP_ANDROID_IMMEDIATE_UPDATE = config('APP_ANDROID_IMMEDIATE_UPDATE', default=True, cast=bool)
 APP_ANDROID_STORE_URL = config(

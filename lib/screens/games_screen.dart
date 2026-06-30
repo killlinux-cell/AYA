@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import '../utils/loading_mixin.dart';
 import '../theme/app_colors.dart';
+import '../utils/loading_mixin.dart';
+import '../widgets/world_cup_games_section.dart';
 import 'scratch_and_win_game_screen.dart';
 import 'spin_wheel_game_screen.dart';
+import 'world_cup_rankings_screen.dart';
 
 class GamesScreen extends StatefulWidget {
   const GamesScreen({super.key});
@@ -11,581 +13,190 @@ class GamesScreen extends StatefulWidget {
   State<GamesScreen> createState() => _GamesScreenState();
 }
 
-class _GamesScreenState extends State<GamesScreen>
-    with TickerProviderStateMixin, LoadingMixin {
-  late AnimationController _headerAnimationController;
-  late AnimationController _cardsAnimationController;
-  late Animation<double> _headerAnimation;
-  late Animation<double> _cardsAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _headerAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    _cardsAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _headerAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _headerAnimationController,
-        curve: Curves.easeOutBack,
-      ),
-    );
-
-    _cardsAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _cardsAnimationController,
-        curve: Curves.easeOutCubic,
-      ),
-    );
-
-    _headerAnimationController.forward();
-    Future.delayed(const Duration(milliseconds: 300), () {
-      _cardsAnimationController.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _headerAnimationController.dispose();
-    _cardsAnimationController.dispose();
-    super.dispose();
-  }
+class _GamesScreenState extends State<GamesScreen> with LoadingMixin {
+  final GlobalKey<WorldCupGamesSectionState> _wcSectionKey =
+      GlobalKey<WorldCupGamesSectionState>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF4F6F8),
       appBar: AppBar(
-        title: const Text(
-          '🎮 Jeux',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-        ),
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: const Column(
           children: [
-            // En-tête des jeux avec animation
-            AnimatedBuilder(
-              animation: _headerAnimation,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: _headerAnimation.value,
-                  child: Opacity(
-                    opacity: _headerAnimation.value.clamp(0.0, 1.0),
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.primaryGreen,
-                            AppColors.primaryGreenLight,
-                            AppColors.primaryGreenDark,
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primaryGreen.withOpacity(0.4),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                            spreadRadius: 0,
-                          ),
-                          BoxShadow(
-                            color: AppColors.primaryGreenDark.withOpacity(0.2),
-                            blurRadius: 40,
-                            offset: const Offset(0, 20),
-                            spreadRadius: -10,
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.25),
-                              borderRadius: BorderRadius.circular(30),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
-                                width: 2,
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.casino,
-                              color: Colors.white,
-                              size: 32,
-                            ),
-                          ),
-                          const SizedBox(width: 20),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  '🎯 Zone de jeux',
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Gagnez des points en jouant !',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    color: Colors.white.withOpacity(0.9),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.3),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    '✨ Nouveaux jeux disponibles',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
+            Text(
+              '🎮 Jeux',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
             ),
-
-            const SizedBox(height: 32),
-
-            // Titre des jeux disponibles avec animation
-            AnimatedBuilder(
-              animation: _cardsAnimation,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(0, 20 * (1 - _cardsAnimation.value)),
-                  child: Opacity(
-                    opacity: _cardsAnimation.value.clamp(0.0, 1.0),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 4,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                AppColors.primaryGreen,
-                                AppColors.primaryGreenLight,
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          '🎮 Jeux disponibles',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 20),
-
-            // Jeu Scratch & Win avec animation
-            AnimatedBuilder(
-              animation: _cardsAnimation,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(0, 30 * (1 - _cardsAnimation.value)),
-                  child: Opacity(
-                    opacity: _cardsAnimation.value.clamp(0.0, 1.0),
-                    child: _buildGameCard(
-                      context,
-                      title: '🎨 Scratch & Win',
-                      subtitle: 'Grattez pour découvrir vos gains',
-                      icon: Icons.auto_fix_high,
-                      color: AppColors.primaryGreen,
-                      gradientColors: const [
-                        AppColors.primaryGreen,
-                        AppColors.primaryGreenLight,
-                      ],
-                      onTap: () {
-                        navigateWithLoading(
-                          const ScratchAndWinGameScreen(),
-                          message: 'Chargement du jeu Grattez & Gagnez...',
-                        );
-                      },
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 20),
-
-            // Jeu Spin a wheel avec animation
-            AnimatedBuilder(
-              animation: _cardsAnimation,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(0, 30 * (1 - _cardsAnimation.value)),
-                  child: Opacity(
-                    opacity: _cardsAnimation.value.clamp(0.0, 1.0),
-                    child: _buildGameCard(
-                      context,
-                      title: '🎡 Spin a wheel',
-                      subtitle: 'Tournez la roue de la fortune',
-                      icon: Icons.casino,
-                      color: AppColors.accentRed,
-                      gradientColors: const [
-                        AppColors.accentRed,
-                        AppColors.accentRedLight,
-                      ],
-                      onTap: () {
-                        navigateWithLoading(
-                          const SpinWheelGameScreen(),
-                          message: 'Chargement de la Roue de la Fortune...',
-                        );
-                      },
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 32),
-
-            // Section des règles avec animation
-            AnimatedBuilder(
-              animation: _cardsAnimation,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(0, 40 * (1 - _cardsAnimation.value)),
-                  child: Opacity(
-                    opacity: _cardsAnimation.value.clamp(0.0, 1.0),
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [AppColors.surface, AppColors.divider],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: AppColors.primaryGreen.withOpacity(0.2),
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primaryGreen.withOpacity(0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                            spreadRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      AppColors.primaryGreen,
-                                      AppColors.primaryGreenLight,
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(25),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFF488950,
-                                      ).withOpacity(0.3),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Icons.rule,
-                                  color: Colors.white,
-                                  size: 26,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              const Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '📋 Règles des jeux',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textPrimary,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Comment jouer et gagner',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: AppColors.textSecondary,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppColors.borderPrimary,
-                                width: 1,
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                _buildRuleItem(
-                                  '💰',
-                                  'Chaque jeu coûte 10 points à jouer',
-                                ),
-                                _buildRuleItem(
-                                  '🎯',
-                                  'Vous pouvez gagner entre 0 et 50 points',
-                                ),
-                                _buildRuleItem(
-                                  '⏰',
-                                  'Jouez une fois par jour par jeu',
-                                ),
-                                _buildRuleItem(
-                                  '📈',
-                                  'Les points gagnés sont ajoutés à votre solde',
-                                ),
-                                _buildRuleItem(
-                                  '🔒',
-                                  'Les gains sont déterminés par le serveur pour la sécurité',
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
+            Text(
+              '⚽ Pronostics - Coupe du Monde 2026',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
           ],
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF1B4332),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.leaderboard_outlined),
+            tooltip: 'Classement',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const WorldCupRankingsScreen(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => _wcSectionKey.currentState?.loadMatches(),
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        color: AppColors.primaryGreen,
+        onRefresh: () async {
+          await _wcSectionKey.currentState?.loadMatches();
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              WorldCupGamesSection(key: _wcSectionKey),
+              const SizedBox(height: 28),
+              _miniGamesHeader(),
+              const SizedBox(height: 14),
+              _buildMiniGameCard(
+                title: '🎨 Scratch & Win',
+                subtitle: 'Grattez pour découvrir vos gains',
+                icon: Icons.auto_fix_high,
+                colors: const [Color(0xFF1B4332), Color(0xFF40916C)],
+                onTap: () => navigateWithLoading(
+                  const ScratchAndWinGameScreen(),
+                  message: 'Chargement...',
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildMiniGameCard(
+                title: '🎡 Spin a wheel',
+                subtitle: 'Tournez la roue de la fortune',
+                icon: Icons.casino,
+                colors: const [Color(0xFFa93236), Color(0xFFC54A4E)],
+                onTap: () => navigateWithLoading(
+                  const SpinWheelGameScreen(),
+                  message: 'Chargement...',
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildGameCard(
-    BuildContext context, {
+  Widget _miniGamesHeader() {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 22,
+          decoration: BoxDecoration(
+            color: AppColors.primaryGreen,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        const Text(
+          '🎮 Mini-jeux',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMiniGameCard({
     required String title,
     required String subtitle,
     required IconData icon,
-    required Color color,
-    List<Color>? gradientColors,
+    required List<Color> colors,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: gradientColors != null
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: gradientColors,
-                )
-              : null,
-          color: gradientColors == null ? Colors.white : null,
-          borderRadius: BorderRadius.circular(20),
-          border: gradientColors != null
-              ? null
-              : Border.all(color: color.withOpacity(0.2), width: 1),
+          gradient: LinearGradient(colors: colors),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: gradientColors != null
-                  ? gradientColors.first.withOpacity(0.3)
-                  : Colors.black.withOpacity(0.1),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-              spreadRadius: 0,
+              color: colors.first.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
             ),
-            if (gradientColors != null)
-              BoxShadow(
-                color: gradientColors.last.withOpacity(0.2),
-                blurRadius: 30,
-                offset: const Offset(0, 15),
-                spreadRadius: -5,
-              ),
           ],
         ),
         child: Row(
           children: [
             Container(
-              width: 70,
-              height: 70,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
-                color: gradientColors != null
-                    ? Colors.white.withOpacity(0.25)
-                    : color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(35),
-                border: gradientColors != null
-                    ? Border.all(color: Colors.white.withOpacity(0.3), width: 2)
-                    : null,
-                boxShadow: gradientColors != null
-                    ? [
-                        BoxShadow(
-                          color: Colors.white.withOpacity(0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
-                    : null,
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                color: gradientColors != null ? Colors.white : color,
-                size: 32,
-              ),
+              child: Icon(icon, color: Colors.white, size: 28),
             ),
-            const SizedBox(width: 20),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: gradientColors != null
-                          ? AppColors.white
-                          : AppColors.textPrimary,
-                      letterSpacing: 0.5,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 17,
                     ),
                   ),
-                  const SizedBox(height: 6),
                   Text(
                     subtitle,
                     style: TextStyle(
-                      fontSize: 15,
-                      color: gradientColors != null
-                          ? AppColors.white.withOpacity(0.9)
-                          : AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 13,
                     ),
                   ),
                 ],
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: gradientColors != null
-                    ? Colors.white.withOpacity(0.25)
-                    : color,
-                borderRadius: BorderRadius.circular(25),
-                border: gradientColors != null
-                    ? Border.all(color: Colors.white.withOpacity(0.3), width: 1)
-                    : null,
+                color: Colors.white.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(20),
               ),
-              child: Text(
+              child: const Text(
                 '10 pts',
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: gradientColors != null ? Colors.white : Colors.white,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
                 ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildRuleItem(String emoji, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 18)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

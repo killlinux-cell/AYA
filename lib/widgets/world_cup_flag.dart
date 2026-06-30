@@ -5,25 +5,28 @@ class WorldCupFlag extends StatelessWidget {
   final String? countryCode;
   final double width;
   final double height;
+  final bool circular;
 
   const WorldCupFlag({
     super.key,
     required this.countryCode,
     this.width = 36,
     this.height = 26,
+    this.circular = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final url = countryFlagUrl(countryCode, width: width.round());
     final emoji = countryFlagEmoji(countryCode);
+    final radius = circular ? width / 2 : 4.0;
 
     if (url == null) {
-      return _fallbackBox(emoji);
+      return _fallbackBox(emoji, radius);
     }
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(radius),
       child: Image.network(
         url,
         width: width,
@@ -31,20 +34,24 @@ class WorldCupFlag extends StatelessWidget {
         fit: BoxFit.cover,
         loadingBuilder: (context, child, progress) {
           if (progress == null) return child;
-          return _fallbackBox(emoji, loading: true);
+          return _fallbackBox(emoji, radius, loading: true);
         },
-        errorBuilder: (_, __, ___) => _fallbackBox(emoji),
+        errorBuilder: (_, __, ___) => _fallbackBox(emoji, radius),
       ),
     );
   }
 
-  Widget _fallbackBox(String? emoji, {bool loading = false}) {
+  Widget _fallbackBox(String? emoji, double radius, {bool loading = false}) {
     if (emoji != null && !loading) {
-      return SizedBox(
+      return Container(
         width: width,
         height: height,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(radius),
+        ),
         child: Center(
-          child: Text(emoji, style: TextStyle(fontSize: height * 0.85)),
+          child: Text(emoji, style: TextStyle(fontSize: height * 0.55)),
         ),
       );
     }
@@ -53,7 +60,7 @@ class WorldCupFlag extends StatelessWidget {
       height: height,
       decoration: BoxDecoration(
         color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(radius),
       ),
       child: loading
           ? const Padding(
