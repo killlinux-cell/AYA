@@ -1,92 +1,253 @@
 {% extends 'dashboard/base.html' %}
-{% load world_cup_tags %}
 
 {% block title %}Coupe du Monde 2026{% endblock %}
 
 {% block extra_css %}
 <style>
-    .wc-tabs { border-bottom: 2px solid #e9ecef; margin-bottom: 1.5rem; }
-    .wc-tabs .nav-link {
-        color: #666; font-weight: 600; border: none; padding: 12px 20px;
-        border-bottom: 3px solid transparent; margin-bottom: -2px;
-    }
-    .wc-tabs .nav-link.active { color: #1B4332; border-bottom-color: #1B4332; background: transparent; }
-    .bracket-wrap { overflow-x: auto; padding: 1rem 0 2rem; }
-    .bracket-grid { display: flex; gap: 24px; min-width: 1100px; align-items: flex-start; }
-    .bracket-round { flex: 1; min-width: 180px; }
-    .round-title {
-        text-align: center; font-weight: 700; color: #1B4332;
-        margin-bottom: 16px; font-size: 0.95rem;
-    }
-    .bracket-match {
-        background: #fff; border: 1px solid #E5E7EB; border-radius: 12px;
-        margin-bottom: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
-    .bracket-match-header {
-        background: #F9FAFB; padding: 4px 10px; font-size: 0.75rem;
-        color: #9CA3AF; text-align: right; border-bottom: 1px solid #F3F4F6;
-    }
-    .bracket-team {
-        display: flex; align-items: center; gap: 8px; padding: 10px 12px;
-        cursor: pointer; transition: background 0.15s; border: none; background: none;
-        width: 100%; text-align: left; font-size: 0.9rem;
-    }
-    .bracket-team:hover { background: #F0FDF4; }
-    .bracket-team.winner { background: #DCFCE7; font-weight: 700; }
-    .bracket-team.disabled { cursor: default; opacity: 0.65; pointer-events: none; }
-    .bracket-team + .bracket-team { border-top: 1px solid #F3F4F6; }
-    .country-flag { width: 22px; height: 16px; object-fit: cover; border-radius: 50%; }
-    .wc-badge { padding: 6px 14px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
-    .wc-badge-green { background: #DCFCE7; color: #166534; }
-    .wc-badge-blue { background: #DBEAFE; color: #1E40AF; }
-    .wc-badge-gray { background: #F3F4F6; color: #4B5563; }
+.aya-wc-skin{font-family:'Nunito',sans-serif}
+.aya-wc-skin .page-title{display:flex;align-items:center;gap:13px;font-family:'Baloo 2',cursive;font-weight:800;font-size:30px;margin-bottom:4px}
+.aya-wc-skin .subtitle{color:#64726a;font-weight:700;font-size:14px;margin-bottom:16px}
+.aya-wc-skin .wc-tabs{border-bottom:2px solid #e7edea;margin-bottom:22px;display:flex;gap:8px}
+.aya-wc-skin .wc-tabs a{font-weight:800;font-size:14.5px;color:#64726a;text-decoration:none;padding:11px 18px;border-radius:10px 10px 0 0;position:relative}
+.aya-wc-skin .wc-tabs a:hover{color:#1d2a23;background:#eef3f0}
+.aya-wc-skin .wc-tabs a.active{color:#14803f}
+.aya-wc-skin .wc-tabs a.active::after{content:"";position:absolute;left:12px;right:12px;bottom:-2px;height:3px;background:#1f9d54;border-radius:3px}
+.champ{display:inline-flex;align-items:center;gap:11px;background:linear-gradient(135deg,#fff6e0,#ffedc2);border:2px solid #e0a92e;color:#8a6a14;font-weight:800;padding:10px 18px;border-radius:14px;margin-bottom:16px;font-size:15px;animation:pop .7s ease}
+.champ .bf{width:26px;height:26px;border-radius:50%;overflow:hidden}
+.champ .bf img{width:100%;height:100%;object-fit:cover}
+.bl-legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.bl-legend span{font-size:12.5px;font-weight:800;padding:6px 13px;border-radius:20px;background:#fff;border:1px solid #e3eae6;color:#64726a}
+.bl-legend .hot{background:#e3f7ea;color:#137a3e;border-color:#cdebd6}
+.bl-legend .tip{background:#eef3ff;color:#2c5bb0;border-color:#d6e0fb}
+.reset-btn{margin-left:auto;display:flex;align-items:center;gap:7px;background:#fff;border:1.5px solid #e3eae6;color:#64726a;font-family:inherit;font-weight:800;font-size:13px;padding:8px 15px;border-radius:10px;cursor:pointer;transition:.15s}
+.reset-btn:hover{border-color:#c23434;color:#c23434;background:#fff5f5}
+.wc-panel{background:#fff;border:1px solid #e3eae6;border-radius:16px;padding:24px 26px;box-shadow:0 8px 22px -16px rgba(20,40,30,.32);overflow-x:auto}
+.bracket{display:flex;gap:40px;align-items:flex-start;min-width:1080px}
+.col{display:flex;flex-direction:column;flex:none}
+.col.r32{width:212px}.col.r16{width:150px}.col.qf{width:150px}.col.sf{width:150px}.col.final{width:190px}
+.ch{height:30px;font-family:'Baloo 2',cursive;font-weight:800;font-size:15px;color:#14803f;text-align:center;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:6px}
+.games{display:flex;flex-direction:column}
+.col.r32 .games{padding-top:0}.col.r32 .game{margin-bottom:14px}
+.col.r16 .games{padding-top:34px}.col.r16 .game{margin-bottom:82px}
+.col.qf .games{padding-top:102px}.col.qf .game{margin-bottom:218px}
+.col.sf .games{padding-top:238px}.col.sf .game{margin-bottom:490px}
+.col.final .games{padding-top:502px}
+.game{height:54px;width:100%;background:#fff;border:1px solid #e3eae6;border-radius:11px;position:relative;display:flex;flex-direction:column;box-shadow:0 4px 12px -8px rgba(20,40,30,.3)}
+.bt{flex:1;display:flex;align-items:center;gap:8px;padding:0 11px;font-size:12.5px;font-weight:800;min-width:0;transition:background .15s}
+.bt+.bt{border-top:1px solid #f0f3f1}
+.game .bt:first-child{border-radius:10px 10px 0 0}
+.game .bt:last-child{border-radius:0 0 10px 10px}
+.bf{width:19px;height:19px;border-radius:50%;overflow:hidden;flex:none;background:#e6ece9;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07)}
+.bf img{width:100%;height:100%;object-fit:cover;display:block}
+.bn{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bt .seed{font-family:'Baloo 2',cursive;font-size:11px;color:#8a958e;font-weight:700;margin-left:4px}
+.bt .chk{color:#1f9d54;font-weight:900;font-size:13px;margin-left:4px}
+.bt.team{cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:inherit}
+.bt.team:hover{background:#f1f8f3}
+.bt.sel{background:#e6f7ec}
+.bt.sel .bn{color:#137a3e}
+.bt.lost{opacity:.42}
+.bt.ph{color:#8a958e;font-weight:700;cursor:default}
+.bt.ph .bn{font-size:12px}
+@keyframes pop{0%{background:#fff3c4;transform:scale(1.04)}60%{background:#fff7da}100%{transform:scale(1)}}
+.bt.just{animation:pop .9s ease}
+.col:not(.final) .game::after{content:"";position:absolute;right:-20px;top:50%;width:20px;height:2px;background:#9db6a6;transform:translateY(-50%)}
+.col:not(.r32) .game::before{content:"";position:absolute;left:-20px;top:50%;width:20px;height:2px;background:#9db6a6;transform:translateY(-50%)}
+.vb{position:absolute;right:-20px;top:50%;width:2px;background:#9db6a6}
+.col.r32 .game.pt .vb{height:68px}
+.col.r16 .game.pt .vb{height:136px}
+.col.qf .game.pt .vb{height:272px}
+.col.sf .game.pt .vb{height:544px}
+.col.final .game{height:72px;border:2px solid #e0a92e;border-radius:14px;background:linear-gradient(180deg,#fffdf5,#fff6e0);box-shadow:0 12px 28px -10px rgba(224,169,46,.5)}
+.col.final .game .bt:first-child{border-radius:12px 12px 0 0}
+.col.final .game .bt:last-child{border-radius:0 0 12px 12px}
+.col.final .bt.sel{background:#fdeec2}
+.col.final .ch{color:#e0a92e}
+.fin-cap{text-align:center;margin-top:14px;font-weight:800;font-size:12px;color:#8a958e}
+.third{margin-top:24px;display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #e3eae6;border-radius:14px;padding:14px 20px;max-width:560px;box-shadow:0 6px 18px -14px rgba(20,40,30,.3)}
+.third .t-ic{font-size:20px}
+.third b{font-family:'Baloo 2',cursive;font-size:15px}
+.third small{color:#8a958e;font-weight:700}
+.third .t-slot{margin-left:auto;display:flex;gap:8px}
+.third .t-slot span{font-size:12px;font-weight:800;color:#64726a;background:#f1f5f2;border:1px solid #e3eae6;border-radius:20px;padding:5px 12px}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
-    <div>
-        <h2 class="mb-1">🏆 Coupe du Monde 2026</h2>
-        <p class="text-muted mb-2">Tableau final · cliquez une équipe pour la faire avancer jusqu'à la finale</p>
-        <div class="d-flex flex-wrap gap-2">
-            <span class="wc-badge wc-badge-green">🟢 1/16 de finale — équipes qualifiées</span>
-            <span class="wc-badge wc-badge-blue">👆 Cliquez une équipe pour l'avancer</span>
-            <span class="wc-badge wc-badge-gray">📅 28 juin → 19 juillet</span>
-        </div>
-    </div>
-    <form method="POST" action="{% url 'dashboard:world_cup_bracket_reset' %}"
+<div class="aya-wc-skin">
+  <div class="page-title"><span>🏆</span> Coupe du Monde 2026</div>
+  <div class="subtitle">Tableau final · cliquez une équipe pour la faire avancer jusqu'à la finale</div>
+
+  <nav class="wc-tabs">
+    <a href="{% url 'dashboard:world_cup' %}" class="active">Tableau</a>
+    <a href="{% url 'dashboard:world_cup_matches' %}">Gérer les matchs</a>
+    <a href="{% url 'dashboard:games' %}?tab=pronostics">Pronostics & classement</a>
+  </nav>
+
+  <div id="champ" class="champ" style="display:none"></div>
+
+  <div class="bl-legend">
+    <span class="hot">🟢 1/16 de finale — équipes qualifiées</span>
+    <span class="tip">👆 Cliquez une équipe pour l'avancer</span>
+    <span>📅 28 juin → 19 juillet</span>
+    <form method="POST" action="{% url 'dashboard:world_cup_bracket_reset' %}" style="margin-left:auto"
           onsubmit="return confirm('Réinitialiser tout le tableau ?');">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-outline-secondary">
-            <i class="fas fa-redo"></i> Réinitialiser
-        </button>
+      {% csrf_token %}
+      <button type="submit" class="reset-btn">↺ Réinitialiser</button>
     </form>
-</div>
+  </div>
 
-<ul class="nav wc-tabs">
-    <li class="nav-item">
-        <a class="nav-link active" href="{% url 'dashboard:world_cup' %}">Tableau</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'dashboard:world_cup_matches' %}">Gérer les matchs</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'dashboard:games' %}?tab=pronostics">Pronostics & classement</a>
-    </li>
-</ul>
+  <div class="wc-panel"><div class="bracket" id="bracket"></div></div>
 
-<div class="bracket-wrap">
-    <div class="bracket-grid">
-        {% for round_key, round_label, round_matches in bracket_rounds %}
-        <div class="bracket-round">
-            <div class="round-title">{{ round_label }}</div>
-            {% for match in round_matches %}
-                {% include 'dashboard/partials/bracket_match.html' with match=match %}
-            {% empty %}
-                <p class="text-muted small text-center">—</p>
-            {% endfor %}
-        </div>
-        {% endfor %}
+  <div class="third">
+    <span class="t-ic">🥉</span>
+    <div><b>Match pour la 3ᵉ place</b><br><small>15 juillet · Match 103</small></div>
+    <div class="t-slot">
+      <span id="third0">Perdant M101</span>
+      <span id="third1">Perdant M102</span>
     </div>
+  </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const BRACKET_API = "{% url 'dashboard:world_cup_bracket_api' %}";
+const CSRF_TOKEN = "{{ csrf_token }}";
+const INITIAL_WINNERS = {{ bracket_winners_json|safe }};
+
+const R32 = {
+  74:[['Allemagne','de'],['Paraguay','py']],
+  77:[['France','fr'],['Suède','se']],
+  73:[['Afrique du Sud','za'],['Canada','ca']],
+  75:[['Pays-Bas','nl'],['Maroc','ma']],
+  83:[['Portugal','pt'],['Croatie','hr']],
+  84:[['Espagne','es'],['Autriche','at']],
+  81:[['États-Unis','us'],['Bosnie','ba']],
+  82:[['Belgique','be'],['Sénégal','sn']],
+  76:[['Brésil','br'],['Japon','jp']],
+  78:[["Côte d'Ivoire",'ci'],['Norvège','no']],
+  79:[['Mexique','mx'],['Équateur','ec']],
+  80:[['Angleterre','gb-eng'],['RD Congo','cd']],
+  86:[['Argentine','ar'],['Cap-Vert','cv']],
+  88:[['Australie','au'],['Égypte','eg']],
+  85:[['Suisse','ch'],['Algérie','dz']],
+  87:[['Colombie','co'],['Ghana','gh']]
+};
+const FEED = {
+  89:[74,77], 90:[73,75], 93:[83,84], 94:[81,82],
+  91:[76,78], 92:[79,80], 95:[86,88], 96:[85,87],
+  97:[89,90], 98:[93,94], 99:[91,92], 100:[95,96],
+  101:[97,98], 102:[99,100],
+  104:[101,102]
+};
+const COLS = [
+  {cls:'r32',  label:'🏆 1/16 de finale', order:[74,77,73,75,83,84,81,82,76,78,79,80,86,88,85,87]},
+  {cls:'r16',  label:'⚔️ 1/8 de finale',  order:[89,90,93,94,91,92,95,96]},
+  {cls:'qf',   label:'🔥 Quarts',          order:[97,98,99,100]},
+  {cls:'sf',   label:'🥇 Demies',          order:[101,102]},
+  {cls:'final',label:'🏆 Finale',          order:[104]}
+];
+
+let winner = {};
+Object.entries(INITIAL_WINNERS || {}).forEach(([k, v]) => { winner[+k] = v; });
+
+const bracket = document.getElementById('bracket');
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const teamEq = (a,b) => !!a && !!b && a.name === b.name;
+
+function slotTeam(m, side){
+  if(R32[m]) return {name:R32[m][side][0], flag:R32[m][side][1]};
+  const f = FEED[m][side];
+  return winner[f] || null;
+}
+function downstream(m){ for(const d in FEED){ if(FEED[d].includes(+m)) return +d; } return null; }
+function loser(m){
+  if(!winner[m]) return null;
+  const t0=slotTeam(m,0), t1=slotTeam(m,1);
+  if(!t0||!t1) return null;
+  return teamEq(winner[m],t0)?t1:t0;
+}
+
+function recompute(){
+  const all = Object.keys(FEED).map(Number).sort((a,b)=>a-b);
+  for(const m of all){
+    if(winner[m]){
+      const t0=slotTeam(m,0), t1=slotTeam(m,1);
+      if(!teamEq(winner[m],t0) && !teamEq(winner[m],t1)) delete winner[m];
+    }
+  }
+}
+
+let saveTimer = null;
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    fetch(BRACKET_API, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN},
+      body: JSON.stringify({winners: winner})
+    }).catch(() => {});
+  }, 350);
+}
+
+function slotHTML(m, side){
+  const team = slotTeam(m, side);
+  if(team){
+    const sel  = teamEq(winner[m], team);
+    const lost = winner[m] && !sel ? ' lost' : '';
+    const seed = (R32[m] && side===0) ? `<span class="seed">M${m}</span>` : '';
+    const chk  = sel ? '<span class="chk">✓</span>' : '';
+    return `<button type="button" class="bt team${sel?' sel':''}${lost}" data-m="${m}" data-side="${side}">
+      <span class="bf"><img src="https://flagcdn.com/w80/${team.flag}.png" alt="" loading="lazy"></span>
+      <span class="bn">${esc(team.name)}</span>${seed}${chk}</button>`;
+  }
+  return `<div class="bt ph"><span class="bn">Vainqueur M${FEED[m][side]}</span></div>`;
+}
+function gameHTML(m, i){
+  const pt = (i % 2 === 0) ? ' pt' : '';
+  const vb = pt ? '<div class="vb"></div>' : '';
+  return `<div class="game${pt}" data-m="${m}">${vb}${slotHTML(m,0)}${slotHTML(m,1)}</div>`;
+}
+function colHTML(col){
+  const games = col.order.map(gameHTML).join('');
+  const extra = col.cls==='final' ? `<div class="fin-cap">🗽 19 juillet · MetLife Stadium</div>` : '';
+  return `<div class="col ${col.cls}"><div class="ch">${col.label}</div><div class="games">${games}</div>${extra}</div>`;
+}
+function render(){
+  bracket.innerHTML = COLS.map(colHTML).join('');
+  const l1=loser(101), l2=loser(102);
+  document.getElementById('third0').textContent = l1 ? l1.name : 'Perdant M101';
+  document.getElementById('third1').textContent = l2 ? l2.name : 'Perdant M102';
+  const champ = document.getElementById('champ');
+  if(winner[104]){
+    champ.style.display='inline-flex';
+    champ.innerHTML = `<span class="bf"><img src="https://flagcdn.com/w80/${winner[104].flag}.png" alt=""></span>
+      🏆 Champion du Monde 2026 : ${esc(winner[104].name)} !`;
+  } else champ.style.display='none';
+}
+function flow(m){
+  const d = downstream(m);
+  if(d==null) return;
+  const side = FEED[d][0]===+m ? 0 : 1;
+  const el = bracket.querySelector(`.game[data-m="${d}"] .bt[data-side="${side}"]`);
+  if(el){ el.classList.remove('just'); void el.offsetWidth; el.classList.add('just'); }
+}
+
+bracket.addEventListener('click', e=>{
+  const bt = e.target.closest('.bt.team');
+  if(!bt) return;
+  const m = +bt.dataset.m, side = +bt.dataset.side;
+  const team = slotTeam(m, side);
+  if(!team) return;
+  if(teamEq(winner[m], team)) delete winner[m];
+  else winner[m] = team;
+  recompute();
+  render();
+  flow(m);
+  scheduleSave();
+});
+
+render();
+</script>
 {% endblock %}

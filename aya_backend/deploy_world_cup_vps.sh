@@ -25,6 +25,7 @@ cp "$AYA/qr_codes/world_cup_bracket.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/world_cup_dashboard.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/migrations/0009_world_cup.py" "$BACKEND/qr_codes/migrations/"
 cp "$AYA/qr_codes/migrations/0010_world_cup_bracket.py" "$BACKEND/qr_codes/migrations/"
+cp "$AYA/qr_codes/migrations/0011_world_cup_bracket_state.py" "$BACKEND/qr_codes/migrations/"
 cp "$AYA/qr_codes/urls.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/admin.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/models.py" "$BACKEND/qr_codes/"
@@ -44,6 +45,7 @@ cp "$AYA/dashboard/templates/dashboard/base.html" "$BACKEND/dashboard/templates/
 cp "$AYA/dashboard/templates/dashboard/games.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/world_cup.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/world_cup_bracket.html" "$BACKEND/dashboard/templates/dashboard/"
+cp "$AYA/dashboard/templates/dashboard/games.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/world_cup_match_form.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/world_cup_match_detail.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/world_cup_predictions.html" "$BACKEND/dashboard/templates/dashboard/"
@@ -55,7 +57,8 @@ cp "$AYA/aya_project/settings.py" "$BACKEND/aya_project/settings.py"
 test -f /root/.env.aya.backup && cp /root/.env.aya.backup "$BACKEND/.env" || true
 
 echo "=== 6. Vérification ==="
-grep -q "world_cup_bracket" "$BACKEND/dashboard/urls.py" && echo "OK bracket urls" || { echo "ERREUR bracket urls"; exit 1; }
+grep -q "world_cup_bracket_api" "$BACKEND/dashboard/urls.py" && echo "OK bracket API" || { echo "ERREUR bracket API"; exit 1; }
+test -f "$BACKEND/dashboard/templates/dashboard/games.html" && grep -q "aya-games-skin" "$BACKEND/dashboard/templates/dashboard/games.html" && echo "OK skin jeux" || { echo "ERREUR games.html"; exit 1; }
 grep -q "POINTS_EXACT = 10" "$BACKEND/qr_codes/world_cup_scoring.py" && echo "OK barème 10/5/1" || { echo "ERREUR scoring"; exit 1; }
 test -f "$BACKEND/dashboard/templates/dashboard/world_cup_bracket.html" && echo "OK tableau" || { echo "ERREUR template tableau"; exit 1; }
 
@@ -63,7 +66,7 @@ echo "=== 7. Migration + données CDM ==="
 cd "$BACKEND"
 source venv/bin/activate
 python manage.py migrate qr_codes
-python manage.py seed_world_cup_bracket
+python manage.py seed_world_cup_bracket 2>/dev/null || true
 python manage.py recalculate_world_cup_points
 
 echo "=== 8. Redémarrage Gunicorn ==="

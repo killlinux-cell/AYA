@@ -139,6 +139,22 @@ class WorldCupBracketMatch(models.Model):
         return ''
 
 
+class WorldCupBracketState(models.Model):
+    """État du tableau interactif (vainqueurs par numéro de match)."""
+
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1)
+    winners = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'world_cup_bracket_state'
+        verbose_name = 'État tableau CDM'
+        verbose_name_plural = 'États tableau CDM'
+
+    def __str__(self):
+        return f'Tableau CDM ({len(self.winners)} vainqueurs)'
+
+
 class WorldCupPrediction(models.Model):
     """Pronostic d'un utilisateur pour un match."""
 

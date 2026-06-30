@@ -6,19 +6,37 @@ from .models_world_cup import WorldCupMatch, WorldCupPrediction
 from .world_cup_scoring import (
     POINTS_CORRECT_OUTCOME,
     POINTS_EXACT,
-    POINTS_PARTICIPATION,
     classify_prediction_outcome,
     outcome_label,
 )
+
+AVATAR_COLORS = [
+    '#e0a92e', '#7c8a93', '#c07b4a', '#2f7df0',
+    '#1cb8d6', '#9a5fb0', '#1f9d54', '#e89b08',
+]
+
+
+def avatar_color_for(user_id) -> str:
+    key = str(user_id).replace('-', '')
+    idx = int(key[:8], 16) % len(AVATAR_COLORS) if key else 0
+    return AVATAR_COLORS[idx]
 
 
 def mask_phone(phone: str) -> str:
     if not phone:
         return '—'
-    digits = ''.join(c for c in phone if c.isdigit() or c == '+')
+    digits = ''.join(c for c in phone if c.isdigit())
     if len(digits) < 6:
         return phone
-    return f'{digits[:8]} .. ..'
+    if len(digits) >= 10:
+        return f'+{digits[:3]} {digits[3:5]} {digits[5:7]} •• ••'
+    return f'{digits[:4]} •• ••'
+
+
+def user_initials(user) -> str:
+    if user.first_name and user.last_name:
+        return (user.first_name[:1] + user.last_name[:1]).upper()
+    return '??'
 
 
 def get_prediction_stats(queryset=None):
@@ -39,52 +57,88 @@ def get_prediction_stats(queryset=None):
 
 
 def enrich_prediction_row(prediction):
-    """Ajoute issue, labels et statut gagné/perdu pour l'affichage dashboard."""
+    """Ajoute issue, labels et statut pour l'affichage dashboard."""
     match = prediction.match
     outcome = None
     outcome_display = '—'
-    status_won = None
+    status_key = 'pending'
+    status_label = 'En attente'
 
-    if (
-        match.is_finished
-        and match.home_score is not None
-        and match.away_score is not None
-        and prediction.points_earned is not None
-    ):
-        outcome = classify_prediction_outcome(
-            prediction.home_score,
-            prediction.away_score,
-            match.home_score,
-            match.away_score,
-        )
-        outcome_display = outcome_label(outcome)
-        status_won = prediction.points_earned >= POINTS_CORRECT_OUTCOME
+    if match.is_finished and match.home_score is not None and match.away_score is not None:
+        if prediction.points_earned is not None:
+            outcome = classify_prediction_outcome(
+                prediction.home_score,
+                prediction.away_score,
+                match.home_score,
+                match.away_score,
+            )
+            outcome_display = outcome_label(outcome)
+            if prediction.points_earned >= POINTS_CORRECT_OUTCOME:
+                status_key = 'win'
+                status_label = 'Gagné'
+            else:
+                status_key = 'lose'
+                status_label = 'Perdu'
+    else:
+        outcome = 'wait'
+        outcome_display = 'À jouer'
+        status_key = 'pending'
+        status_label = 'En attente'
 
     phone = ''
-    if hasattr(prediction.user, 'profile'):
-        phone = getattr(prediction.user.profile, 'phone_number', '') or ''
+    try:
+        if hasattr(prediction.user, 'profile') and prediction.user.profile:
+            phone = prediction.user.profile.phone_number or ''
+    except Exception:
+        pass
 
-    initials = (
-        (prediction.user.first_name[:1] + prediction.user.last_name[:1]).upper()
-        if prediction.user.first_name
-        else '??'
+    pred_score = f'{prediction.home_score} – {prediction.away_score}'
+    match_score = (
+        f'{match.home_score} – {match.away_score}'
+        if match.is_finished and match.home_score is not None
+        else '— : —'
     )
 
     return {
         'prediction': prediction,
         'outcome': outcome,
         'outcome_display': outcome_display,
-        'status_won': status_won,
+        'status_key': status_key,
+        'status_label': status_label,
         'phone_masked': mask_phone(phone),
-        'initials': initials,
-        'display_id': f'PR-{str(prediction.id).replace("-", "")[:4].upper()}',
+        'initials': user_initials(prediction.user),
+        'avatar_color': avatar_color_for(prediction.user_id),
+        'display_id': f'PR-{str(prediction.id).replace("-", "")[-4:].upper()}',
+        'pred_score': pred_score,
+        'match_score': match_score,
+        'match_inline_score': f'{prediction.home_score}–{prediction.away_score}',
+    }
+
+
+def enrich_game_row(game):
+    prize = '—'
+    if game.is_winning and game.points_won >= 10:
+        prize = '🎁 Bon -10%'
+    status_key = 'win' if game.is_winning else 'pending'
+    status_label = 'Validé' if game.is_winning else 'En attente'
+    game_type_label = '🎡 Spin Wheel' if game.game_type == 'spin_wheel' else '🎟️ Scratch & Win'
+    return {
+        'game': game,
+        'display_id': f'JX-{str(game.id).replace("-", "")[-4:].upper()}',
+        'initials': user_initials(game.user),
+        'avatar_color': avatar_color_for(game.user_id),
+        'prize': prize,
+        'status_key': status_key,
+        'status_label': status_label,
+        'game_type_label': game_type_label,
+        'played_label': game.played_at.strftime('%d/%m · %Hh%M'),
     }
 
 
 def get_leaderboard(limit=None):
     stats = (
         WorldCupPrediction.objects.filter(points_earned__isnull=False)
-        .values('user_id', 'user__first_name', 'user__last_name', 'user__email')
+        .values('user_id', 'user__first_name', 'user__last_name')
         .annotate(
             total_predictions=Count('id'),
             correct_predictions=Count(
@@ -105,14 +159,17 @@ def get_leaderboard(limit=None):
         correct = row['correct_predictions'] or 0
         precision = round((correct / total_preds) * 100) if total_preds else 0
         name = f"{row['user__first_name']} {row['user__last_name']}".strip() or 'Joueur'
-        initials = (name.split()[0][:1] + (name.split()[1][:1] if len(name.split()) > 1 else '')).upper()
+        initials = user_initials(type('U', (), {
+            'first_name': row['user__first_name'],
+            'last_name': row['user__last_name'],
+        })())
 
         phone = ''
         from django.contrib.auth import get_user_model
         User = get_user_model()
         try:
             user = User.objects.select_related('profile').get(pk=row['user_id'])
-            if hasattr(user, 'profile'):
+            if hasattr(user, 'profile') and user.profile:
                 phone = mask_phone(user.profile.phone_number)
         except User.DoesNotExist:
             pass
@@ -122,6 +179,7 @@ def get_leaderboard(limit=None):
             'user_id': row['user_id'],
             'display_name': name,
             'initials': initials,
+            'avatar_color': avatar_color_for(row['user_id']),
             'phone_masked': phone,
             'total_predictions': total_preds,
             'correct_predictions': correct,

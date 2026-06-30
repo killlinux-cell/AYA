@@ -1,414 +1,250 @@
 {% extends 'dashboard/base.html' %}
-{% load static %}
-{% load world_cup_tags %}
 
 {% block title %}Gestion des Jeux{% endblock %}
 
 {% block extra_css %}
 <style>
-    .games-tabs { border-bottom: 2px solid #e9ecef; margin-bottom: 1.5rem; }
-    .games-tabs .nav-link {
-        color: #666; font-weight: 600; border: none; padding: 12px 24px;
-        border-bottom: 3px solid transparent; margin-bottom: -2px;
-    }
-    .games-tabs .nav-link.active { color: #1B4332; border-bottom-color: #1B4332; background: transparent; }
-    .stat-card-modern {
-        border: none; border-radius: 16px; color: #fff; overflow: hidden;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.08);
-    }
-    .stat-card-modern .card-body { padding: 1.25rem 1.5rem; }
-    .stat-card-modern h3 { font-size: 2rem; font-weight: 800; margin: 0; }
-    .stat-card-modern p { margin: 0; opacity: 0.9; font-size: 0.9rem; }
-    .stat-blue { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
-    .stat-green { background: linear-gradient(135deg, #16A34A, #4ADE80); }
-    .stat-orange { background: linear-gradient(135deg, #EA580C, #FB923C); }
-    .stat-cyan { background: linear-gradient(135deg, #0891B2, #22D3EE); }
-    .bareme-pill {
-        display: inline-flex; align-items: center; gap: 8px;
-        padding: 10px 18px; border-radius: 999px; font-weight: 600; font-size: 0.9rem;
-        margin-right: 10px; margin-bottom: 8px;
-    }
-    .bareme-exact { background: #DCFCE7; color: #166534; }
-    .bareme-bon { background: #DBEAFE; color: #1E40AF; }
-    .bareme-rate { background: #F3F4F6; color: #4B5563; }
-    .user-avatar {
-        width: 36px; height: 36px; border-radius: 50%;
-        background: #1B4332; color: #fff; display: inline-flex;
-        align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem;
-    }
-    .rank-badge {
-        width: 32px; height: 32px; border-radius: 50%;
-        display: inline-flex; align-items: center; justify-content: center; font-weight: 800;
-    }
-    .rank-1 { background: #FFD700; color: #7C5E00; }
-    .rank-2 { background: #C0C0C0; color: #555; }
-    .rank-3 { background: #CD7F32; color: #fff; }
-    .rank-other { background: #E5E7EB; color: #374151; }
-    .precision-bar { height: 6px; border-radius: 3px; background: #E5E7EB; overflow: hidden; min-width: 80px; }
-    .precision-fill { height: 100%; background: #16A34A; border-radius: 3px; }
-    .outcome-badge { padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; }
-    .outcome-exact { background: #DCFCE7; color: #166534; }
-    .outcome-bon { background: #DBEAFE; color: #1E40AF; }
-    .outcome-rate { background: #FEE2E2; color: #991B1B; }
-    .score-box { display: inline-block; padding: 4px 12px; border-radius: 8px; font-weight: 700; }
-    .score-pred { background: #F3F4F6; }
-    .score-result { background: #DCFCE7; color: #166534; }
-    .country-flag { width: 22px; height: 16px; object-fit: cover; border-radius: 3px; }
-    .match-cell { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.aya-games-skin{font-family:'Nunito',sans-serif;color:#1d2a23}
+.aya-games-skin .page-title{display:flex;align-items:center;gap:13px;font-family:'Baloo 2',cursive;font-weight:800;font-size:30px;margin-bottom:18px}
+.aya-games-skin .tabs{display:flex;gap:8px;margin-bottom:22px;border-bottom:2px solid #e7edea}
+.aya-games-skin .tabs a{font-family:inherit;font-weight:800;font-size:14.5px;color:#64726a;text-decoration:none;padding:11px 18px;border-radius:10px 10px 0 0;position:relative}
+.aya-games-skin .tabs a:hover{color:#1d2a23;background:#eef3f0}
+.aya-games-skin .tabs a.active{color:#14803f}
+.aya-games-skin .tabs a.active::after{content:"";position:absolute;left:12px;right:12px;bottom:-2px;height:3px;background:#1f9d54;border-radius:3px}
+.aya-games-skin .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:22px}
+.aya-games-skin .kpi{border-radius:16px;padding:20px 22px;color:#fff;display:flex;justify-content:space-between;align-items:flex-start;box-shadow:0 12px 26px -14px rgba(20,40,30,.4);min-height:108px}
+.aya-games-skin .kpi .k-val{font-family:'Baloo 2',cursive;font-weight:800;font-size:30px;line-height:1}
+.aya-games-skin .kpi .k-lbl{font-size:13.5px;font-weight:700;opacity:.92;margin-top:9px}
+.aya-games-skin .kpi .k-ic{width:46px;height:46px;border-radius:13px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+.aya-games-skin .k-blue{background:linear-gradient(145deg,#3b8bf5,#2667e0)}
+.aya-games-skin .k-green{background:linear-gradient(145deg,#23a85d,#147a42)}
+.aya-games-skin .k-yellow{background:linear-gradient(145deg,#f6bb2d,#e89b08)}
+.aya-games-skin .k-cyan{background:linear-gradient(145deg,#28c3dd,#0fa3c2)}
+.aya-games-skin .filters{background:#fff;border:1px solid #e7edea;border-radius:16px;padding:18px 20px;display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap;margin-bottom:24px;box-shadow:0 6px 18px -14px rgba(20,40,30,.3)}
+.aya-games-skin .fl{display:flex;flex-direction:column;gap:7px}
+.aya-games-skin .fl label{font-size:12.5px;font-weight:800;color:#64726a}
+.aya-games-skin .fl select,.aya-games-skin .fl input{font-family:inherit;font-weight:600;font-size:14px;color:#1d2a23;padding:10px 13px;border:1.5px solid #e7edea;border-radius:10px;background:#fff;min-width:190px;outline:none}
+.aya-games-skin .fl select:focus,.aya-games-skin .fl input:focus{border-color:#1f9d54}
+.aya-games-skin .btn-filter{display:flex;align-items:center;gap:8px;background:linear-gradient(145deg,#28a85e,#16823f);color:#fff;border:none;font-family:inherit;font-weight:800;font-size:14px;padding:11px 22px;border-radius:10px;cursor:pointer;box-shadow:0 8px 18px -10px rgba(20,120,60,.6)}
+.aya-games-skin .legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:#fff;border:1px solid #e7edea;border-radius:14px;padding:14px 20px;margin-bottom:24px;box-shadow:0 6px 18px -14px rgba(20,40,30,.3)}
+.aya-games-skin .legend .lg-t{font-weight:800;font-size:13.5px;color:#64726a;margin-right:4px}
+.aya-games-skin .legend .lg-c{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:13.5px;padding:7px 14px;border-radius:20px}
+.aya-games-skin .legend .lg-c b{font-family:'Baloo 2',cursive;font-size:15px}
+.aya-games-skin .lg-exact{background:#e3f7ea;color:#137a3e}
+.aya-games-skin .lg-good{background:#e2f1fb;color:#1a6fb0}
+.aya-games-skin .lg-miss{background:#f4f6f7;color:#7a858d}
+.aya-games-skin .panel{background:#fff;border:1px solid #e7edea;border-radius:16px;overflow:hidden;margin-bottom:24px;box-shadow:0 8px 22px -16px rgba(20,40,30,.32)}
+.aya-games-skin .panel-h{display:flex;align-items:center;gap:10px;padding:18px 22px;border-bottom:1px solid #e7edea}
+.aya-games-skin .panel-h h3{font-family:'Baloo 2',cursive;font-weight:800;font-size:18px;margin:0}
+.aya-games-skin .panel-h .ph-tag{margin-left:auto;font-size:12px;font-weight:800;color:#64726a;background:#eef3f0;border-radius:20px;padding:5px 12px}
+.aya-games-skin table{width:100%;border-collapse:collapse}
+.aya-games-skin thead th{background:#eff6f1;text-align:left;font-size:11.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#6e7d74;padding:13px 18px;white-space:nowrap}
+.aya-games-skin tbody td{padding:14px 18px;border-bottom:1px solid #f0f4f1;font-size:14px;font-weight:600;vertical-align:middle}
+.aya-games-skin tbody tr:last-child td{border-bottom:none}
+.aya-games-skin tbody tr:hover{background:#f8fbf9}
+.aya-games-skin .mono{font-family:'Baloo 2',cursive;font-weight:700;letter-spacing:.3px;color:#64726a;font-size:13px}
+.aya-games-skin .user{display:flex;align-items:center;gap:11px}
+.aya-games-skin .av{width:36px;height:36px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Baloo 2',cursive;font-weight:700;font-size:14px}
+.aya-games-skin .user b{font-weight:800;font-size:14px}
+.aya-games-skin .user small{display:block;color:#8a958e;font-weight:700;font-size:11.5px}
+.aya-games-skin .rank{font-family:'Baloo 2',cursive;font-weight:800;font-size:16px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff}
+.aya-games-skin .r1{background:linear-gradient(145deg,#f2c44e,#d99a1f)}
+.aya-games-skin .r2{background:linear-gradient(145deg,#c3ccd1,#8f9ba2)}
+.aya-games-skin .r3{background:linear-gradient(145deg,#d59663,#b06a37)}
+.aya-games-skin .r-x{background:#eef3f0;color:#64726a}
+.aya-games-skin .match-cell{display:flex;align-items:center;gap:8px;font-weight:800}
+.aya-games-skin .match-cell .tn{font-weight:800}
+.aya-games-skin .sc{font-family:'Baloo 2',cursive;font-weight:700;background:#f1f5f2;border:1px solid #e7edea;border-radius:8px;padding:3px 9px;font-size:13.5px;color:#1d2a23}
+.aya-games-skin .sc.real{background:#eef7f1;border-color:#cfe7d8;color:#14803f}
+.aya-games-skin .pts{font-family:'Baloo 2',cursive;font-weight:800;font-size:15px}
+.aya-games-skin .pts.up{color:#14803f}
+.aya-games-skin .pts.zero{color:#8a958e}
+.aya-games-skin .bar{height:7px;border-radius:6px;background:#eef3f0;overflow:hidden;width:84px;display:inline-block;vertical-align:middle}
+.aya-games-skin .bar i{display:block;height:100%;background:linear-gradient(90deg,#28a85e,#16823f);border-radius:6px}
+.aya-games-skin .pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;padding:5px 11px;border-radius:20px;white-space:nowrap}
+.aya-games-skin .p-exact{background:#e3f7ea;color:#137a3e}
+.aya-games-skin .p-good{background:#e2f1fb;color:#1a6fb0}
+.aya-games-skin .p-miss{background:#fde7e7;color:#c23434}
+.aya-games-skin .p-wait{background:#f0f1f3;color:#7a858d}
+.aya-games-skin .p-win{background:#e3f7ea;color:#137a3e}
+.aya-games-skin .p-lose{background:#fde7e7;color:#c23434}
+.aya-games-skin .p-pend{background:#fff3da;color:#b5851a}
+.aya-games-skin .pagination-wrap{padding:16px;display:flex;justify-content:center;gap:8px}
+.aya-games-skin .pagination-wrap a,.aya-games-skin .pagination-wrap span{font-weight:700;font-size:13px;padding:8px 14px;border-radius:8px;text-decoration:none;color:#14803f;border:1px solid #e7edea}
+.aya-games-skin .pagination-wrap span.current{background:#1f9d54;color:#fff;border-color:#1f9d54}
+@media (max-width:900px){.aya-games-skin .kpis{grid-template-columns:repeat(2,1fr)}}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2><i class="fas fa-gamepad text-primary"></i> Gestion des Jeux</h2>
-</div>
+<div class="aya-games-skin">
+  <div class="page-title"><span>🎮</span> Gestion des Jeux</div>
 
-<ul class="nav games-tabs">
-    <li class="nav-item">
-        <a class="nav-link {% if tab != 'pronostics' %}active{% endif %}"
-           href="{% url 'dashboard:games' %}?tab=jeux">Historique des Jeux</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {% if tab == 'pronostics' %}active{% endif %}"
-           href="{% url 'dashboard:games' %}?tab=pronostics">Pronostics</a>
-    </li>
-</ul>
+  <div class="tabs">
+    <a href="{% url 'dashboard:games' %}?tab=jeux" class="{% if tab != 'pronostics' %}active{% endif %}">📜 Historique des Jeux</a>
+    <a href="{% url 'dashboard:games' %}?tab=pronostics" class="{% if tab == 'pronostics' %}active{% endif %}">🎯 Pronostics</a>
+  </div>
 
-{% if tab == 'pronostics' %}
-{# ===== ONGLET PRONOSTICS ===== #}
-<div class="row mb-4 g-3">
-    <div class="col-md-3">
-        <div class="card stat-card-modern stat-blue">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div><h3>{{ stats.total_predictions }}</h3><p>Pronostics placés</p></div>
-                <i class="fas fa-bullseye fa-2x opacity-50"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card-modern stat-green">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div><h3>{{ stats.correct_predictions }}</h3><p>Bons pronostics</p></div>
-                <i class="fas fa-check-circle fa-2x opacity-50"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card-modern stat-orange">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div><h3>{{ stats.success_rate }}%</h3><p>Taux de réussite</p></div>
-                <i class="fas fa-chart-line fa-2x opacity-50"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card-modern stat-cyan">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div><h3>{{ stats.points_distributed }}</h3><p>Points distribués</p></div>
-                <i class="fas fa-coins fa-2x opacity-50"></i>
-            </div>
-        </div>
-    </div>
-</div>
+  {% if tab == 'pronostics' %}
 
-<div class="card mb-4">
-    <div class="card-body">
-        <form method="GET" class="row g-3 align-items-end">
-            <input type="hidden" name="tab" value="pronostics">
-            <div class="col-md-3">
-                <label class="form-label">Compétition</label>
-                <select class="form-select" disabled><option>Coupe du Monde</option></select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Joueur</label>
-                <select name="user" class="form-select">
-                    <option value="">Tous les joueurs</option>
-                    {% for u in users %}
-                    <option value="{{ u.id }}" {% if user_filter == u.id|stringformat:"s" %}selected{% endif %}>
-                        {{ u.full_name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Date de début</label>
-                <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Date de fin</label>
-                <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-success w-100"><i class="fas fa-filter"></i> Filtrer</button>
-            </div>
-        </form>
-    </div>
-</div>
+  <div class="kpis">
+    <div class="kpi k-blue"><div><div class="k-val">{{ stats.total_predictions }}</div><div class="k-lbl">Pronostics placés</div></div><div class="k-ic">🎯</div></div>
+    <div class="kpi k-green"><div><div class="k-val">{{ stats.correct_predictions }}</div><div class="k-lbl">Bons pronostics</div></div><div class="k-ic">✅</div></div>
+    <div class="kpi k-yellow"><div><div class="k-val">{{ stats.success_rate }}%</div><div class="k-lbl">Taux de réussite</div></div><div class="k-ic">📈</div></div>
+    <div class="kpi k-cyan"><div><div class="k-val">{{ stats.points_distributed }}</div><div class="k-lbl">Points distribués</div></div><div class="k-ic">💰</div></div>
+  </div>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <strong>Barème des points :</strong>
-        <div class="mt-2">
-            <span class="bareme-pill bareme-exact">🎯 Score exact +10</span>
-            <span class="bareme-pill bareme-bon">🔵 Bon résultat +5</span>
-            <span class="bareme-pill bareme-rate">✕ Raté +1</span>
-        </div>
+  <form method="GET" class="filters">
+    <input type="hidden" name="tab" value="pronostics">
+    <div class="fl"><label>Compétition</label>
+      <select name="competition">
+        <option value="all" {% if competition_filter == 'all' %}selected{% endif %}>Toutes</option>
+        <option value="cdm" {% if competition_filter == 'cdm' %}selected{% endif %}>Coupe du Monde</option>
+        <option value="ligue1" disabled>Ligue 1</option>
+      </select>
     </div>
-</div>
+    <div class="fl"><label>Joueur</label>
+      <select name="user">
+        <option value="">Tous les joueurs</option>
+        {% for u in users %}
+        <option value="{{ u.id }}" {% if user_filter == u.id|stringformat:"s" %}selected{% endif %}>{{ u.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="fl"><label>Date de début</label><input type="date" name="date_from" value="{{ date_from }}"></div>
+    <div class="fl"><label>Date de fin</label><input type="date" name="date_to" value="{{ date_to }}"></div>
+    <button type="submit" class="btn-filter">▼ Filtrer</button>
+  </form>
 
-{# Classement #}
-<div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center bg-white">
-        <h5 class="mb-0"><i class="fas fa-trophy text-warning"></i> Classement des pronostiqueurs</h5>
-        <span class="badge bg-light text-dark border">Qui gagne</span>
-    </div>
-    <div class="card-body p-0">
-        {% if leaderboard %}
-        <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Rang</th>
-                        <th>Utilisateur</th>
-                        <th>Pronostics</th>
-                        <th>Corrects</th>
-                        <th>Précision</th>
-                        <th>Points</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in leaderboard %}
-                    <tr>
-                        <td>
-                            <span class="rank-badge rank-{% if row.rank <= 3 %}{{ row.rank }}{% else %}other{% endif %}">
-                                {{ row.rank }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="user-avatar me-2">{{ row.initials }}</span>
-                            <strong>{{ row.display_name }}</strong>
-                            <br><small class="text-muted">{{ row.phone_masked }}</small>
-                        </td>
-                        <td>{{ row.total_predictions }}</td>
-                        <td>{{ row.correct_predictions }}</td>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <span>{{ row.precision }}%</span>
-                                <div class="precision-bar"><div class="precision-fill" style="width:{{ row.precision }}%"></div></div>
-                            </div>
-                        </td>
-                        <td><strong class="text-success">+{{ row.total_points }}</strong></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p class="text-muted text-center py-4 mb-0">Aucun pronostic noté pour le moment.</p>
-        {% endif %}
-    </div>
-</div>
+  <div class="legend">
+    <span class="lg-t">⚖️ Barème des points :</span>
+    <span class="lg-c lg-exact">🎯 Score exact <b>+10</b></span>
+    <span class="lg-c lg-good">◐ Bon résultat <b>+5</b></span>
+    <span class="lg-c lg-miss">✗ Raté <b>+1</b></span>
+  </div>
 
-{# Historique #}
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center bg-white">
-        <h5 class="mb-0"><i class="fas fa-list"></i> Historique des Pronostics</h5>
-        <span class="badge bg-secondary">{{ total_predictions }} entrées</span>
-    </div>
-    <div class="card-body p-0">
-        {% if prediction_rows %}
-        <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>ID</th>
-                        <th>Utilisateur</th>
-                        <th>Match</th>
-                        <th>Pronostic</th>
-                        <th>Résultat</th>
-                        <th>Issue</th>
-                        <th>Points</th>
-                        <th>Date</th>
-                        <th>Statut</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in prediction_rows %}
-                    {% with p=row.prediction %}
-                    <tr>
-                        <td><small class="text-muted">#{{ row.display_id }}</small></td>
-                        <td>
-                            <span class="user-avatar me-1">{{ row.initials }}</span>
-                            {{ p.user.full_name }}
-                        </td>
-                        <td>
-                            <div class="match-cell">
-                                {% country_flag p.match.home_team_code 22 %}
-                                {{ p.match.home_team }}
-                                <span class="text-muted">vs</span>
-                                {% country_flag p.match.away_team_code 22 %}
-                                {{ p.match.away_team }}
-                            </div>
-                        </td>
-                        <td><span class="score-box score-pred">{{ p.home_score }}-{{ p.away_score }}</span></td>
-                        <td>
-                            {% if p.match.is_finished %}
-                            <span class="score-box score-result">{{ p.match.home_score }}-{{ p.match.away_score }}</span>
-                            {% else %}<span class="text-muted">—</span>{% endif %}
-                        </td>
-                        <td>
-                            {% if row.outcome == 'exact' %}
-                            <span class="outcome-badge outcome-exact">🎯 {{ row.outcome_display }}</span>
-                            {% elif row.outcome == 'bon' %}
-                            <span class="outcome-badge outcome-bon">👁 {{ row.outcome_display }}</span>
-                            {% elif row.outcome == 'rate' %}
-                            <span class="outcome-badge outcome-rate">✕ {{ row.outcome_display }}</span>
-                            {% else %}<span class="text-muted">En attente</span>{% endif %}
-                        </td>
-                        <td>
-                            {% if p.points_earned is not None %}
-                            <strong class="text-success">+{{ p.points_earned }}</strong>
-                            {% else %}—{% endif %}
-                        </td>
-                        <td><small>{{ p.match.kickoff_at|date:"d/m - H\hi" }}</small></td>
-                        <td>
-                            {% if row.status_won == True %}
-                            <span class="badge bg-success">Gagné</span>
-                            {% elif row.status_won == False %}
-                            <span class="badge bg-danger">Perdu</span>
-                            {% else %}
-                            <span class="badge bg-secondary">En cours</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endwith %}
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% if page_obj.has_other_pages %}
-        <nav class="p-3">
-            <ul class="pagination justify-content-center mb-0">
-                {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?tab=pronostics&page={{ page_obj.previous_page_number }}&user={{ user_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">Précédent</a></li>
-                {% endif %}
-                <li class="page-item active"><span class="page-link">{{ page_obj.number }}/{{ page_obj.paginator.num_pages }}</span></li>
-                {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?tab=pronostics&page={{ page_obj.next_page_number }}&user={{ user_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">Suivant</a></li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
-        {% else %}
-        <p class="text-muted text-center py-5 mb-0">Aucun pronostic enregistré.</p>
-        {% endif %}
-    </div>
-</div>
+  <div class="panel">
+    <div class="panel-h"><span>🏆</span><h3>Classement des pronostiqueurs</h3><span class="ph-tag">Qui gagne</span></div>
+    {% if leaderboard %}
+    <table>
+      <thead><tr><th>Rang</th><th>Utilisateur</th><th>Pronostics</th><th>Corrects</th><th>Précision</th><th>Points</th></tr></thead>
+      <tbody>
+        {% for row in leaderboard %}
+        <tr>
+          <td><span class="rank {% if row.rank == 1 %}r1{% elif row.rank == 2 %}r2{% elif row.rank == 3 %}r3{% else %}r-x{% endif %}">{{ row.rank }}</span></td>
+          <td><div class="user"><span class="av" style="background:{{ row.avatar_color }}">{{ row.initials }}</span><div><b>{{ row.display_name }}</b><small>{{ row.phone_masked }}</small></div></div></td>
+          <td>{{ row.total_predictions }}</td>
+          <td>{{ row.correct_predictions }}</td>
+          <td><span class="bar"><i style="width:{{ row.precision }}%"></i></span> <b>{{ row.precision }}%</b></td>
+          <td><span class="pts up">{{ row.total_points }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="text-align:center;padding:32px;color:#8a958e">Aucun pronostic noté.</p>
+    {% endif %}
+  </div>
 
-{% else %}
-{# ===== ONGLET JEUX ===== #}
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white stat-card-modern">
-            <div class="card-body"><h3>{{ total_games }}</h3><p>Total Jeux</p></div>
-        </div>
+  <div class="panel">
+    <div class="panel-h"><span>📋</span><h3>Historique des Pronostics</h3><span class="ph-tag">{{ total_predictions }} entrées</span></div>
+    {% if prediction_rows %}
+    <table>
+      <thead><tr><th>ID</th><th>Utilisateur</th><th>Match</th><th>Pronostic</th><th>Résultat</th><th>Issue</th><th>Points</th><th>Date</th><th>Statut</th></tr></thead>
+      <tbody>
+        {% for row in prediction_rows %}
+        {% with p=row.prediction %}
+        <tr>
+          <td class="mono">#{{ row.display_id }}</td>
+          <td><div class="user"><span class="av" style="background:{{ row.avatar_color }}">{{ row.initials }}</span><b>{{ p.user.full_name }}</b></div></td>
+          <td><div class="match-cell"><span class="tn">{{ p.match.home_team }}</span><span class="sc">{{ row.match_inline_score }}</span><span class="tn">{{ p.match.away_team }}</span></div></td>
+          <td><span class="sc">{{ row.pred_score }}</span></td>
+          <td><span class="sc {% if p.match.is_finished %}real{% endif %}">{{ row.match_score }}</span></td>
+          <td>
+            {% if row.outcome == 'exact' %}<span class="pill p-exact">🎯 {{ row.outcome_display }}</span>
+            {% elif row.outcome == 'bon' %}<span class="pill p-good">◐ {{ row.outcome_display }}</span>
+            {% elif row.outcome == 'rate' %}<span class="pill p-miss">✗ {{ row.outcome_display }}</span>
+            {% elif row.outcome == 'wait' %}<span class="pill p-wait">⏳ {{ row.outcome_display }}</span>
+            {% else %}<span class="pill p-wait">⏳ En attente</span>{% endif %}
+          </td>
+          <td>{% if p.points_earned is not None %}<span class="pts up">+{{ p.points_earned }}</span>{% else %}<span class="pts zero">—</span>{% endif %}</td>
+          <td class="mono">{{ p.match.kickoff_at|date:"d/m · H\hi" }}</td>
+          <td>
+            {% if row.status_key == 'win' %}<span class="pill p-win">{{ row.status_label }}</span>
+            {% elif row.status_key == 'lose' %}<span class="pill p-lose">{{ row.status_label }}</span>
+            {% else %}<span class="pill p-pend">{{ row.status_label }}</span>{% endif %}
+          </td>
+        </tr>
+        {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if page_obj.has_other_pages %}
+    <div class="pagination-wrap">
+      {% if page_obj.has_previous %}<a href="?tab=pronostics&page={{ page_obj.previous_page_number }}&user={{ user_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&competition={{ competition_filter }}">← Précédent</a>{% endif %}
+      <span class="current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}<a href="?tab=pronostics&page={{ page_obj.next_page_number }}&user={{ user_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&competition={{ competition_filter }}">Suivant →</a>{% endif %}
     </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white stat-card-modern">
-            <div class="card-body"><h3>{{ spin_wheel_games }}</h3><p>Spin Wheel</p></div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white stat-card-modern">
-            <div class="card-body"><h3>{{ scratch_games }}</h3><p>Scratch & Win</p></div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white stat-card-modern">
-            <div class="card-body"><h3>{{ total_points_distributed }}</h3><p>Points Distribués</p></div>
-        </div>
-    </div>
-</div>
+    {% endif %}
+    {% else %}
+    <p style="text-align:center;padding:32px;color:#8a958e">Aucun pronostic.</p>
+    {% endif %}
+  </div>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <form method="GET" class="row g-3">
-            <input type="hidden" name="tab" value="jeux">
-            <div class="col-md-3">
-                <label class="form-label">Type de Jeu</label>
-                <select name="game_type" class="form-select">
-                    <option value="all" {% if game_type_filter == 'all' %}selected{% endif %}>Tous</option>
-                    <option value="spin_wheel" {% if game_type_filter == 'spin_wheel' %}selected{% endif %}>Spin Wheel</option>
-                    <option value="scratch_and_win" {% if game_type_filter == 'scratch_and_win' %}selected{% endif %}>Scratch & Win</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Date de début</label>
-                <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Date de fin</label>
-                <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter"></i> Filtrer</button>
-            </div>
-        </form>
-    </div>
-</div>
+  {% else %}
 
-<div class="card">
-    <div class="card-header"><h5 class="mb-0">Historique des Jeux</h5></div>
-    <div class="card-body">
-        {% if page_obj %}
-        <div class="table-responsive">
-            <table class="table table-striped align-middle">
-                <thead>
-                    <tr>
-                        <th>Utilisateur</th>
-                        <th>Type</th>
-                        <th>Points Gagnés</th>
-                        <th>Date</th>
-                        <th>Statut</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for game in page_obj %}
-                    <tr>
-                        <td><strong>{{ game.user.full_name }}</strong></td>
-                        <td>
-                            {% if game.game_type == 'spin_wheel' %}
-                            <span class="badge bg-success">Spin Wheel</span>
-                            {% else %}
-                            <span class="badge bg-warning">Scratch & Win</span>
-                            {% endif %}
-                        </td>
-                        <td><span class="badge bg-primary">{{ game.points_won }} pts</span></td>
-                        <td>{{ game.played_at|date:"d/m/Y H:i" }}</td>
-                        <td>
-                            {% if game.is_winning %}<span class="badge bg-success">Gagné</span>
-                            {% else %}<span class="badge bg-secondary">Perdu</span>{% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% if page_obj.has_other_pages %}
-        <nav><ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-            <li class="page-item"><a class="page-link" href="?tab=jeux&page={{ page_obj.previous_page_number }}">Précédent</a></li>
-            {% endif %}
-            <li class="page-item active"><span class="page-link">{{ page_obj.number }}/{{ page_obj.paginator.num_pages }}</span></li>
-            {% if page_obj.has_next %}
-            <li class="page-item"><a class="page-link" href="?tab=jeux&page={{ page_obj.next_page_number }}">Suivant</a></li>
-            {% endif %}
-        </ul></nav>
-        {% endif %}
-        {% else %}
-        <p class="text-muted text-center py-4">Aucun jeu trouvé.</p>
-        {% endif %}
+  <div class="kpis">
+    <div class="kpi k-blue"><div><div class="k-val">{{ total_games }}</div><div class="k-lbl">Total Jeux</div></div><div class="k-ic">🎮</div></div>
+    <div class="kpi k-green"><div><div class="k-val">{{ spin_wheel_games }}</div><div class="k-lbl">Spin Wheel</div></div><div class="k-ic">🎡</div></div>
+    <div class="kpi k-yellow"><div><div class="k-val">{{ scratch_games }}</div><div class="k-lbl">Scratch &amp; Win</div></div><div class="k-ic">🎟️</div></div>
+    <div class="kpi k-cyan"><div><div class="k-val">{{ total_points_distributed }}</div><div class="k-lbl">Points Distribués</div></div><div class="k-ic">💰</div></div>
+  </div>
+
+  <form method="GET" class="filters">
+    <input type="hidden" name="tab" value="jeux">
+    <div class="fl"><label>Type de Jeu</label>
+      <select name="game_type">
+        <option value="all" {% if game_type_filter == 'all' %}selected{% endif %}>Tous</option>
+        <option value="spin_wheel" {% if game_type_filter == 'spin_wheel' %}selected{% endif %}>Spin Wheel</option>
+        <option value="scratch_and_win" {% if game_type_filter == 'scratch_and_win' %}selected{% endif %}>Scratch &amp; Win</option>
+      </select>
     </div>
+    <div class="fl"><label>Date de début</label><input type="date" name="date_from" value="{{ date_from }}"></div>
+    <div class="fl"><label>Date de fin</label><input type="date" name="date_to" value="{{ date_to }}"></div>
+    <button type="submit" class="btn-filter">▼ Filtrer</button>
+  </form>
+
+  <div class="panel">
+    <div class="panel-h"><span>📜</span><h3>Historique des Jeux</h3></div>
+    {% if game_rows %}
+    <table>
+      <thead><tr><th>ID</th><th>Utilisateur</th><th>Type de Jeu</th><th>Points Gagnés</th><th>Prix</th><th>Date</th><th>Statut</th></tr></thead>
+      <tbody>
+        {% for row in game_rows %}
+        <tr>
+          <td class="mono">#{{ row.display_id }}</td>
+          <td><div class="user"><span class="av" style="background:{{ row.avatar_color }}">{{ row.initials }}</span><b>{{ row.game.user.full_name }}</b></div></td>
+          <td>{{ row.game_type_label }}</td>
+          <td><span class="pts up">+{{ row.game.points_won }}</span></td>
+          <td>{{ row.prize }}</td>
+          <td class="mono">{{ row.played_label }}</td>
+          <td><span class="pill {% if row.status_key == 'win' %}p-win{% else %}p-pend{% endif %}">{{ row.status_label }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if page_obj.has_other_pages %}
+    <div class="pagination-wrap">
+      {% if page_obj.has_previous %}<a href="?tab=jeux&page={{ page_obj.previous_page_number }}&game_type={{ game_type_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">← Précédent</a>{% endif %}
+      <span class="current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}<a href="?tab=jeux&page={{ page_obj.next_page_number }}&game_type={{ game_type_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">Suivant →</a>{% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <p style="text-align:center;padding:32px;color:#8a958e">Aucun jeu trouvé.</p>
+    {% endif %}
+  </div>
+
+  {% endif %}
 </div>
-{% endif %}
 {% endblock %}

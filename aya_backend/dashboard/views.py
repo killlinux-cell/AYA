@@ -1516,6 +1516,7 @@ def games_management(request):
 
     from django.contrib.auth import get_user_model
     from qr_codes.world_cup_dashboard import (
+        enrich_game_row,
         enrich_prediction_row,
         filter_predictions,
         get_leaderboard,
@@ -1545,6 +1546,7 @@ def games_management(request):
             'match_filter': request.GET.get('match', ''),
             'date_from': request.GET.get('date_from', ''),
             'date_to': request.GET.get('date_to', ''),
+            'competition_filter': request.GET.get('competition', 'cdm'),
             'users': User.objects.order_by('first_name', 'last_name'),
             'matches': WorldCupMatch.objects.order_by('kickoff_at'),
             'total_predictions': WorldCupPrediction.objects.count(),
@@ -1579,10 +1581,12 @@ def games_management(request):
 
     paginator = Paginator(games, 20)
     page_obj = paginator.get_page(request.GET.get('page'))
+    game_rows = [enrich_game_row(g) for g in page_obj]
 
     context = {
         'tab': tab,
         'page_obj': page_obj,
+        'game_rows': game_rows,
         'game_type_filter': game_type_filter,
         'date_from': date_from,
         'date_to': date_to,
@@ -2096,50 +2100,47 @@ def _apply_world_cup_match_data(match, data):
 @login_required
 @user_passes_test(is_admin)
 def world_cup_management(request):
-    """Tableau d'élimination Coupe du Monde."""
+    """Tableau d'élimination Coupe du Monde (design complet interactif)."""
+    import json
 
-    from qr_codes.models_world_cup import WorldCupBracketMatch
+    from qr_codes.models_world_cup import WorldCupBracketState
 
-    view_mode = request.GET.get('view', 'bracket')
-
-    if view_mode == 'matches':
+    if request.GET.get('view') == 'matches':
         return world_cup_matches_list(request)
 
-    rounds = {
-        'r16': WorldCupBracketMatch.objects.filter(round='r16'),
-        'r8': WorldCupBracketMatch.objects.filter(round='r8'),
-        'qf': WorldCupBracketMatch.objects.filter(round='qf'),
-        'sf': WorldCupBracketMatch.objects.filter(round='sf'),
-        'final': WorldCupBracketMatch.objects.filter(round='final'),
-    }
-
-    round_labels = {
-        'r16': '1/16 de Finale',
-        'r8': '1/8 de Finale',
-        'qf': 'Quarts',
-        'sf': 'Demies',
-        'final': 'Finale',
-    }
-
-    if not WorldCupBracketMatch.objects.exists():
-        from django.core.management import call_command
-        call_command('seed_world_cup_bracket')
-
-    bracket_rounds = [
-        ('r16', round_labels['r16'], list(rounds['r16'])),
-        ('r8', round_labels['r8'], list(rounds['r8'])),
-        ('qf', round_labels['qf'], list(rounds['qf'])),
-        ('sf', round_labels['sf'], list(rounds['sf'])),
-        ('final', round_labels['final'], list(rounds['final'])),
-    ]
+    state, _ = WorldCupBracketState.objects.get_or_create(pk=1)
 
     context = {
         'view_mode': 'bracket',
-        'rounds': rounds,
-        'round_labels': round_labels,
-        'bracket_rounds': bracket_rounds,
+        'bracket_winners_json': json.dumps(state.winners or {}),
     }
     return render(request, 'dashboard/world_cup_bracket.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def world_cup_bracket_api(request):
+    """API JSON — lecture / sauvegarde du tableau interactif."""
+    import json
+
+    from django.http import JsonResponse
+    from qr_codes.models_world_cup import WorldCupBracketState
+
+    state, _ = WorldCupBracketState.objects.get_or_create(pk=1)
+
+    if request.method == 'GET':
+        return JsonResponse({'winners': state.winners or {}})
+
+    if request.method == 'POST':
+        try:
+            payload = json.loads(request.body.decode('utf-8'))
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'JSON invalide'}, status=400)
+        state.winners = payload.get('winners', {})
+        state.save(update_fields=['winners', 'updated_at'])
+        return JsonResponse({'success': True})
+
+    return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
 
 
 @login_required
@@ -2174,35 +2175,14 @@ def world_cup_matches_list(request):
 
 @login_required
 @user_passes_test(is_admin)
-def world_cup_bracket_advance(request):
-    """Avance une équipe dans le tableau."""
-
-    from qr_codes.world_cup_bracket import set_bracket_winner
-
-    if request.method != 'POST':
-        return redirect('dashboard:world_cup')
-
-    code = request.POST.get('code', '').strip()
-    side = request.POST.get('side', '').strip()
-
-    try:
-        set_bracket_winner(code, side)
-        messages.success(request, f'Équipe avancée dans {code}.')
-    except Exception as e:
-        messages.error(request, str(e))
-
-    return redirect('dashboard:world_cup')
-
-
-@login_required
-@user_passes_test(is_admin)
 def world_cup_bracket_reset(request):
-    """Réinitialise le tableau."""
-
-    from qr_codes.world_cup_bracket import reset_bracket
+    """Réinitialise le tableau interactif."""
+    from qr_codes.models_world_cup import WorldCupBracketState
 
     if request.method == 'POST':
-        reset_bracket()
+        state, _ = WorldCupBracketState.objects.get_or_create(pk=1)
+        state.winners = {}
+        state.save(update_fields=['winners', 'updated_at'])
         messages.success(request, 'Tableau réinitialisé.')
     return redirect('dashboard:world_cup')
 
