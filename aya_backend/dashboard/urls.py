@@ -61,6 +61,9 @@ urlpatterns = [
 
     # Pronostics Coupe du Monde
     path('world-cup/', views.world_cup_management, name='world_cup'),
+    path('world-cup/matches/', views.world_cup_matches_list, name='world_cup_matches'),
+    path('world-cup/bracket/advance/', views.world_cup_bracket_advance, name='world_cup_bracket_advance'),
+    path('world-cup/bracket/reset/', views.world_cup_bracket_reset, name='world_cup_bracket_reset'),
     path('world-cup/create/', views.create_world_cup_match, name='world_cup_create'),
     path('world-cup/predictions/', views.world_cup_predictions_list, name='world_cup_predictions'),
     path('world-cup/<uuid:match_id>/', views.world_cup_match_detail, name='world_cup_match_detail'),

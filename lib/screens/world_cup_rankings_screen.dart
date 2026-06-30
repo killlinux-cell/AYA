@@ -113,9 +113,9 @@ class _WorldCupRankingsScreenState extends State<WorldCupRankingsScreen> {
           ),
           SizedBox(height: 12),
           Text(
-            '• Score exact : 5 points\n'
-            '• Bon vainqueur ou match nul : 2 points\n'
-            '• Bonne différence de buts : 3 points',
+            '• Score exact : 10 points\n'
+            '• Bon résultat (vainqueur ou nul) : 5 points\n'
+            '• Participation (raté) : 1 point',
             style: TextStyle(color: Colors.white70, height: 1.5, fontSize: 13),
           ),
         ],

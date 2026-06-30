@@ -1512,37 +1512,76 @@ def update_vendor_status(request, vendor_id):
 @login_required
 @user_passes_test(is_admin)
 def games_management(request):
-    """Gestion des jeux et historique"""
-    
-    # Filtres
+    """Gestion des jeux + onglet pronostics CDM."""
+
+    from django.contrib.auth import get_user_model
+    from qr_codes.world_cup_dashboard import (
+        enrich_prediction_row,
+        filter_predictions,
+        get_leaderboard,
+        get_prediction_stats,
+    )
+    from qr_codes.models_world_cup import WorldCupMatch, WorldCupPrediction
+
+    User = get_user_model()
+    tab = request.GET.get('tab', 'jeux')
+
+    if tab == 'pronostics':
+        predictions_qs = filter_predictions(request)
+        stats = get_prediction_stats(predictions_qs)
+        leaderboard = get_leaderboard()
+
+        paginator = Paginator(predictions_qs, 25)
+        page_obj = paginator.get_page(request.GET.get('page'))
+        prediction_rows = [enrich_prediction_row(p) for p in page_obj]
+
+        context = {
+            'tab': tab,
+            'stats': stats,
+            'leaderboard': leaderboard,
+            'page_obj': page_obj,
+            'prediction_rows': prediction_rows,
+            'user_filter': request.GET.get('user', ''),
+            'match_filter': request.GET.get('match', ''),
+            'date_from': request.GET.get('date_from', ''),
+            'date_to': request.GET.get('date_to', ''),
+            'users': User.objects.order_by('first_name', 'last_name'),
+            'matches': WorldCupMatch.objects.order_by('kickoff_at'),
+            'total_predictions': WorldCupPrediction.objects.count(),
+        }
+        return render(request, 'dashboard/games.html', context)
+
     game_type_filter = request.GET.get('game_type', 'all')
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
-    
+
     games = GameHistory.objects.select_related('user').all()
-    
+
     if game_type_filter != 'all':
-        games = games.filter(game_type=game_type_filter)
-    
+        if game_type_filter == 'scratch_and_win':
+            games = games.filter(game_type__in=['scratch_and_win', 'scratch_win'])
+        else:
+            games = games.filter(game_type=game_type_filter)
+
     if date_from:
         games = games.filter(played_at__date__gte=date_from)
     if date_to:
         games = games.filter(played_at__date__lte=date_to)
-    
-    # Statistiques
+
     total_games = GameHistory.objects.count()
     spin_wheel_games = GameHistory.objects.filter(game_type='spin_wheel').count()
-    scratch_games = GameHistory.objects.filter(game_type='scratch_and_win').count()
+    scratch_games = GameHistory.objects.filter(
+        game_type__in=['scratch_and_win', 'scratch_win']
+    ).count()
     total_points_distributed = GameHistory.objects.aggregate(
         total=Sum('points_won')
     )['total'] or 0
-    
-    # Pagination
+
     paginator = Paginator(games, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     context = {
+        'tab': tab,
         'page_obj': page_obj,
         'game_type_filter': game_type_filter,
         'date_from': date_from,
@@ -1552,7 +1591,7 @@ def games_management(request):
         'scratch_games': scratch_games,
         'total_points_distributed': total_points_distributed,
     }
-    
+
     return render(request, 'dashboard/games.html', context)
 
 
@@ -2030,7 +2069,7 @@ def _parse_world_cup_match_post(request):
 
 def _apply_world_cup_match_data(match, data):
     """Applique les données au modèle et recalcule les points si terminé."""
-    from qr_codes.world_cup_scoring import calculate_prediction_points
+    from qr_codes.world_cup_scoring import recalculate_match_predictions
 
     match.home_team = data['home_team']
     match.away_team = data['away_team']
@@ -2051,21 +2090,62 @@ def _apply_world_cup_match_data(match, data):
     match.save()
 
     if match.status == 'finished' and match.home_score is not None and match.away_score is not None:
-        for prediction in match.predictions.select_related('user'):
-            points = calculate_prediction_points(
-                prediction.home_score,
-                prediction.away_score,
-                match.home_score,
-                match.away_score,
-            )
-            prediction.points_earned = points
-            prediction.save(update_fields=['points_earned', 'updated_at'])
+        recalculate_match_predictions(match)
 
 
 @login_required
 @user_passes_test(is_admin)
 def world_cup_management(request):
-    """Liste des matchs Coupe du Monde."""
+    """Tableau d'élimination Coupe du Monde."""
+
+    from qr_codes.models_world_cup import WorldCupBracketMatch
+
+    view_mode = request.GET.get('view', 'bracket')
+
+    if view_mode == 'matches':
+        return world_cup_matches_list(request)
+
+    rounds = {
+        'r16': WorldCupBracketMatch.objects.filter(round='r16'),
+        'r8': WorldCupBracketMatch.objects.filter(round='r8'),
+        'qf': WorldCupBracketMatch.objects.filter(round='qf'),
+        'sf': WorldCupBracketMatch.objects.filter(round='sf'),
+        'final': WorldCupBracketMatch.objects.filter(round='final'),
+    }
+
+    round_labels = {
+        'r16': '1/16 de Finale',
+        'r8': '1/8 de Finale',
+        'qf': 'Quarts',
+        'sf': 'Demies',
+        'final': 'Finale',
+    }
+
+    if not WorldCupBracketMatch.objects.exists():
+        from django.core.management import call_command
+        call_command('seed_world_cup_bracket')
+
+    bracket_rounds = [
+        ('r16', round_labels['r16'], list(rounds['r16'])),
+        ('r8', round_labels['r8'], list(rounds['r8'])),
+        ('qf', round_labels['qf'], list(rounds['qf'])),
+        ('sf', round_labels['sf'], list(rounds['sf'])),
+        ('final', round_labels['final'], list(rounds['final'])),
+    ]
+
+    context = {
+        'view_mode': 'bracket',
+        'rounds': rounds,
+        'round_labels': round_labels,
+        'bracket_rounds': bracket_rounds,
+    }
+    return render(request, 'dashboard/world_cup_bracket.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def world_cup_matches_list(request):
+    """Liste des matchs CDM (gestion pronostics)."""
 
     from qr_codes.models_world_cup import WorldCupMatch, WorldCupPrediction
 
@@ -2081,6 +2161,7 @@ def world_cup_management(request):
     page_obj = paginator.get_page(request.GET.get('page'))
 
     context = {
+        'view_mode': 'matches',
         'page_obj': page_obj,
         'status_filter': status_filter,
         'total_matches': WorldCupMatch.objects.count(),
@@ -2088,8 +2169,42 @@ def world_cup_management(request):
         'finished_matches': WorldCupMatch.objects.filter(status='finished').count(),
         'total_predictions': WorldCupPrediction.objects.count(),
     }
-
     return render(request, 'dashboard/world_cup.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def world_cup_bracket_advance(request):
+    """Avance une équipe dans le tableau."""
+
+    from qr_codes.world_cup_bracket import set_bracket_winner
+
+    if request.method != 'POST':
+        return redirect('dashboard:world_cup')
+
+    code = request.POST.get('code', '').strip()
+    side = request.POST.get('side', '').strip()
+
+    try:
+        set_bracket_winner(code, side)
+        messages.success(request, f'Équipe avancée dans {code}.')
+    except Exception as e:
+        messages.error(request, str(e))
+
+    return redirect('dashboard:world_cup')
+
+
+@login_required
+@user_passes_test(is_admin)
+def world_cup_bracket_reset(request):
+    """Réinitialise le tableau."""
+
+    from qr_codes.world_cup_bracket import reset_bracket
+
+    if request.method == 'POST':
+        reset_bracket()
+        messages.success(request, 'Tableau réinitialisé.')
+    return redirect('dashboard:world_cup')
 
 
 @login_required

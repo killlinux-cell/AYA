@@ -156,8 +156,9 @@ def world_cup_rankings(request):
         .values('user_id', 'user__first_name', 'user__last_name')
         .annotate(
             total_points=Sum('points_earned'),
-            exact_scores=Count('id', filter=Q(points_earned=5)),
-            correct_outcomes=Count('id', filter=Q(points_earned__gte=2)),
+            exact_scores=Count('id', filter=Q(points_earned=10)),
+            correct_outcomes=Count('id', filter=Q(points_earned__gte=5)),
+            total_predictions=Count('id'),
         )
         .order_by('-total_points', '-exact_scores')
     )
@@ -174,6 +175,7 @@ def world_cup_rankings(request):
             'points': row['total_points'] or 0,
             'exact_scores': row['exact_scores'] or 0,
             'correct_outcomes': row['correct_outcomes'] or 0,
+            'total_predictions': row.get('total_predictions') or 0,
             'is_current_user': str(row['user_id']) == str(request.user.id),
         })
 

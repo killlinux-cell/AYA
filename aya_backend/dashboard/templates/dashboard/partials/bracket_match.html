@@ -1,0 +1,30 @@
+{% load world_cup_tags %}
+<div class="bracket-match">
+    <div class="bracket-match-header">{{ match.code }}</div>
+    <form method="POST" action="{% url 'dashboard:world_cup_bracket_advance' %}">
+        {% csrf_token %}
+        <input type="hidden" name="code" value="{{ match.code }}">
+        {% if match.home_team %}
+        <button type="submit" name="side" value="home"
+                class="bracket-team {% if match.winner_side == 'home' %}winner{% endif %}">
+            {% country_flag match.home_team_code 20 %}
+            <span>{{ match.home_team }}</span>
+        </button>
+        {% else %}
+        <div class="bracket-team disabled">
+            <span class="text-muted">{{ match.home_label }}</span>
+        </div>
+        {% endif %}
+        {% if match.away_team %}
+        <button type="submit" name="side" value="away"
+                class="bracket-team {% if match.winner_side == 'away' %}winner{% endif %}">
+            {% country_flag match.away_team_code 20 %}
+            <span>{{ match.away_team }}</span>
+        </button>
+        {% else %}
+        <div class="bracket-team disabled">
+            <span class="text-muted">{{ match.away_label }}</span>
+        </div>
+        {% endif %}
+    </form>
+</div>

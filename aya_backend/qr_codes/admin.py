@@ -175,16 +175,8 @@ class WorldCupMatchAdmin(admin.ModelAdmin):
             and obj.home_score is not None
             and obj.away_score is not None
         ):
-            for prediction in obj.predictions.all():
-                points = calculate_prediction_points(
-                    prediction.home_score,
-                    prediction.away_score,
-                    obj.home_score,
-                    obj.away_score,
-                )
-                if prediction.points_earned != points:
-                    prediction.points_earned = points
-                    prediction.save(update_fields=['points_earned', 'updated_at'])
+            from .world_cup_scoring import recalculate_match_predictions
+            recalculate_match_predictions(obj)
             if obj.predictions_open:
                 WorldCupMatch.objects.filter(pk=obj.pk).update(predictions_open=False)
 

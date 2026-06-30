@@ -1,122 +1,373 @@
 {% extends 'dashboard/base.html' %}
 {% load static %}
+{% load world_cup_tags %}
 
 {% block title %}Gestion des Jeux{% endblock %}
 
+{% block extra_css %}
+<style>
+    .games-tabs { border-bottom: 2px solid #e9ecef; margin-bottom: 1.5rem; }
+    .games-tabs .nav-link {
+        color: #666; font-weight: 600; border: none; padding: 12px 24px;
+        border-bottom: 3px solid transparent; margin-bottom: -2px;
+    }
+    .games-tabs .nav-link.active { color: #1B4332; border-bottom-color: #1B4332; background: transparent; }
+    .stat-card-modern {
+        border: none; border-radius: 16px; color: #fff; overflow: hidden;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    }
+    .stat-card-modern .card-body { padding: 1.25rem 1.5rem; }
+    .stat-card-modern h3 { font-size: 2rem; font-weight: 800; margin: 0; }
+    .stat-card-modern p { margin: 0; opacity: 0.9; font-size: 0.9rem; }
+    .stat-blue { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
+    .stat-green { background: linear-gradient(135deg, #16A34A, #4ADE80); }
+    .stat-orange { background: linear-gradient(135deg, #EA580C, #FB923C); }
+    .stat-cyan { background: linear-gradient(135deg, #0891B2, #22D3EE); }
+    .bareme-pill {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 18px; border-radius: 999px; font-weight: 600; font-size: 0.9rem;
+        margin-right: 10px; margin-bottom: 8px;
+    }
+    .bareme-exact { background: #DCFCE7; color: #166534; }
+    .bareme-bon { background: #DBEAFE; color: #1E40AF; }
+    .bareme-rate { background: #F3F4F6; color: #4B5563; }
+    .user-avatar {
+        width: 36px; height: 36px; border-radius: 50%;
+        background: #1B4332; color: #fff; display: inline-flex;
+        align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem;
+    }
+    .rank-badge {
+        width: 32px; height: 32px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center; font-weight: 800;
+    }
+    .rank-1 { background: #FFD700; color: #7C5E00; }
+    .rank-2 { background: #C0C0C0; color: #555; }
+    .rank-3 { background: #CD7F32; color: #fff; }
+    .rank-other { background: #E5E7EB; color: #374151; }
+    .precision-bar { height: 6px; border-radius: 3px; background: #E5E7EB; overflow: hidden; min-width: 80px; }
+    .precision-fill { height: 100%; background: #16A34A; border-radius: 3px; }
+    .outcome-badge { padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; }
+    .outcome-exact { background: #DCFCE7; color: #166534; }
+    .outcome-bon { background: #DBEAFE; color: #1E40AF; }
+    .outcome-rate { background: #FEE2E2; color: #991B1B; }
+    .score-box { display: inline-block; padding: 4px 12px; border-radius: 8px; font-weight: 700; }
+    .score-pred { background: #F3F4F6; }
+    .score-result { background: #DCFCE7; color: #166534; }
+    .country-flag { width: 22px; height: 16px; object-fit: cover; border-radius: 3px; }
+    .match-cell { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-gamepad"></i> Gestion des Jeux</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="fas fa-gamepad text-primary"></i> Gestion des Jeux</h2>
 </div>
 
-<!-- Statistiques -->
+<ul class="nav games-tabs">
+    <li class="nav-item">
+        <a class="nav-link {% if tab != 'pronostics' %}active{% endif %}"
+           href="{% url 'dashboard:games' %}?tab=jeux">Historique des Jeux</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if tab == 'pronostics' %}active{% endif %}"
+           href="{% url 'dashboard:games' %}?tab=pronostics">Pronostics</a>
+    </li>
+</ul>
+
+{% if tab == 'pronostics' %}
+{# ===== ONGLET PRONOSTICS ===== #}
+<div class="row mb-4 g-3">
+    <div class="col-md-3">
+        <div class="card stat-card-modern stat-blue">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div><h3>{{ stats.total_predictions }}</h3><p>Pronostics placés</p></div>
+                <i class="fas fa-bullseye fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card-modern stat-green">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div><h3>{{ stats.correct_predictions }}</h3><p>Bons pronostics</p></div>
+                <i class="fas fa-check-circle fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card-modern stat-orange">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div><h3>{{ stats.success_rate }}%</h3><p>Taux de réussite</p></div>
+                <i class="fas fa-chart-line fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card-modern stat-cyan">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div><h3>{{ stats.points_distributed }}</h3><p>Points distribués</p></div>
+                <i class="fas fa-coins fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+            <input type="hidden" name="tab" value="pronostics">
+            <div class="col-md-3">
+                <label class="form-label">Compétition</label>
+                <select class="form-select" disabled><option>Coupe du Monde</option></select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Joueur</label>
+                <select name="user" class="form-select">
+                    <option value="">Tous les joueurs</option>
+                    {% for u in users %}
+                    <option value="{{ u.id }}" {% if user_filter == u.id|stringformat:"s" %}selected{% endif %}>
+                        {{ u.full_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Date de début</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Date de fin</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-success w-100"><i class="fas fa-filter"></i> Filtrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <strong>Barème des points :</strong>
+        <div class="mt-2">
+            <span class="bareme-pill bareme-exact">🎯 Score exact +10</span>
+            <span class="bareme-pill bareme-bon">🔵 Bon résultat +5</span>
+            <span class="bareme-pill bareme-rate">✕ Raté +1</span>
+        </div>
+    </div>
+</div>
+
+{# Classement #}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center bg-white">
+        <h5 class="mb-0"><i class="fas fa-trophy text-warning"></i> Classement des pronostiqueurs</h5>
+        <span class="badge bg-light text-dark border">Qui gagne</span>
+    </div>
+    <div class="card-body p-0">
+        {% if leaderboard %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Rang</th>
+                        <th>Utilisateur</th>
+                        <th>Pronostics</th>
+                        <th>Corrects</th>
+                        <th>Précision</th>
+                        <th>Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in leaderboard %}
+                    <tr>
+                        <td>
+                            <span class="rank-badge rank-{% if row.rank <= 3 %}{{ row.rank }}{% else %}other{% endif %}">
+                                {{ row.rank }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="user-avatar me-2">{{ row.initials }}</span>
+                            <strong>{{ row.display_name }}</strong>
+                            <br><small class="text-muted">{{ row.phone_masked }}</small>
+                        </td>
+                        <td>{{ row.total_predictions }}</td>
+                        <td>{{ row.correct_predictions }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span>{{ row.precision }}%</span>
+                                <div class="precision-bar"><div class="precision-fill" style="width:{{ row.precision }}%"></div></div>
+                            </div>
+                        </td>
+                        <td><strong class="text-success">+{{ row.total_points }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4 mb-0">Aucun pronostic noté pour le moment.</p>
+        {% endif %}
+    </div>
+</div>
+
+{# Historique #}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center bg-white">
+        <h5 class="mb-0"><i class="fas fa-list"></i> Historique des Pronostics</h5>
+        <span class="badge bg-secondary">{{ total_predictions }} entrées</span>
+    </div>
+    <div class="card-body p-0">
+        {% if prediction_rows %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Utilisateur</th>
+                        <th>Match</th>
+                        <th>Pronostic</th>
+                        <th>Résultat</th>
+                        <th>Issue</th>
+                        <th>Points</th>
+                        <th>Date</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in prediction_rows %}
+                    {% with p=row.prediction %}
+                    <tr>
+                        <td><small class="text-muted">#{{ row.display_id }}</small></td>
+                        <td>
+                            <span class="user-avatar me-1">{{ row.initials }}</span>
+                            {{ p.user.full_name }}
+                        </td>
+                        <td>
+                            <div class="match-cell">
+                                {% country_flag p.match.home_team_code 22 %}
+                                {{ p.match.home_team }}
+                                <span class="text-muted">vs</span>
+                                {% country_flag p.match.away_team_code 22 %}
+                                {{ p.match.away_team }}
+                            </div>
+                        </td>
+                        <td><span class="score-box score-pred">{{ p.home_score }}-{{ p.away_score }}</span></td>
+                        <td>
+                            {% if p.match.is_finished %}
+                            <span class="score-box score-result">{{ p.match.home_score }}-{{ p.match.away_score }}</span>
+                            {% else %}<span class="text-muted">—</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if row.outcome == 'exact' %}
+                            <span class="outcome-badge outcome-exact">🎯 {{ row.outcome_display }}</span>
+                            {% elif row.outcome == 'bon' %}
+                            <span class="outcome-badge outcome-bon">👁 {{ row.outcome_display }}</span>
+                            {% elif row.outcome == 'rate' %}
+                            <span class="outcome-badge outcome-rate">✕ {{ row.outcome_display }}</span>
+                            {% else %}<span class="text-muted">En attente</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if p.points_earned is not None %}
+                            <strong class="text-success">+{{ p.points_earned }}</strong>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td><small>{{ p.match.kickoff_at|date:"d/m - H\hi" }}</small></td>
+                        <td>
+                            {% if row.status_won == True %}
+                            <span class="badge bg-success">Gagné</span>
+                            {% elif row.status_won == False %}
+                            <span class="badge bg-danger">Perdu</span>
+                            {% else %}
+                            <span class="badge bg-secondary">En cours</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if page_obj.has_other_pages %}
+        <nav class="p-3">
+            <ul class="pagination justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?tab=pronostics&page={{ page_obj.previous_page_number }}&user={{ user_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">Précédent</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}/{{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?tab=pronostics&page={{ page_obj.next_page_number }}&user={{ user_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">Suivant</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <p class="text-muted text-center py-5 mb-0">Aucun pronostic enregistré.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% else %}
+{# ===== ONGLET JEUX ===== #}
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ total_games }}</h4>
-                        <p class="mb-0">Total Jeux</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-gamepad fa-2x"></i>
-                    </div>
-                </div>
-            </div>
+        <div class="card bg-primary text-white stat-card-modern">
+            <div class="card-body"><h3>{{ total_games }}</h3><p>Total Jeux</p></div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ spin_wheel_games }}</h4>
-                        <p class="mb-0">Spin Wheel</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-circle-notch fa-2x"></i>
-                    </div>
-                </div>
-            </div>
+        <div class="card bg-success text-white stat-card-modern">
+            <div class="card-body"><h3>{{ spin_wheel_games }}</h3><p>Spin Wheel</p></div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ scratch_games }}</h4>
-                        <p class="mb-0">Scratch & Win</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-gem fa-2x"></i>
-                    </div>
-                </div>
-            </div>
+        <div class="card bg-warning text-white stat-card-modern">
+            <div class="card-body"><h3>{{ scratch_games }}</h3><p>Scratch & Win</p></div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ total_points_distributed }}</h4>
-                        <p class="mb-0">Points Distribués</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-coins fa-2x"></i>
-                    </div>
-                </div>
-            </div>
+        <div class="card bg-info text-white stat-card-modern">
+            <div class="card-body"><h3>{{ total_points_distributed }}</h3><p>Points Distribués</p></div>
         </div>
     </div>
 </div>
 
-<!-- Filtres -->
 <div class="card mb-4">
     <div class="card-body">
         <form method="GET" class="row g-3">
+            <input type="hidden" name="tab" value="jeux">
             <div class="col-md-3">
-                <label for="game_type" class="form-label">Type de Jeu</label>
-                <select name="game_type" id="game_type" class="form-select">
+                <label class="form-label">Type de Jeu</label>
+                <select name="game_type" class="form-select">
                     <option value="all" {% if game_type_filter == 'all' %}selected{% endif %}>Tous</option>
                     <option value="spin_wheel" {% if game_type_filter == 'spin_wheel' %}selected{% endif %}>Spin Wheel</option>
                     <option value="scratch_and_win" {% if game_type_filter == 'scratch_and_win' %}selected{% endif %}>Scratch & Win</option>
                 </select>
             </div>
             <div class="col-md-3">
-                <label for="date_from" class="form-label">Date de début</label>
-                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                <label class="form-label">Date de début</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
             </div>
             <div class="col-md-3">
-                <label for="date_to" class="form-label">Date de fin</label>
-                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                <label class="form-label">Date de fin</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
             </div>
             <div class="col-md-3 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-filter"></i> Filtrer
-                </button>
+                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter"></i> Filtrer</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Liste des jeux -->
 <div class="card">
-    <div class="card-header">
-        <h5 class="mb-0">Historique des Jeux</h5>
-    </div>
+    <div class="card-header"><h5 class="mb-0">Historique des Jeux</h5></div>
     <div class="card-body">
         {% if page_obj %}
         <div class="table-responsive">
-            <table class="table table-striped">
+            <table class="table table-striped align-middle">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Utilisateur</th>
-                        <th>Type de Jeu</th>
+                        <th>Type</th>
                         <th>Points Gagnés</th>
-                        <th>Prix</th>
                         <th>Date</th>
                         <th>Statut</th>
                     </tr>
@@ -124,81 +375,40 @@
                 <tbody>
                     {% for game in page_obj %}
                     <tr>
-                        <td>{{ game.id }}</td>
-                        <td>
-                            <strong>{{ game.user.full_name }}</strong>
-                            <br>
-                            <small class="text-muted">{{ game.user.email }}</small>
-                        </td>
+                        <td><strong>{{ game.user.full_name }}</strong></td>
                         <td>
                             {% if game.game_type == 'spin_wheel' %}
-                                <span class="badge bg-success">
-                                    <i class="fas fa-circle-notch"></i> Spin Wheel
-                                </span>
-                            {% elif game.game_type == 'scratch_and_win' %}
-                                <span class="badge bg-warning">
-                                    <i class="fas fa-gem"></i> Scratch & Win
-                                </span>
+                            <span class="badge bg-success">Spin Wheel</span>
                             {% else %}
-                                <span class="badge bg-secondary">{{ game.get_game_type_display }}</span>
+                            <span class="badge bg-warning">Scratch & Win</span>
                             {% endif %}
                         </td>
-                        <td>
-                            <span class="badge bg-primary">{{ game.points_won }} pts</span>
-                        </td>
-                        <td>{{ game.prize_text|default:"N/A" }}</td>
+                        <td><span class="badge bg-primary">{{ game.points_won }} pts</span></td>
                         <td>{{ game.played_at|date:"d/m/Y H:i" }}</td>
                         <td>
-                            {% if game.is_winning %}
-                                <span class="badge bg-success">Gagné</span>
-                            {% else %}
-                                <span class="badge bg-secondary">Perdu</span>
-                            {% endif %}
+                            {% if game.is_winning %}<span class="badge bg-success">Gagné</span>
+                            {% else %}<span class="badge bg-secondary">Perdu</span>{% endif %}
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-
-        <!-- Pagination -->
         {% if page_obj.has_other_pages %}
-        <nav aria-label="Pagination des jeux">
-            <ul class="pagination justify-content-center">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1{% if game_type_filter != 'all' %}&game_type={{ game_type_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Premier</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if game_type_filter != 'all' %}&game_type={{ game_type_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Précédent</a>
-                    </li>
-                {% endif %}
-
-                <li class="page-item active">
-                    <span class="page-link">
-                        Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}
-                    </span>
-                </li>
-
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if game_type_filter != 'all' %}&game_type={{ game_type_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Suivant</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if game_type_filter != 'all' %}&game_type={{ game_type_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Dernier</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
+        <nav><ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?tab=jeux&page={{ page_obj.previous_page_number }}">Précédent</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }}/{{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?tab=jeux&page={{ page_obj.next_page_number }}">Suivant</a></li>
+            {% endif %}
+        </ul></nav>
         {% endif %}
-
         {% else %}
-        <div class="text-center py-5">
-            <i class="fas fa-gamepad fa-3x text-muted mb-3"></i>
-            <h5 class="text-muted">Aucun jeu trouvé</h5>
-            <p class="text-muted">Aucun jeu n'a encore été joué avec les critères sélectionnés.</p>
-        </div>
+        <p class="text-muted text-center py-4">Aucun jeu trouvé.</p>
         {% endif %}
     </div>
 </div>
+{% endif %}
 {% endblock %}

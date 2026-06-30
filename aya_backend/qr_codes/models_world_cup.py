@@ -52,23 +52,91 @@ class WorldCupMatch(models.Model):
 
     def finish_match(self, home_score, away_score):
         """Enregistre le résultat et calcule les points des pronostics."""
-        from .world_cup_scoring import calculate_prediction_points
-
         self.home_score = home_score
         self.away_score = away_score
         self.status = 'finished'
         self.predictions_open = False
         self.save()
 
-        for prediction in self.predictions.select_related('user'):
-            points = calculate_prediction_points(
-                prediction.home_score,
-                prediction.away_score,
-                home_score,
-                away_score,
-            )
-            prediction.points_earned = points
-            prediction.save(update_fields=['points_earned', 'updated_at'])
+        from .world_cup_scoring import recalculate_match_predictions
+        recalculate_match_predictions(self)
+
+
+class WorldCupBracketMatch(models.Model):
+    """Match du tableau d'élimination directe (admin interactif)."""
+
+    ROUND_CHOICES = [
+        ('r16', '1/16 de finale'),
+        ('r8', '1/8 de finale'),
+        ('qf', 'Quarts'),
+        ('sf', 'Demies'),
+        ('final', 'Finale'),
+    ]
+    SIDE_CHOICES = [
+        ('', '—'),
+        ('home', 'Domicile'),
+        ('away', 'Extérieur'),
+    ]
+
+    code = models.CharField(max_length=10, unique=True, verbose_name='Code match')
+    round = models.CharField(max_length=10, choices=ROUND_CHOICES)
+    position = models.PositiveSmallIntegerField(default=0)
+    home_team = models.CharField(max_length=100, blank=True)
+    away_team = models.CharField(max_length=100, blank=True)
+    home_team_code = models.CharField(max_length=8, blank=True)
+    away_team_code = models.CharField(max_length=8, blank=True)
+    home_source_code = models.CharField(max_length=10, blank=True)
+    away_source_code = models.CharField(max_length=10, blank=True)
+    winner_side = models.CharField(max_length=4, choices=SIDE_CHOICES, blank=True, default='')
+    world_cup_match = models.ForeignKey(
+        WorldCupMatch,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='bracket_slots',
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'world_cup_bracket_matches'
+        ordering = ['round', 'position']
+        verbose_name = 'Match tableau CDM'
+        verbose_name_plural = 'Matchs tableau CDM'
+
+    def __str__(self):
+        return self.code
+
+    @property
+    def home_label(self):
+        if self.home_team:
+            return self.home_team
+        if self.home_source_code:
+            return f'Vainqueur {self.home_source_code}'
+        return '—'
+
+    @property
+    def away_label(self):
+        if self.away_team:
+            return self.away_team
+        if self.away_source_code:
+            return f'Vainqueur {self.away_source_code}'
+        return '—'
+
+    @property
+    def winner_team(self):
+        if self.winner_side == 'home':
+            return self.home_team
+        if self.winner_side == 'away':
+            return self.away_team
+        return ''
+
+    @property
+    def winner_code(self):
+        if self.winner_side == 'home':
+            return self.home_team_code
+        if self.winner_side == 'away':
+            return self.away_team_code
+        return ''
 
 
 class WorldCupPrediction(models.Model):

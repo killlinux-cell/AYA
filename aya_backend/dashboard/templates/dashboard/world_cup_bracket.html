@@ -1,0 +1,92 @@
+{% extends 'dashboard/base.html' %}
+{% load world_cup_tags %}
+
+{% block title %}Coupe du Monde 2026{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wc-tabs { border-bottom: 2px solid #e9ecef; margin-bottom: 1.5rem; }
+    .wc-tabs .nav-link {
+        color: #666; font-weight: 600; border: none; padding: 12px 20px;
+        border-bottom: 3px solid transparent; margin-bottom: -2px;
+    }
+    .wc-tabs .nav-link.active { color: #1B4332; border-bottom-color: #1B4332; background: transparent; }
+    .bracket-wrap { overflow-x: auto; padding: 1rem 0 2rem; }
+    .bracket-grid { display: flex; gap: 24px; min-width: 1100px; align-items: flex-start; }
+    .bracket-round { flex: 1; min-width: 180px; }
+    .round-title {
+        text-align: center; font-weight: 700; color: #1B4332;
+        margin-bottom: 16px; font-size: 0.95rem;
+    }
+    .bracket-match {
+        background: #fff; border: 1px solid #E5E7EB; border-radius: 12px;
+        margin-bottom: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .bracket-match-header {
+        background: #F9FAFB; padding: 4px 10px; font-size: 0.75rem;
+        color: #9CA3AF; text-align: right; border-bottom: 1px solid #F3F4F6;
+    }
+    .bracket-team {
+        display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+        cursor: pointer; transition: background 0.15s; border: none; background: none;
+        width: 100%; text-align: left; font-size: 0.9rem;
+    }
+    .bracket-team:hover { background: #F0FDF4; }
+    .bracket-team.winner { background: #DCFCE7; font-weight: 700; }
+    .bracket-team.disabled { cursor: default; opacity: 0.65; pointer-events: none; }
+    .bracket-team + .bracket-team { border-top: 1px solid #F3F4F6; }
+    .country-flag { width: 22px; height: 16px; object-fit: cover; border-radius: 50%; }
+    .wc-badge { padding: 6px 14px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
+    .wc-badge-green { background: #DCFCE7; color: #166534; }
+    .wc-badge-blue { background: #DBEAFE; color: #1E40AF; }
+    .wc-badge-gray { background: #F3F4F6; color: #4B5563; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+    <div>
+        <h2 class="mb-1">🏆 Coupe du Monde 2026</h2>
+        <p class="text-muted mb-2">Tableau final · cliquez une équipe pour la faire avancer jusqu'à la finale</p>
+        <div class="d-flex flex-wrap gap-2">
+            <span class="wc-badge wc-badge-green">🟢 1/16 de finale — équipes qualifiées</span>
+            <span class="wc-badge wc-badge-blue">👆 Cliquez une équipe pour l'avancer</span>
+            <span class="wc-badge wc-badge-gray">📅 28 juin → 19 juillet</span>
+        </div>
+    </div>
+    <form method="POST" action="{% url 'dashboard:world_cup_bracket_reset' %}"
+          onsubmit="return confirm('Réinitialiser tout le tableau ?');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-secondary">
+            <i class="fas fa-redo"></i> Réinitialiser
+        </button>
+    </form>
+</div>
+
+<ul class="nav wc-tabs">
+    <li class="nav-item">
+        <a class="nav-link active" href="{% url 'dashboard:world_cup' %}">Tableau</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'dashboard:world_cup_matches' %}">Gérer les matchs</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'dashboard:games' %}?tab=pronostics">Pronostics & classement</a>
+    </li>
+</ul>
+
+<div class="bracket-wrap">
+    <div class="bracket-grid">
+        {% for round_key, round_label, round_matches in bracket_rounds %}
+        <div class="bracket-round">
+            <div class="round-title">{{ round_label }}</div>
+            {% for match in round_matches %}
+                {% include 'dashboard/partials/bracket_match.html' with match=match %}
+            {% empty %}
+                <p class="text-muted small text-center">—</p>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

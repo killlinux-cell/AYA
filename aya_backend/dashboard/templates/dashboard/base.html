@@ -300,7 +300,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'world_cup' %}active{% endif %}" 
+                        <a class="nav-link {% if request.resolver_match.url_name == 'world_cup' or request.resolver_match.url_name == 'world_cup_matches' %}active{% endif %}" 
                            href="{% url 'dashboard:world_cup' %}">
                             <i class="fas fa-futbol"></i> Coupe du Monde
                         </a>

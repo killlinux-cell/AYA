@@ -13,12 +13,24 @@
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-futbol"></i> Pronostics Coupe du Monde</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="fas fa-futbol"></i> Gestion des matchs CDM</h2>
     <a href="{% url 'dashboard:world_cup_create' %}" class="btn btn-primary">
         <i class="fas fa-plus"></i> Nouveau match
     </a>
 </div>
+
+<ul class="nav wc-tabs mb-4" style="border-bottom:2px solid #e9ecef;">
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'dashboard:world_cup' %}" style="color:#666;font-weight:600;">Tableau</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link active" href="{% url 'dashboard:world_cup_matches' %}" style="color:#1B4332;border-bottom:3px solid #1B4332;font-weight:600;">Gérer les matchs</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'dashboard:games' %}?tab=pronostics" style="color:#666;font-weight:600;">Pronostics & classement</a>
+    </li>
+</ul>
 
 <div class="row mb-4">
     <div class="col-md-3">
@@ -78,8 +90,8 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Liste des matchs</h5>
-        <a href="{% url 'dashboard:world_cup_predictions' %}" class="btn btn-sm btn-outline-secondary">
-            Voir tous les pronostics
+        <a href="{% url 'dashboard:games' %}?tab=pronostics" class="btn btn-sm btn-outline-secondary">
+            Pronostics & classement
         </a>
     </div>
     <div class="card-body">
@@ -176,7 +188,8 @@
 </div>
 
 <div class="alert alert-info mt-4">
-    <strong>Règles de points :</strong> score exact 5 pts · bonne différence 3 pts · bon résultat 2 pts.
-    Pour clôturer un match : <strong>Modifier</strong> → statut <em>Terminé</em> + scores → les points sont calculés automatiquement.
+    <strong>Règles de points :</strong> score exact +10 pts · bon résultat +5 pts · raté +1 pt.
+    Les points sont crédités automatiquement sur le solde du joueur.
+    Pour clôturer un match : <strong>Modifier</strong> → statut <em>Terminé</em> + scores.
 </div>
 {% endblock %}
