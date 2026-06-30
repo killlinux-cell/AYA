@@ -16,6 +16,7 @@ const Map<String, String> _alpha3ToAlpha2 = {
   'POL': 'pl', 'POR': 'pt', 'QAT': 'qa', 'ROU': 'ro', 'RUS': 'ru', 'KSA': 'sa',
   'SCO': 'gb', 'SEN': 'sn', 'SRB': 'rs', 'SVK': 'sk', 'SVN': 'si', 'RSA': 'za',
   'AFS': 'za', 'ESP': 'es', 'SWE': 'se', 'SUI': 'ch', 'SYR': 'sy', 'TUN': 'tn',
+  'COD': 'cd', 'CPV': 'cv',
   'TUR': 'tr', 'UKR': 'ua', 'UAE': 'ae', 'USA': 'us', 'URU': 'uy', 'UZB': 'uz',
   'VEN': 've', 'WAL': 'gb', 'ZAM': 'zm', 'ZIM': 'zw',
 };

@@ -15,15 +15,24 @@
                 <form method="POST">
                     {% csrf_token %}
 
+                    {% if match and match.bracket_match_code %}
+                    <div class="alert alert-info">
+                        Match <strong>M{{ match.bracket_match_code }}</strong> issu du tableau —
+                        équipes synchronisées automatiquement. Modifiez l'heure et le score final.
+                    </div>
+                    {% endif %}
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Équipe domicile *</label>
                             <input type="text" name="home_team" class="form-control" required maxlength="100"
+                                   {% if match and match.bracket_match_code %}readonly{% endif %}
                                    value="{% if form_data %}{{ form_data.home_team }}{% elif match %}{{ match.home_team }}{% endif %}">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Équipe extérieur *</label>
                             <input type="text" name="away_team" class="form-control" required maxlength="100"
+                                   {% if match and match.bracket_match_code %}readonly{% endif %}
                                    value="{% if form_data %}{{ form_data.away_team }}{% elif match %}{{ match.away_team }}{% endif %}">
                         </div>
                     </div>
@@ -32,11 +41,13 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Code domicile</label>
                             <input type="text" name="home_team_code" class="form-control" maxlength="8" placeholder="CIV, FRA, MAR..."
+                                   {% if match and match.bracket_match_code %}readonly{% endif %}
                                    value="{% if form_data %}{{ form_data.home_team_code }}{% elif match %}{{ match.home_team_code }}{% endif %}">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Code extérieur</label>
                             <input type="text" name="away_team_code" class="form-control" maxlength="8" placeholder="CIV, FRA, MAR..."
+                                   {% if match and match.bracket_match_code %}readonly{% endif %}
                                    value="{% if form_data %}{{ form_data.away_team_code }}{% elif match %}{{ match.away_team_code }}{% endif %}">
                         </div>
                     </div>
@@ -45,6 +56,7 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Phase</label>
                             <input type="text" name="stage" class="form-control"
+                                   {% if match and match.bracket_match_code %}readonly{% endif %}
                                    value="{% if form_data %}{{ form_data.stage }}{% elif match %}{{ match.stage }}{% else %}Phase de groupes{% endif %}">
                         </div>
                         <div class="col-md-6 mb-3">
@@ -116,8 +128,9 @@
             <div class="card-body">
                 <h6><i class="fas fa-info-circle"></i> Aide</h6>
                 <ul class="small text-muted mb-0">
-                    <li>Renseignez les <strong>codes pays</strong> (CIV, MAR, FRA…) pour afficher les drapeaux.</li>
-                    <li>Pour clôturer : statut <strong>Terminé</strong> + scores → points calculés automatiquement.</li>
+                    <li>Les matchs du <strong>tableau</strong> apparaissent ici automatiquement.</li>
+                    <li>Ajustez l'<strong>heure</strong> du coup d'envoi si nécessaire.</li>
+                    <li>Pour clôturer : statut <strong>Terminé</strong> + scores → points calculés et crédités dans l'app.</li>
                     <li>Score exact : +10 pts · bon résultat : +5 pts · raté : +1 pt.</li>
                 </ul>
             </div>

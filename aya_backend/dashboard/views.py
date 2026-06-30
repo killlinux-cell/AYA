@@ -2138,7 +2138,9 @@ def world_cup_bracket_api(request):
             return JsonResponse({'error': 'JSON invalide'}, status=400)
         state.winners = payload.get('winners', {})
         state.save(update_fields=['winners', 'updated_at'])
-        return JsonResponse({'success': True})
+        from qr_codes.world_cup_match_sync import sync_bracket_to_matches
+        sync_result = sync_bracket_to_matches(state.winners)
+        return JsonResponse({'success': True, 'sync': sync_result})
 
     return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
 
@@ -2149,6 +2151,15 @@ def world_cup_matches_list(request):
     """Liste des matchs CDM (gestion pronostics)."""
 
     from qr_codes.models_world_cup import WorldCupMatch, WorldCupPrediction
+    from qr_codes.world_cup_match_sync import sync_bracket_to_matches
+
+    sync_result = sync_bracket_to_matches()
+    if sync_result['created'] or sync_result['updated']:
+        messages.info(
+            request,
+            f'Tableau synchronisé : {sync_result["created"]} match(s) créé(s), '
+            f'{sync_result["updated"]} mis à jour.',
+        )
 
     status_filter = request.GET.get('status', 'all')
     matches = WorldCupMatch.objects.all()
@@ -2171,6 +2182,23 @@ def world_cup_matches_list(request):
         'total_predictions': WorldCupPrediction.objects.count(),
     }
     return render(request, 'dashboard/world_cup.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def world_cup_sync_matches(request):
+    """Synchronise manuellement le tableau → matchs pronostics."""
+    from qr_codes.world_cup_match_sync import sync_bracket_to_matches
+
+    if request.method == 'POST':
+        result = sync_bracket_to_matches()
+        messages.success(
+            request,
+            f'Synchronisation OK : {result["created"]} créé(s), '
+            f'{result["updated"]} mis à jour, '
+            f'{result["total_active"]} matchs actifs.',
+        )
+    return redirect('dashboard:world_cup_matches')
 
 
 @login_required

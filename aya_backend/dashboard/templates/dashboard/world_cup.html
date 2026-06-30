@@ -15,9 +15,23 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2><i class="fas fa-futbol"></i> Gestion des matchs CDM</h2>
-    <a href="{% url 'dashboard:world_cup_create' %}" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Nouveau match
-    </a>
+    <div class="d-flex gap-2">
+        <form method="POST" action="{% url 'dashboard:world_cup_sync' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-success">
+                <i class="fas fa-sync"></i> Sync tableau
+            </button>
+        </form>
+        <a href="{% url 'dashboard:world_cup_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Match manuel
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-success mb-4">
+    <strong>Automatique :</strong> les matchs du tableau (1/16 de finale, etc.) sont créés ici
+    dès qu'ils sont connus. Vous n'avez qu'à renseigner l'<strong>heure</strong> si besoin,
+    puis le <strong>score</strong> à la fin → les points sont distribués aux joueurs et visibles dans l'app mobile.
 </div>
 
 <ul class="nav wc-tabs mb-4" style="border-bottom:2px solid #e9ecef;">
@@ -101,6 +115,7 @@
                 <thead>
                     <tr>
                         <th>Match</th>
+                        <th>Code</th>
                         <th>Phase / Groupe</th>
                         <th>Coup d'envoi</th>
                         <th>Score</th>
@@ -126,6 +141,13 @@
                             </div>
                             {% if match.home_team_code %}
                             <small class="text-muted">{{ match.home_team_code }} — {{ match.away_team_code }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if match.bracket_match_code %}
+                                <span class="badge bg-secondary">M{{ match.bracket_match_code }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
                             {% endif %}
                         </td>
                         <td>
@@ -181,7 +203,12 @@
         <div class="text-center py-5 text-muted">
             <i class="fas fa-futbol fa-3x mb-3"></i>
             <p>Aucun match pour le moment.</p>
-            <a href="{% url 'dashboard:world_cup_create' %}" class="btn btn-primary">Créer le premier match</a>
+            <form method="POST" action="{% url 'dashboard:world_cup_sync' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-sync"></i> Importer depuis le tableau
+                </button>
+            </form>
         </div>
         {% endif %}
     </div>

@@ -22,10 +22,13 @@ cp "$AYA/qr_codes/world_cup_scoring.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/world_cup_views.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/world_cup_flags.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/world_cup_bracket.py" "$BACKEND/qr_codes/"
+cp "$AYA/qr_codes/world_cup_bracket_data.py" "$BACKEND/qr_codes/"
+cp "$AYA/qr_codes/world_cup_match_sync.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/world_cup_dashboard.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/migrations/0009_world_cup.py" "$BACKEND/qr_codes/migrations/"
 cp "$AYA/qr_codes/migrations/0010_world_cup_bracket.py" "$BACKEND/qr_codes/migrations/"
 cp "$AYA/qr_codes/migrations/0011_world_cup_bracket_state.py" "$BACKEND/qr_codes/migrations/"
+cp "$AYA/qr_codes/migrations/0012_world_cup_match_bracket_code.py" "$BACKEND/qr_codes/migrations/"
 cp "$AYA/qr_codes/urls.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/admin.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/models.py" "$BACKEND/qr_codes/"
@@ -66,6 +69,7 @@ echo "=== 7. Migration + données CDM ==="
 cd "$BACKEND"
 source venv/bin/activate
 python manage.py migrate qr_codes
+python manage.py sync_world_cup_matches
 python manage.py seed_world_cup_bracket 2>/dev/null || true
 python manage.py recalculate_world_cup_points
 

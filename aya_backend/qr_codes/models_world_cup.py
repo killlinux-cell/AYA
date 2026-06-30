@@ -28,6 +28,13 @@ class WorldCupMatch(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
     predictions_open = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
+    bracket_match_code = models.CharField(
+        max_length=10,
+        blank=True,
+        null=True,
+        unique=True,
+        verbose_name='Code tableau (M73…)',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

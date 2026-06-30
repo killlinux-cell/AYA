@@ -64,6 +64,7 @@ urlpatterns = [
     path('world-cup/matches/', views.world_cup_matches_list, name='world_cup_matches'),
     path('world-cup/bracket/api/', views.world_cup_bracket_api, name='world_cup_bracket_api'),
     path('world-cup/bracket/reset/', views.world_cup_bracket_reset, name='world_cup_bracket_reset'),
+    path('world-cup/sync/', views.world_cup_sync_matches, name='world_cup_sync'),
     path('world-cup/create/', views.create_world_cup_match, name='world_cup_create'),
     path('world-cup/predictions/', views.world_cup_predictions_list, name='world_cup_predictions'),
     path('world-cup/<uuid:match_id>/', views.world_cup_match_detail, name='world_cup_match_detail'),
