@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.2.3+21
+version: 1.2.4+22
 
 environment:
   sdk: ^3.8.1
@@ -76,10 +76,10 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icons/MonUnivers1.PNG"
+  image_path: "assets/icons/MonUnivers_legacy.png"
   remove_alpha_ios: true
-  adaptive_icon_background: "#488950"
-  adaptive_icon_foreground: "assets/icons/MonUnivers1.PNG"
+  adaptive_icon_background: "#36723F"
+  adaptive_icon_foreground: "assets/icons/MonUnivers_fg.png"
   adaptive_icon_foreground_inset: 0
 
   # The "flutter_lints" package below contains a set of recommended lints to

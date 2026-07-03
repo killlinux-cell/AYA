@@ -23,8 +23,14 @@ class DjangoAuthService {
 
   // Constructeur privé pour le singleton
   DjangoAuthService._internal() {
-    _loadPersistedData();
+    _ready = _loadPersistedData();
   }
+
+  // Future qui se termine une fois les données persistées chargées
+  late final Future<void> _ready;
+
+  /// Attend que le chargement initial des données persistées soit terminé.
+  Future<void> ensureReady() => _ready;
 
   String? _accessToken;
   String? _refreshToken;
@@ -189,6 +195,62 @@ class DjangoAuthService {
     } catch (e) {
       print('Erreur de connexion: $e');
       throw _handleConnectionError(e);
+    }
+  }
+
+  /// Rafraîchit le token d'accès à partir du refresh token.
+  /// Retourne true si un nouveau token a été obtenu.
+  /// En cas de refresh token invalide/expiré (401), déconnecte l'utilisateur.
+  /// En cas d'erreur réseau, conserve la session (retourne false sans déconnecter).
+  Future<bool> refreshAccessToken() async {
+    if (_refreshToken == null) return false;
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse(DjangoConfig.refreshTokenEndpoint),
+            headers: _publicHeaders,
+            body: jsonEncode({'refresh': _refreshToken}),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _accessToken = data['access'];
+        // La rotation des refresh tokens renvoie un nouveau refresh token
+        if (data['refresh'] != null) {
+          _refreshToken = data['refresh'];
+        }
+        await _savePersistedData();
+        print('🔁 Token d\'accès rafraîchi avec succès');
+        return true;
+      }
+
+      if (response.statusCode == 401) {
+        // Refresh token expiré ou blacklisté → session réellement terminée
+        print('⛔ Refresh token invalide, déconnexion');
+        await signOut();
+      }
+      return false;
+    } catch (e) {
+      // Erreur réseau : on garde la session locale (mode hors ligne)
+      print('⚠️ Impossible de rafraîchir le token (réseau ?): $e');
+      return false;
+    }
+  }
+
+  /// Tente de renouveler la session au démarrage :
+  /// rafraîchit le token puis recharge le profil utilisateur.
+  Future<void> refreshSession() async {
+    await ensureReady();
+    if (_refreshToken == null) return;
+
+    final ok = await refreshAccessToken();
+    if (ok) {
+      await getUserProfile();
+      if (isAuthenticated) {
+        _authStateController.add({'event': 'SIGNED_IN', 'user': _currentUser});
+      }
     }
   }
 

@@ -18,8 +18,9 @@ class AuthProvider with ChangeNotifier {
   bool get isAuthenticated => _isAuthenticated;
 
   AuthProvider() {
-    _checkAuthStatus();
+    // S'abonner d'abord pour ne manquer aucun événement (ex: SIGNED_IN au démarrage)
     _listenToAuthChanges();
+    _checkAuthStatus();
   }
 
   void _listenToAuthChanges() {
@@ -86,34 +87,36 @@ class AuthProvider with ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      // Vérifier l'état d'authentification du service
-      print(
-        'AuthProvider: _authService.isAuthenticated = ${_authService.isAuthenticated}',
-      );
-      print(
-        'AuthProvider: _authService.currentUser = ${_authService.currentUser?.email}',
-      );
+      // Attendre le chargement des données persistées (token + utilisateur)
+      await _authService.ensureReady();
 
+      // Authentification optimiste : si un token est présent, on connecte
+      // immédiatement l'utilisateur (fonctionne aussi hors ligne).
       if (_authService.isAuthenticated) {
         _currentUser = _authService.currentUser;
         _isAuthenticated = true;
         _error = null;
-        print('AuthProvider: User is authenticated: ${_currentUser?.email}');
-        print(
-          'AuthProvider: User personalQRCode: ${_currentUser?.personalQRCode}',
-        );
+        print('AuthProvider: Session restaurée: ${_currentUser?.email}');
       } else {
         _isAuthenticated = false;
         _currentUser = null;
-        print('AuthProvider: User is not authenticated');
+        print('AuthProvider: Aucune session persistée');
       }
 
       _isLoading = false;
       notifyListeners();
+
+      // En arrière-plan : renouveler le token d'accès et rafraîchir le profil.
+      // Ne déconnecte que si le refresh token est réellement invalide (401).
+      if (_isAuthenticated) {
+        await _authService.refreshSession();
+        _currentUser = _authService.currentUser;
+        _isAuthenticated = _authService.isAuthenticated;
+        notifyListeners();
+      }
     } catch (e) {
       _error = 'Erreur lors de la vérification de l\'authentification';
       _isLoading = false;
-      _isAuthenticated = false;
       notifyListeners();
     }
   }
