@@ -122,3 +122,22 @@ echo "1. Tableau: https://monuniversaya.com/dashboard/world-cup/"
 echo "2. Pronostics: https://monuniversaya.com/dashboard/games/?tab=pronostics"
 echo "3. Matchs: https://monuniversaya.com/dashboard/world-cup/matches/"
 echo "4. Ctrl+F5 pour vider le cache"
+echo ""
+echo "=== 10. Nginx upload (bannière / vidéo, fix 413) ==="
+NGINX_SITE=""
+for f in /etc/nginx/sites-enabled/*monuniversaya* /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/aya*; do
+  [ -f "$f" ] && NGINX_SITE="$f" && break
+done
+if [ -n "$NGINX_SITE" ]; then
+  if grep -q "client_max_body_size" "$NGINX_SITE"; then
+    sed -i 's/client_max_body_size.*/client_max_body_size 100M;/' "$NGINX_SITE"
+    echo "OK client_max_body_size mis à jour dans $NGINX_SITE"
+  else
+    sed -i '/server_name/a \    client_max_body_size 100M;' "$NGINX_SITE" 2>/dev/null || \
+    sed -i '/listen 443/a \    client_max_body_size 100M;' "$NGINX_SITE" 2>/dev/null || \
+    echo "ATTENTION: ajoutez manuellement client_max_body_size 100M; dans $NGINX_SITE"
+  fi
+  nginx -t && systemctl reload nginx && echo "OK nginx rechargé" || echo "ERREUR nginx -t"
+else
+  echo "ATTENTION: config nginx introuvable — voir aya_backend/nginx_upload_fix.conf"
+fi

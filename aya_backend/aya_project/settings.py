@@ -142,6 +142,10 @@ STATIC_ROOT = '/var/www/aya_backend/static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'  # Utilise le dossier media du projet
 
+# Uploads dashboard (bannière max ~5 Mo, vidéo max 50 Mo)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 55 * 1024 * 1024  # 55 Mo
+FILE_UPLOAD_MAX_MEMORY_SIZE = 55 * 1024 * 1024
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
