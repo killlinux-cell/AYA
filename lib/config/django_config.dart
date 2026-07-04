@@ -44,6 +44,10 @@ class DjangoConfig {
   // Version application (mise à jour)
   static const String appVersionEndpoint = '$qrUrl/app-version/';
 
+  // Assistant SARCI (chatbot gratuit)
+  static const String chatEndpoint = '$qrUrl/chat/';
+  static const String chatWelcomeEndpoint = '$qrUrl/chat/welcome/';
+
   // Configuration pour la production
   static const bool isDevelopment = false;
 

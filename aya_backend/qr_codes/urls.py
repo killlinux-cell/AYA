@@ -2,6 +2,7 @@ from django.urls import path
 from django.http import JsonResponse
 from . import views
 from . import world_cup_views
+from . import chat_views
 
 def api_root(request):
     """Vue racine de l'API qui retourne les endpoints disponibles"""
@@ -14,6 +15,7 @@ def api_root(request):
             'exchanges': '/api/exchanges/',
             'stats': '/api/stats/',
             'world_cup': '/api/world-cup/',
+            'chat': '/api/chat/',
             'app_version': '/api/app-version/',
         },
         'documentation': 'https://monuniversaya.com'
@@ -51,4 +53,8 @@ urlpatterns = [
     path('world-cup/predictions/', world_cup_views.world_cup_submit_prediction, name='world_cup_predictions'),
     path('world-cup/predictions/me/', world_cup_views.world_cup_my_predictions, name='world_cup_my_predictions'),
     path('world-cup/rankings/', world_cup_views.world_cup_rankings, name='world_cup_rankings'),
+
+    # Assistant SARCI (chatbot gratuit)
+    path('chat/welcome/', chat_views.chat_welcome, name='chat_welcome'),
+    path('chat/', chat_views.chat_message, name='chat_message'),
 ]

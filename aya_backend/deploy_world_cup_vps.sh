@@ -24,6 +24,9 @@ cp "$AYA/qr_codes/world_cup_flags.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/world_cup_bracket.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/world_cup_bracket_data.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/world_cup_match_sync.py" "$BACKEND/qr_codes/"
+cp "$AYA/qr_codes/sarci_knowledge.py" "$BACKEND/qr_codes/"
+cp "$AYA/qr_codes/sarci_chat.py" "$BACKEND/qr_codes/"
+cp "$AYA/qr_codes/chat_views.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/world_cup_dashboard.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/migrations/0009_world_cup.py" "$BACKEND/qr_codes/migrations/"
 cp "$AYA/qr_codes/migrations/0010_world_cup_bracket.py" "$BACKEND/qr_codes/migrations/"
@@ -73,7 +76,7 @@ test -f /root/.env.aya.backup && cp /root/.env.aya.backup "$BACKEND/.env" || tru
 echo "=== 6. Vérification ==="
 grep -q "world_cup_bracket_api" "$BACKEND/dashboard/urls.py" && echo "OK bracket API" || { echo "ERREUR bracket API"; exit 1; }
 test -f "$BACKEND/dashboard/templates/dashboard/games.html" && grep -q "aya-games-skin" "$BACKEND/dashboard/templates/dashboard/games.html" && echo "OK skin jeux" || { echo "ERREUR games.html"; exit 1; }
-grep -q "POINTS_EXACT = 10" "$BACKEND/qr_codes/world_cup_scoring.py" && echo "OK barème 10/5/1" || { echo "ERREUR scoring"; exit 1; }
+grep -q "chat_message" "$BACKEND/qr_codes/urls.py" && echo "OK chat SARCI" || { echo "ERREUR chat API"; exit 1; }
 test -f "$BACKEND/dashboard/templates/dashboard/world_cup_bracket.html" && echo "OK tableau" || { echo "ERREUR template tableau"; exit 1; }
 
 echo "=== 7. Migration + données CDM ==="

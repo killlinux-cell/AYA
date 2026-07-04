@@ -11,6 +11,7 @@ import 'help_support_screen.dart';
 import 'about_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'contact_screen.dart';
+import 'sarci_chat_screen.dart';
 import 'qr_generator_screen.dart';
 import 'user_exchange_history_screen.dart';
 
@@ -425,6 +426,19 @@ class ProfileScreen extends StatelessWidget {
                 _buildProfileSection(
                   title: 'Autres',
                   children: [
+                    _buildProfileOption(
+                      icon: Icons.smart_toy_outlined,
+                      title: 'Assistant SARCI',
+                      subtitle: 'Questions sur SARCI SA & nos produits',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SarciChatScreen(),
+                          ),
+                        );
+                      },
+                    ),
                     _buildProfileOption(
                       icon: Icons.help,
                       title: 'Aide et support',
