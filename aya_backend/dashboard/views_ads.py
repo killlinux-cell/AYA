@@ -18,6 +18,16 @@ def is_admin(user):
     return user.is_staff or user.is_superuser
 
 
+def _absolute_media_url(request, file_field):
+    """URL absolue HTTPS pour les fichiers media (app mobile)."""
+    if not file_field:
+        return None
+    url = request.build_absolute_uri(file_field.url)
+    if url.startswith('http://'):
+        url = 'https://' + url[len('http://'):]
+    return url
+
+
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
 def active_advertisements(request):
@@ -205,7 +215,7 @@ def home_banner_details(request):
         'subtitle': banner.subtitle,
         'button_text': banner.button_text,
         'button_url': banner.button_url,
-        'image_url': request.build_absolute_uri(banner.image.url) if banner.image else None,
+        'image_url': _absolute_media_url(request, banner.image),
         'updated_at': banner.updated_at.isoformat(),
     }
 

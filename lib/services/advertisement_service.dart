@@ -41,9 +41,6 @@ class Advertisement {
 class AdvertisementService {
   AdvertisementService(DjangoAuthService authService);
 
-  /// Modèle pour la bannière d'accueil
-  HomeBannerData? _cachedBanner;
-
   /// Récupérer les publicités actives
   Future<List<Advertisement>> getActiveAdvertisements() async {
     try {
@@ -65,6 +62,7 @@ class AdvertisementService {
 
         final ads = adsJson
             .map((json) => Advertisement.fromJson(json))
+            .where((ad) => ad.videoUrl.isNotEmpty)
             .toList();
 
         print('✅ ${ads.length} publicités récupérées');
@@ -95,19 +93,18 @@ class AdvertisementService {
     }
   }
 
-  /// Récupérer la bannière d'accueil
+  /// Récupérer la bannière d'accueil (toujours depuis l'API, pas de cache).
   Future<HomeBannerData?> getHomeBanner() async {
     try {
-      if (_cachedBanner != null) {
-        return _cachedBanner;
-      }
-
       final url = '${DjangoConfig.baseUrl}/api/advertisements/banner/';
       print('🖼️ BannerService: Récupération de la bannière ($url)');
 
       final response = await http.get(
         Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+        },
       );
 
       if (response.statusCode == 200) {
@@ -117,8 +114,7 @@ class AdvertisementService {
           return null;
         }
 
-        _cachedBanner = HomeBannerData.fromJson(data['banner']);
-        return _cachedBanner;
+        return HomeBannerData.fromJson(data['banner']);
       } else {
         print('❌ BannerService: Statut ${response.statusCode}');
         return null;
@@ -137,6 +133,7 @@ class HomeBannerData {
   final String? buttonText;
   final String? buttonUrl;
   final String? imageUrl;
+  final String? updatedAt;
 
   HomeBannerData({
     required this.id,
@@ -145,7 +142,16 @@ class HomeBannerData {
     this.buttonText,
     this.buttonUrl,
     this.imageUrl,
+    this.updatedAt,
   });
+
+  /// URL image avec cache-busting pour forcer le rechargement après mise à jour admin.
+  String? get imageUrlWithCacheBust {
+    if (imageUrl == null || imageUrl!.isEmpty) return null;
+    if (updatedAt == null || updatedAt!.isEmpty) return imageUrl;
+    final sep = imageUrl!.contains('?') ? '&' : '?';
+    return '$imageUrl${sep}t=${Uri.encodeComponent(updatedAt!)}';
+  }
 
   factory HomeBannerData.fromJson(Map<String, dynamic> json) {
     return HomeBannerData(
@@ -155,6 +161,7 @@ class HomeBannerData {
       buttonText: json['button_text'],
       buttonUrl: json['button_url'],
       imageUrl: json['image_url'],
+      updatedAt: json['updated_at'],
     );
   }
 }

@@ -9,6 +9,13 @@ class HomeBannerWidget extends StatefulWidget {
 
   @override
   State<HomeBannerWidget> createState() => _HomeBannerWidgetState();
+
+  /// Rafraîchir la bannière depuis l'extérieur (pull-to-refresh accueil).
+  static void refresh(BuildContext context) {
+    context
+        .findAncestorStateOfType<_HomeBannerWidgetState>()
+        ?.reloadBanner();
+  }
 }
 
 class _HomeBannerWidgetState extends State<HomeBannerWidget> {
@@ -25,7 +32,10 @@ class _HomeBannerWidgetState extends State<HomeBannerWidget> {
     _loadBanner();
   }
 
+  Future<void> reloadBanner() => _loadBanner();
+
   Future<void> _loadBanner() async {
+    setState(() => _isLoading = true);
     final banner = await _adService.getHomeBanner();
     if (!mounted) return;
 
@@ -43,7 +53,7 @@ class _HomeBannerWidgetState extends State<HomeBannerWidget> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -51,18 +61,26 @@ class _HomeBannerWidgetState extends State<HomeBannerWidget> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: _buildContent(),
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: _buildContent(),
+        ),
       ),
     );
   }
 
   Widget _buildContent() {
     if (_isLoading) {
-      return _placeholder();
+      return _loadingPlaceholder();
     }
 
-    if (_banner == null || _banner!.imageUrl == null) {
-      return _placeholder();
+    if (_banner == null) {
+      return _defaultPlaceholder();
+    }
+
+    final imageUrl = _banner!.imageUrlWithCacheBust;
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return _textBanner(_banner!);
     }
 
     final hasLink =
@@ -71,91 +89,136 @@ class _HomeBannerWidgetState extends State<HomeBannerWidget> {
     return InkWell(
       onTap: hasLink ? () => _openLink(_banner!.buttonUrl!) : null,
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          Positioned.fill(
-            child: Image.network(
-              _banner!.imageUrl!,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => _placeholder(),
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return _placeholder();
-              },
-            ),
+          Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              debugPrint('❌ Erreur chargement bannière: $error');
+              return _textBanner(_banner!);
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return _loadingPlaceholder();
+            },
           ),
-          if (_banner!.title != null || _banner!.subtitle != null)
-            Container(
-              padding: const EdgeInsets.all(16),
-              alignment: Alignment.bottomLeft,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.6),
-                    Colors.black.withOpacity(0.0),
-                  ],
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_banner!.title != null)
-                    Text(
-                      _banner!.title!,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  if (_banner!.subtitle != null) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      _banner!.subtitle!,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                  if (_banner!.buttonText != null) ...[
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreen,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        _banner!.buttonText!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+          if (_banner!.title != null ||
+              _banner!.subtitle != null ||
+              _banner!.buttonText != null)
+            _overlayText(_banner!),
         ],
       ),
     );
   }
 
-  Widget _placeholder() {
-    return Image.asset(
-      'assets/images/advertisement.jpg',
-      fit: BoxFit.cover,
-      width: double.infinity,
-      errorBuilder: (context, error, stackTrace) {
-        return const SizedBox(height: 180);
-      },
+  Widget _overlayText(HomeBannerData banner) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      alignment: Alignment.bottomLeft,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [
+            Colors.black.withValues(alpha: 0.6),
+            Colors.black.withValues(alpha: 0.0),
+          ],
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (banner.title != null && banner.title!.isNotEmpty)
+            Text(
+              banner.title!,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          if (banner.subtitle != null && banner.subtitle!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              banner.subtitle!,
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+          ],
+          if (banner.buttonText != null && banner.buttonText!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                banner.buttonText!,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _textBanner(HomeBannerData banner) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1B4332), Color(0xFF40916C)],
+        ),
+      ),
+      child: _overlayText(banner),
+    );
+  }
+
+  Widget _loadingPlaceholder() {
+    return Container(
+      color: const Color(0xFFE8F5E9),
+      child: const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.primaryGreen,
+          strokeWidth: 2,
+        ),
+      ),
+    );
+  }
+
+  Widget _defaultPlaceholder() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF488950), Color(0xFF60A066)],
+        ),
+      ),
+      child: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.campaign_outlined, color: Colors.white, size: 40),
+            SizedBox(height: 8),
+            Text(
+              'Mon univers AYA',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

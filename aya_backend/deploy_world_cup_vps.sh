@@ -55,6 +55,17 @@ cp "$AYA/dashboard/templates/dashboard/world_cup_predictions.html" "$BACKEND/das
 mkdir -p "$BACKEND/dashboard/templates/dashboard/partials"
 cp "$AYA/dashboard/templates/dashboard/partials/"*.html "$BACKEND/dashboard/templates/dashboard/partials/" 2>/dev/null || true
 
+echo "=== 4b. Publicités (bannière + vidéos) ==="
+cp "$AYA/dashboard/views_ads.py" "$BACKEND/dashboard/"
+cp "$AYA/dashboard/models_ads.py" "$BACKEND/dashboard/"
+cp "$AYA/dashboard/serializers_ads.py" "$BACKEND/dashboard/"
+cp "$AYA/dashboard/urls_api.py" "$BACKEND/dashboard/"
+cp "$AYA/dashboard/migrations/0002_videoadvertisement.py" "$BACKEND/dashboard/migrations/" 2>/dev/null || true
+cp "$AYA/dashboard/migrations/0003_homebanner.py" "$BACKEND/dashboard/migrations/" 2>/dev/null || true
+cp "$AYA/dashboard/templates/dashboard/advertisements.html" "$BACKEND/dashboard/templates/dashboard/" 2>/dev/null || true
+cp "$AYA/dashboard/templates/dashboard/create_advertisement.html" "$BACKEND/dashboard/templates/dashboard/" 2>/dev/null || true
+cp "$AYA/dashboard/templates/dashboard/home_banner.html" "$BACKEND/dashboard/templates/dashboard/" 2>/dev/null || true
+
 echo "=== 5. Settings ==="
 cp "$AYA/aya_project/settings.py" "$BACKEND/aya_project/settings.py"
 test -f /root/.env.aya.backup && cp /root/.env.aya.backup "$BACKEND/.env" || true
@@ -69,6 +80,7 @@ echo "=== 7. Migration + données CDM ==="
 cd "$BACKEND"
 source venv/bin/activate
 python manage.py migrate qr_codes
+python manage.py migrate dashboard
 python manage.py sync_world_cup_matches
 python manage.py seed_world_cup_bracket 2>/dev/null || true
 python manage.py recalculate_world_cup_points
@@ -95,6 +107,10 @@ HTTP=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/dashboard/wo
 echo "HTTP /dashboard/world-cup/ = $HTTP"
 HTTP2=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8000/dashboard/games/?tab=pronostics")
 echo "HTTP /dashboard/games/?tab=pronostics = $HTTP2"
+HTTP3=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8000/api/advertisements/banner/")
+echo "HTTP /api/advertisements/banner/ = $HTTP3"
+HTTP4=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8000/api/advertisements/active/")
+echo "HTTP /api/advertisements/active/ = $HTTP4"
 
 rm -rf "$SRC"
 echo ""

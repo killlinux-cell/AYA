@@ -29,13 +29,19 @@ class VideoAdvertisementSerializer(serializers.ModelSerializer):
         """Retourner l'URL complète de la vidéo"""
         request = self.context.get('request')
         if obj.video_file and request:
-            return request.build_absolute_uri(obj.video_file.url)
+            url = request.build_absolute_uri(obj.video_file.url)
+            if url.startswith('http://'):
+                url = 'https://' + url[len('http://'):]
+            return url
         return None
     
     def get_thumbnail_url(self, obj):
         """Retourner l'URL complète de la miniature"""
         request = self.context.get('request')
         if obj.thumbnail and request:
-            return request.build_absolute_uri(obj.thumbnail.url)
+            url = request.build_absolute_uri(obj.thumbnail.url)
+            if url.startswith('http://'):
+                url = 'https://' + url[len('http://'):]
+            return url
         return None
 

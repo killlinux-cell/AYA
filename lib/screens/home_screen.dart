@@ -15,6 +15,7 @@ import '../theme/app_colors.dart';
 import 'games_screen.dart';
 import 'qr_scanner_screen.dart';
 import 'profile_screen.dart';
+import 'recettes_screen.dart';
 import 'auth_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -30,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> with LoadingMixin {
   final List<Widget> _screens = [
     const _HomeContent(),
     const GamesScreen(),
+    const RecettesScreen(),
     const QRScannerScreen(),
     const ProfileScreen(),
   ];
@@ -185,6 +187,10 @@ class _HomeContentState extends State<_HomeContent>
 
       // Rafraîchir la section bonus
       BonusSectionWidget.refresh(context);
+
+      // Rafraîchir bannière et vidéos publicitaires
+      HomeBannerWidget.refresh(context);
+      ApiVideoWidget.refresh(context);
 
       print('✅ HomeScreen: Données rafraîchies avec succès');
 

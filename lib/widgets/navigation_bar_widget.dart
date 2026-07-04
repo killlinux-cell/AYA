@@ -26,7 +26,7 @@ class NavigationBarWidget extends StatelessWidget {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -43,16 +43,22 @@ class NavigationBarWidget extends StatelessWidget {
                 isSelected: currentIndex == 1,
               ),
               _buildNavItem(
-                icon: Icons.qr_code_scanner,
-                label: 'Scanner',
+                icon: Icons.restaurant_menu,
+                label: 'Recettes',
                 index: 2,
                 isSelected: currentIndex == 2,
               ),
               _buildNavItem(
-                icon: Icons.person,
-                label: 'Profil',
+                icon: Icons.qr_code_scanner,
+                label: 'Scanner',
                 index: 3,
                 isSelected: currentIndex == 3,
+              ),
+              _buildNavItem(
+                icon: Icons.person,
+                label: 'Profil',
+                index: 4,
+                isSelected: currentIndex == 4,
               ),
             ],
           ),
@@ -70,7 +76,7 @@ class NavigationBarWidget extends StatelessWidget {
     return GestureDetector(
       onTap: () => onTap(index),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primaryGreen.withOpacity(0.1)
@@ -91,7 +97,7 @@ class NavigationBarWidget extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
                     ? const Color(0xFF488950)

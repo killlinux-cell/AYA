@@ -10,6 +10,11 @@ class ApiVideoWidget extends StatefulWidget {
 
   @override
   State<ApiVideoWidget> createState() => _ApiVideoWidgetState();
+
+  /// Rafraîchir les vidéos depuis l'extérieur (pull-to-refresh accueil).
+  static void refresh(BuildContext context) {
+    context.findAncestorStateOfType<_ApiVideoWidgetState>()?.reloadAds();
+  }
 }
 
 class _ApiVideoWidgetState extends State<ApiVideoWidget> {
@@ -21,13 +26,24 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
   VideoPlayerController? _controller;
   bool _isInitialized = false;
   bool _isLoading = true;
-  int _currentAdIndex = 0;
   Timer? _rotationTimer;
 
   @override
   void initState() {
     super.initState();
     _loadAdvertisements();
+  }
+
+  Future<void> reloadAds() async {
+    _rotationTimer?.cancel();
+    _controller?.dispose();
+    _controller = null;
+    setState(() {
+      _advertisements = [];
+      _isInitialized = false;
+      _isLoading = true;
+    });
+    await _loadAdvertisements();
   }
 
   Future<void> _loadAdvertisements() async {
@@ -176,11 +192,29 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const SizedBox.shrink(); // Masquer pendant le chargement
+      return Container(
+        margin: const EdgeInsets.only(top: 20),
+        height: 200,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8F5E9),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFF488950),
+            strokeWidth: 2,
+          ),
+        ),
+      );
     }
 
-    // Si aucune publicité ou erreur vidéo, afficher image fallback
-    if (_advertisements.isEmpty || !_isInitialized || _controller == null) {
+    // Aucune publicité active
+    if (_advertisements.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Erreur de lecture vidéo
+    if (!_isInitialized || _controller == null) {
       return _buildFallbackImage();
     }
 
@@ -216,59 +250,41 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
   Widget _buildFallbackImage() {
     return Container(
       margin: const EdgeInsets.only(top: 20),
+      height: 200,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF488950), Color(0xFF60A066)],
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Image.asset(
-          'assets/images/advertisement.jpg',
-          width: double.infinity,
-          height: 200,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              height: 200,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF488950),
-                    const Color(0xFF60A066),
-                  ],
-                ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.video_library_outlined,
+              size: 48,
+              color: Colors.white.withValues(alpha: 0.8),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Publicité Aya+',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white.withValues(alpha: 0.9),
+                fontWeight: FontWeight.w600,
               ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.video_library_outlined,
-                      size: 48,
-                      color: Colors.white.withOpacity(0.8),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Publicité Aya+',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white.withOpacity(0.9),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+            ),
+          ],
         ),
       ),
     );
