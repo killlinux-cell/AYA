@@ -586,38 +586,20 @@ def vendor_exchange_history(request):
                 'error': 'Accès refusé. Compte vendeur requis.'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        # Récupérer les échanges validés par ce vendeur (ExchangeRequest)
-        from qr_codes.models import ExchangeRequest, ExchangeToken
+        # Uniquement les échanges validés par CE vendeur (approved_by = utilisateur connecté)
+        from qr_codes.models import ExchangeRequest
         exchanges = ExchangeRequest.objects.filter(
             approved_by=request.user,
             status='completed'
-        ).order_by('-completed_at')
+        ).select_related('user').order_by('-completed_at')
         
-        # Récupérer aussi les tokens d'échange utilisés (ExchangeToken)
-        used_tokens = ExchangeToken.objects.filter(
-            is_used=True
-        ).order_by('-used_at')
-        
-        # Récupérer aussi les tokens d'échange en attente (pour information)
+        # Tokens en attente globaux (tout vendeur peut les valider via scan QR)
         pending_tokens = ExchangeRequest.objects.filter(
             status='pending'
-        ).order_by('-created_at')[:10]  # Limiter à 10 derniers
+        ).select_related('user').order_by('-created_at')[:10]
         
-        print(f'📊 vendor_exchange_history: Nombre d\'échanges validés trouvés: {exchanges.count()}')
-        print(f'📋 vendor_exchange_history: Nombre de tokens utilisés trouvés: {used_tokens.count()}')
-        print(f'📋 vendor_exchange_history: Nombre de tokens en attente: {pending_tokens.count()}')
-        
-        # Log détaillé de chaque échange validé
-        for exchange in exchanges:
-            print(f'   - Échange validé {exchange.id}: {exchange.points} points, {exchange.status}, approuvé par {exchange.approved_by.email}')
-        
-        # Log des tokens utilisés
-        for token in used_tokens:
-            print(f'   - Token utilisé {token.id}: {token.points} points, utilisé le {token.used_at}')
-        
-        # Log des tokens en attente
-        for token in pending_tokens:
-            print(f'   - Token en attente {token.id}: {token.points} points, créé le {token.created_at}')
+        print(f'📊 vendor_exchange_history: Échanges du vendeur {vendor.business_name}: {exchanges.count()}')
+        print(f'📋 vendor_exchange_history: Tokens en attente: {pending_tokens.count()}')
         
         exchanges_data = []
         for exchange in exchanges:
@@ -636,23 +618,6 @@ def vendor_exchange_history(request):
                 'type': 'exchange_request'
             })
         
-        # Ajouter les tokens utilisés
-        for token in used_tokens:
-            exchanges_data.append({
-                'id': str(token.id),
-                'user_id': str(token.user.id),
-                'user_name': token.user.full_name,
-                'user_email': token.user.email,
-                'points': token.points,
-                'exchange_code': token.token,
-                'status': 'completed',
-                'created_at': token.created_at.isoformat(),
-                'approved_at': token.used_at.isoformat() if token.used_at else None,
-                'completed_at': token.used_at.isoformat() if token.used_at else None,
-                'notes': 'Token d\'échange utilisé',
-                'type': 'exchange_token'
-            })
-        
         # Préparer les données des tokens en attente
         pending_data = []
         for token in pending_tokens:
@@ -668,7 +633,7 @@ def vendor_exchange_history(request):
                 'notes': token.notes,
             })
         
-        print(f'✅ vendor_exchange_history: Réponse envoyée avec {len(exchanges_data)} échanges validés (ExchangeRequest + ExchangeToken) et {len(pending_data)} tokens en attente')
+        print(f'✅ vendor_exchange_history: Réponse envoyée avec {len(exchanges_data)} échanges du vendeur et {len(pending_data)} en attente')
         
         return Response({
             'results': exchanges_data,

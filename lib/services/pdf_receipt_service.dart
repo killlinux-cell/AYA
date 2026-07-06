@@ -12,7 +12,37 @@ class PDFReceiptService {
   factory PDFReceiptService() => _instance;
   PDFReceiptService._internal();
 
-  /// Générer un reçu PDF pour un échange
+  /// Générer les bytes du reçu PDF pour un échange
+  Future<Uint8List> buildExchangeReceiptBytes({
+    required Map<String, dynamic> exchangeRequest,
+    required Map<String, dynamic> vendorInfo,
+    required String clientName,
+    required String clientEmail,
+  }) async {
+    final pdf = pw.Document();
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return _buildReceiptContent(
+            exchangeRequest: exchangeRequest,
+            vendorInfo: vendorInfo,
+            clientName: clientName,
+            clientEmail: clientEmail,
+          );
+        },
+      ),
+    );
+    return pdf.save();
+  }
+
+  String _receiptFileName(Map<String, dynamic> exchangeRequest) {
+    final id = exchangeRequest['id']?.toString() ?? 'N/A';
+    final shortId = id.length > 8 ? id.substring(0, 8) : id;
+    return 'Facture_Echange_$shortId.pdf';
+  }
+
+  /// Générer un reçu PDF pour un échange (aperçu / impression)
   Future<void> generateExchangeReceipt({
     required Map<String, dynamic> exchangeRequest,
     required Map<String, dynamic> vendorInfo,
@@ -20,49 +50,52 @@ class PDFReceiptService {
     required String clientEmail,
   }) async {
     try {
-      print('🔄 PDF: Début de la génération du reçu');
-      print('📄 PDF: Exchange Request: $exchangeRequest');
-      print('🏪 PDF: Vendor Info: $vendorInfo');
-
-      // Créer le document PDF
-      final pdf = pw.Document();
-      print('📄 PDF: Document PDF créé');
-
-      // Ajouter la page du reçu
-      print('📄 PDF: Ajout de la page...');
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.a4,
-          build: (pw.Context context) {
-            print('📄 PDF: Construction du contenu...');
-            return _buildReceiptContent(
-              exchangeRequest: exchangeRequest,
-              vendorInfo: vendorInfo,
-              clientName: clientName,
-              clientEmail: clientEmail,
-            );
-          },
-        ),
+      final pdfBytes = await buildExchangeReceiptBytes(
+        exchangeRequest: exchangeRequest,
+        vendorInfo: vendorInfo,
+        clientName: clientName,
+        clientEmail: clientEmail,
       );
-      print('📄 PDF: Page ajoutée');
 
-      // Générer les bytes du PDF
-      print('📄 PDF: Génération des bytes...');
-      final pdfBytes = await pdf.save();
-      print('📄 PDF: Bytes générés (${pdfBytes.length} bytes)');
-
-      // Afficher le PDF
-      print('📄 PDF: Affichage du PDF...');
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => pdfBytes,
-        name:
-            'Reçu_Échange_${exchangeRequest['id']?.toString().substring(0, 8) ?? 'N/A'}.pdf',
+        name: _receiptFileName(exchangeRequest),
       );
-      print('✅ PDF: PDF généré avec succès');
     } catch (e) {
-      print('❌ PDF: Erreur lors de la génération: $e');
       throw Exception('Erreur lors de la génération du reçu PDF: $e');
     }
+  }
+
+  /// Enregistrer la facture localement sur l'appareil
+  Future<String> saveExchangeReceipt({
+    required Map<String, dynamic> exchangeRequest,
+    required Map<String, dynamic> vendorInfo,
+    required String clientName,
+    required String clientEmail,
+  }) async {
+    final pdfBytes = await buildExchangeReceiptBytes(
+      exchangeRequest: exchangeRequest,
+      vendorInfo: vendorInfo,
+      clientName: clientName,
+      clientEmail: clientEmail,
+    );
+    return savePDFLocally(pdfBytes, _receiptFileName(exchangeRequest));
+  }
+
+  /// Partager la facture (WhatsApp, email, etc.)
+  Future<void> shareExchangeReceipt({
+    required Map<String, dynamic> exchangeRequest,
+    required Map<String, dynamic> vendorInfo,
+    required String clientName,
+    required String clientEmail,
+  }) async {
+    final pdfBytes = await buildExchangeReceiptBytes(
+      exchangeRequest: exchangeRequest,
+      vendorInfo: vendorInfo,
+      clientName: clientName,
+      clientEmail: clientEmail,
+    );
+    await sharePDF(pdfBytes, _receiptFileName(exchangeRequest));
   }
 
   /// Construire le contenu du reçu

@@ -4,6 +4,7 @@ import '../services/pdf_receipt_service.dart';
 import '../services/vendor_auth_service.dart';
 import '../constants/exchange_catalog.dart';
 import '../config/fonts.dart';
+import '../screens/vendor_exchange_detail_screen.dart';
 
 class VendorExchangeHistoryWidget extends StatefulWidget {
   const VendorExchangeHistoryWidget({Key? key}) : super(key: key);
@@ -458,7 +459,19 @@ class _VendorExchangeHistoryWidgetState
   }
 
   Widget _buildExchangeCard(VendorExchange exchange) {
-    return Container(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) =>
+                  VendorExchangeDetailScreen(exchange: exchange),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -498,24 +511,34 @@ class _VendorExchangeHistoryWidgetState
                     ),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'Complété',
-                    style: TextStyle(
-                      fontFamily: AppFonts.helveticaNow,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.green.shade700,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'Complété',
+                        style: TextStyle(
+                          fontFamily: AppFonts.helveticaNow,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.green.shade700,
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey.shade400,
+                      size: 20,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -648,6 +671,8 @@ class _VendorExchangeHistoryWidgetState
               ],
             ),
           ],
+        ),
+      ),
         ),
       ),
     );
