@@ -167,7 +167,7 @@ class _HomeContentState extends State<_HomeContent>
 
                     // Vidéo publicitaire de l'API (lecture aléatoire)
                     const ApiVideoWidget(),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 6),
                   ],
                 ),
               ),

@@ -21,7 +21,7 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
   final AdvertisementService _adService = AdvertisementService(
     DjangoAuthService.instance,
   );
-  
+
   List<Advertisement> _advertisements = [];
   VideoPlayerController? _controller;
   bool _isInitialized = false;
@@ -49,7 +49,7 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
   Future<void> _loadAdvertisements() async {
     try {
       final ads = await _adService.getActiveAdvertisements();
-      
+
       if (ads.isEmpty) {
         print('⚠️ Aucune publicité active disponible');
         setState(() {
@@ -82,7 +82,7 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
     try {
       // Sélectionner une vidéo aléatoire (avec poids de priorité)
       final ad = _selectRandomAd();
-      
+
       print('🎬 Chargement vidéo: ${ad.title} (${ad.videoUrl})');
 
       // Incrémenter le compteur de vues
@@ -101,7 +101,9 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
       // Ajouter un listener d'erreur
       _controller!.addListener(() {
         if (_controller!.value.hasError) {
-          print('❌ Erreur vidéo détectée: ${_controller!.value.errorDescription}');
+          print(
+            '❌ Erreur vidéo détectée: ${_controller!.value.errorDescription}',
+          );
           if (mounted) {
             setState(() {
               _isInitialized = false;
@@ -124,26 +126,25 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
         });
 
         // Configurer la vidéo
-        _controller!.setLooping(false); // ✅ Pas de boucle pour permettre la rotation
+        _controller!.setLooping(
+          false,
+        ); // ✅ Pas de boucle pour permettre la rotation
         _controller!.setVolume(0.0); // Muet
         _controller!.play();
 
         // Programmer le changement de vidéo après la durée configurée
         _rotationTimer?.cancel();
-        _rotationTimer = Timer(
-          Duration(seconds: ad.duration),
-          () {
-            if (mounted) {
-              if (_advertisements.length > 1) {
-                _nextVideo(); // Passer à la vidéo suivante
-              } else {
-                // Si une seule vidéo, la rejouer
-                _controller!.seekTo(Duration.zero);
-                _controller!.play();
-              }
+        _rotationTimer = Timer(Duration(seconds: ad.duration), () {
+          if (mounted) {
+            if (_advertisements.length > 1) {
+              _nextVideo(); // Passer à la vidéo suivante
+            } else {
+              // Si une seule vidéo, la rejouer
+              _controller!.seekTo(Duration.zero);
+              _controller!.play();
             }
-          },
-        );
+          }
+        });
 
         print('✅ Vidéo initialisée: ${ad.title}');
         print('🔄 Rotation dans ${ad.duration} secondes');
@@ -162,18 +163,21 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
   Advertisement _selectRandomAd() {
     // Sélection pondérée par priorité
     final random = Random();
-    final totalPriority = _advertisements.fold(0, (sum, ad) => sum + ad.priority + 1);
-    
+    final totalPriority = _advertisements.fold(
+      0,
+      (sum, ad) => sum + ad.priority + 1,
+    );
+
     int randomValue = random.nextInt(totalPriority);
     int cumulativePriority = 0;
-    
+
     for (var ad in _advertisements) {
       cumulativePriority += ad.priority + 1;
       if (randomValue < cumulativePriority) {
         return ad;
       }
     }
-    
+
     return _advertisements[0];
   }
 
@@ -193,7 +197,7 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Container(
-        margin: const EdgeInsets.only(top: 20),
+        margin: const EdgeInsets.only(top: 10),
         height: 200,
         decoration: BoxDecoration(
           color: const Color(0xFFE8F5E9),
@@ -219,17 +223,10 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
     }
 
     return Container(
-      margin: const EdgeInsets.only(top: 20),
+      margin: const EdgeInsets.only(top: 12),
       height: 200, // Hauteur fixe
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -249,7 +246,7 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
 
   Widget _buildFallbackImage() {
     return Container(
-      margin: const EdgeInsets.only(top: 20),
+      margin: const EdgeInsets.only(top: 12),
       height: 200,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -258,13 +255,6 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
           end: Alignment.bottomRight,
           colors: [Color(0xFF488950), Color(0xFF60A066)],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
       ),
       child: Center(
         child: Column(
@@ -290,4 +280,3 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
     );
   }
 }
-

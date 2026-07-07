@@ -94,7 +94,7 @@ class CollectedQRDisplayWidget extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${user.collectedQRCodes}/10',
+                        '${user.collectedQRCodes}/100',
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
