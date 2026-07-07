@@ -12,15 +12,17 @@ class AuthProvider with ChangeNotifier {
 
   final DjangoAuthService _authService = DjangoAuthService.instance;
 
+  /// Termine quand la session locale a été restaurée au démarrage.
+  late final Future<void> initialized;
+
   app_user.User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isAuthenticated => _isAuthenticated;
 
   AuthProvider() {
-    // S'abonner d'abord pour ne manquer aucun événement (ex: SIGNED_IN au démarrage)
     _listenToAuthChanges();
-    _checkAuthStatus();
+    initialized = _checkAuthStatus();
   }
 
   void _listenToAuthChanges() {
@@ -106,11 +108,11 @@ class AuthProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
 
-      // En arrière-plan : renouveler le token d'accès et rafraîchir le profil.
-      // Ne déconnecte que si le refresh token est réellement invalide (401).
+      // En arrière-plan : renouveler le token et rafraîchir le profil.
+      // La session locale reste active même si le réseau ou le refresh échoue.
       if (_isAuthenticated) {
         await _authService.refreshSession();
-        _currentUser = _authService.currentUser;
+        _currentUser = _authService.currentUser ?? _currentUser;
         _isAuthenticated = _authService.isAuthenticated;
         notifyListeners();
       }

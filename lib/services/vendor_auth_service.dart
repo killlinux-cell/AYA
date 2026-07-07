@@ -17,7 +17,8 @@ class VendorAuthService {
   String? get accessToken => _accessToken;
   String? get refreshToken => _refreshToken;
   Map<String, dynamic>? get vendorInfo => _vendorInfo;
-  bool get isAuthenticated => _accessToken != null;
+  bool get isAuthenticated =>
+      _refreshToken != null && _vendorInfo != null;
 
   /// Initialiser le service avec les tokens sauvegardés
   Future<void> initialize() async {
@@ -28,6 +29,40 @@ class VendorAuthService {
     final vendorInfoString = prefs.getString('vendor_info');
     if (vendorInfoString != null) {
       _vendorInfo = jsonDecode(vendorInfoString);
+    }
+
+    // Renouveler le token d'accès en arrière-plan (sans déconnecter si échec)
+    if (_refreshToken != null) {
+      await refreshAccessToken();
+    }
+  }
+
+  /// Rafraîchir le token d'accès vendeur
+  Future<bool> refreshAccessToken() async {
+    if (_refreshToken == null) return false;
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse(DjangoConfig.refreshTokenEndpoint),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'refresh': _refreshToken}),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _accessToken = data['access'];
+        if (data['refresh'] != null) {
+          _refreshToken = data['refresh'];
+        }
+        await _saveTokens();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('⚠️ Impossible de rafraîchir le token vendeur: $e');
+      return false;
     }
   }
 

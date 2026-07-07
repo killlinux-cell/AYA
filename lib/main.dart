@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:aya/providers/auth_provider.dart';
 import 'package:aya/providers/user_provider.dart';
 import 'package:aya/screens/splash_screen.dart';
+import 'package:aya/services/django_auth_service.dart';
 import 'package:aya/services/vendor_auth_service.dart';
 import 'package:aya/theme/app_theme.dart';
 
@@ -13,7 +14,8 @@ void main() async {
   // Masquer la barre de notification système
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-  // Charger la session vendeur persistée (pour redirection au démarrage)
+  // Charger les sessions persistées avant le premier écran
+  await DjangoAuthService.instance.ensureReady();
   await VendorAuthService().initialize();
 
   runApp(const MyApp());

@@ -47,6 +47,13 @@ class _HomeScreenState extends State<HomeScreen> with LoadingMixin {
           'HomeScreen: AuthProvider.currentUser = ${authProvider.currentUser?.id}',
         );
 
+        // Attendre la fin du chargement de session avant toute redirection
+        if (authProvider.isLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
         // Vérifier si l'utilisateur est authentifié
         if (!authProvider.isAuthenticated) {
           print(
@@ -106,8 +113,9 @@ class _HomeContentState extends State<_HomeContent>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Rafraîchir les données quand l'app revient au premier plan
       print('🔄 HomeScreen: App resumed, rafraîchissement des données...');
+      final authProvider = context.read<AuthProvider>();
+      authProvider.refreshUserData();
       BonusSectionWidget.refresh(context);
     }
   }

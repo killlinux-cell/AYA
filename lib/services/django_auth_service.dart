@@ -47,7 +47,8 @@ class DjangoAuthService {
     return _currentUser;
   }
 
-  bool get isAuthenticated => _currentUser != null && _accessToken != null;
+  bool get isAuthenticated =>
+      _refreshToken != null && _currentUser != null;
   bool get isEmailConfirmed =>
       true; // Django gère l'email confirmation différemment
 
@@ -227,9 +228,10 @@ class DjangoAuthService {
       }
 
       if (response.statusCode == 401) {
-        // Refresh token expiré ou blacklisté → session réellement terminée
-        print('⛔ Refresh token invalide, déconnexion');
-        await signOut();
+        // Ne pas déconnecter automatiquement : l'utilisateur reste connecté
+        // localement jusqu'à une déconnexion manuelle.
+        print('⛔ Refresh token refusé (401) — session locale conservée');
+        return false;
       }
       return false;
     } catch (e) {
@@ -241,9 +243,10 @@ class DjangoAuthService {
 
   /// Tente de renouveler la session au démarrage :
   /// rafraîchit le token puis recharge le profil utilisateur.
+  /// En cas d'échec réseau ou token refusé, conserve la session locale.
   Future<void> refreshSession() async {
     await ensureReady();
-    if (_refreshToken == null) return;
+    if (_refreshToken == null || _currentUser == null) return;
 
     final ok = await refreshAccessToken();
     if (ok) {
@@ -251,6 +254,9 @@ class DjangoAuthService {
       if (isAuthenticated) {
         _authStateController.add({'event': 'SIGNED_IN', 'user': _currentUser});
       }
+    } else if (_currentUser != null) {
+      // Garder l'utilisateur connecté avec les données en cache
+      _authStateController.add({'event': 'SIGNED_IN', 'user': _currentUser});
     }
   }
 
@@ -457,20 +463,31 @@ class DjangoAuthService {
     if (!isAuthenticated) return null;
 
     try {
-      final response = await http.get(
+      var response = await http.get(
         Uri.parse(DjangoConfig.profileEndpoint),
         headers: _authHeaders,
       );
 
+      if (response.statusCode == 401 && _refreshToken != null) {
+        final refreshed = await refreshAccessToken();
+        if (refreshed) {
+          response = await http.get(
+            Uri.parse(DjangoConfig.profileEndpoint),
+            headers: _authHeaders,
+          );
+        }
+      }
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         _currentUser = _convertDjangoUserToAppUser(data);
+        await _savePersistedData();
         return _currentUser;
       }
     } catch (e) {
       print('Erreur lors de la récupération du profil: $e');
     }
-    return null;
+    return _currentUser;
   }
 
   // Mettre à jour le profil utilisateur

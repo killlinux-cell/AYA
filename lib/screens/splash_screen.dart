@@ -49,11 +49,16 @@ class _SplashScreenState extends State<SplashScreen>
       if (!mounted || blocked) return;
     }
 
-    await Future.delayed(const Duration(seconds: 2));
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // Attendre la restauration de la session avant de naviguer
+    await authProvider.initialized;
+
+    // Laisser l'animation du splash se jouer (minimum 1,5 s)
+    await Future.delayed(const Duration(milliseconds: 1500));
 
     if (mounted) {
       final vendorAuthService = VendorAuthService();
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
       // Vendeur connecté → écran vendeur
       if (vendorAuthService.isAuthenticated) {
