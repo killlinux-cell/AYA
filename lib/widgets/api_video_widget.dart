@@ -279,21 +279,19 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
     if (_useGifFallback && _gifUrl != null) {
       return Container(
         margin: const EdgeInsets.only(top: 12),
-        height: 200,
         width: double.infinity,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: Image.network(
             _gifUrl!,
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
             width: double.infinity,
-            height: 200,
             errorBuilder: (_, __, ___) => _buildFallbackImage(),
             loadingBuilder: (context, child, progress) {
               if (progress == null) return child;
-              return Container(
-                color: const Color(0xFFE8F5E9),
-                child: const Center(
+              return const SizedBox(
+                height: 120,
+                child: Center(
                   child: CircularProgressIndicator(
                     color: Color(0xFF488950),
                     strokeWidth: 2,
@@ -310,21 +308,20 @@ class _ApiVideoWidgetState extends State<ApiVideoWidget> {
       return _buildFallbackImage();
     }
 
+    final videoSize = _controller!.value.size;
+    final aspectRatio = (videoSize.width > 0 && videoSize.height > 0)
+        ? videoSize.width / videoSize.height
+        : 16 / 9;
+
+    // Affiche la vidéo dans ses proportions d'origine (sans étirement).
     return Container(
       margin: const EdgeInsets.only(top: 12),
-      height: 200,
       width: double.infinity,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: SizedBox.expand(
-          child: FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: _controller!.value.size.width,
-              height: _controller!.value.size.height,
-              child: VideoPlayer(_controller!),
-            ),
-          ),
+        child: AspectRatio(
+          aspectRatio: aspectRatio,
+          child: VideoPlayer(_controller!),
         ),
       ),
     );
