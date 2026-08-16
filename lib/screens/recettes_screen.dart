@@ -7,7 +7,7 @@ class RecettesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F8),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Column(
           children: [
@@ -22,7 +22,7 @@ class RecettesScreen extends StatelessWidget {
           ],
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF1B4332),
+        backgroundColor: AppColors.primaryGreen,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -51,12 +51,12 @@ class RecettesScreen extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1B4332), Color(0xFF40916C)],
+          colors: [AppColors.primaryGreen, AppColors.primaryGreenLight],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1B4332).withValues(alpha: 0.25),
+            color: AppColors.primaryGreen.withValues(alpha: 0.25),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -131,7 +131,7 @@ class RecettesScreen extends StatelessWidget {
 
   Widget _previewSection() {
     const items = [
-      ('🥘', 'Recettes ivoiriennes', 'Plats traditionnels et modernes'),
+      ('🥘', 'Recettes', 'Plats traditionnels et modernes'),
       ('💡', 'Astuces du quotidien', 'Conseils pratiques pour la maison'),
       ('🌿', 'Bien-être & nature', 'Idées saines et locales'),
     ];
@@ -226,11 +226,16 @@ class RecettesScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFE8F5E9),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: AppColors.primaryGreen.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.notifications_active_outlined, color: AppColors.primaryGreen),
+          Icon(
+            Icons.notifications_active_outlined,
+            color: AppColors.primaryGreen,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(

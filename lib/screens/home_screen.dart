@@ -9,7 +9,6 @@ import '../widgets/navigation_bar_widget.dart';
 import '../widgets/vendors_card_widget.dart';
 import '../widgets/api_video_widget.dart';
 import '../widgets/home_banner_widget.dart';
-import '../widgets/world_cup_home_section_widget.dart';
 import '../utils/loading_mixin.dart';
 import '../theme/app_colors.dart';
 import 'games_screen.dart';
@@ -152,10 +151,6 @@ class _HomeContentState extends State<_HomeContent>
 
                     // Section bonus
                     const BonusSectionWidget(),
-                    const SizedBox(height: 20),
-
-                    // Pronostics Coupe du Monde
-                    const WorldCupHomeSectionWidget(),
                     const SizedBox(height: 20),
 
                     // Section des actions rapides
