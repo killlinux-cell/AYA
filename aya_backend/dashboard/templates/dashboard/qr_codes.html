@@ -43,6 +43,11 @@
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createQRModal">
             <i class="fas fa-plus"></i> Créer un QR Code
         </button>
+        {% if total_qr_codes %}
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAllQRModal">
+            <i class="fas fa-trash-alt"></i> Tout supprimer
+        </button>
+        {% endif %}
     </div>
 </div>
 
@@ -159,6 +164,43 @@
     </ul>
 </nav>
 {% endif %}
+
+<!-- Modal Tout supprimer -->
+<div class="modal fade" id="deleteAllQRModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Supprimer tous les QR codes</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'dashboard:delete_all_qr_codes' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <strong>Action irréversible.</strong>
+                        Tous les QR codes et leurs scans associés seront définitivement supprimés.
+                    </div>
+                    <p class="mb-2">
+                        QR codes : <strong>{{ total_qr_codes }}</strong><br>
+                        Scans associés : <strong>{{ total_scans }}</strong>
+                    </p>
+                    <label for="deleteAllConfirmation" class="form-label">
+                        Tapez <strong>SUPPRIMER</strong> pour confirmer
+                    </label>
+                    <input type="text" class="form-control" id="deleteAllConfirmation"
+                           name="confirmation" autocomplete="off" required
+                           placeholder="SUPPRIMER">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-danger" id="deleteAllSubmitBtn" disabled>
+                        <i class="fas fa-trash-alt"></i> Tout supprimer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <!-- Modal Créer QR Code -->
 <div class="modal fade" id="createQRModal" tabindex="-1">
@@ -475,6 +517,14 @@ function deleteQRCode(qrCodeId, code) {
         document.body.appendChild(form);
         form.submit();
     }
+}
+
+const deleteAllInput = document.getElementById('deleteAllConfirmation');
+const deleteAllBtn = document.getElementById('deleteAllSubmitBtn');
+if (deleteAllInput && deleteAllBtn) {
+    deleteAllInput.addEventListener('input', function () {
+        deleteAllBtn.disabled = this.value.trim() !== 'SUPPRIMER';
+    });
 }
 </script>
 {% endblock %}

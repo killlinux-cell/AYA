@@ -108,6 +108,19 @@
                                     <i class="fas fa-clock"></i> Désactiver QR Codes Expirés
                                 </button>
                             </form>
+
+                            <form method="post" class="mt-2"
+                                  onsubmit="return confirm('IRREVERSIBLE : supprimer TOUS les QR codes ? Tapez ensuite SUPPRIMER.');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete_all_qr">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" name="confirmation"
+                                           placeholder="Tapez SUPPRIMER" autocomplete="off" required>
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fas fa-trash-alt"></i> Tout supprimer
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                     
@@ -117,7 +130,8 @@
                             <ul class="mb-0">
                                 <li><strong>{{ inactive_qr_count }}</strong> QR codes inactifs peuvent être activés</li>
                                 <li><strong>{{ expired_qr_count }}</strong> QR codes expirés peuvent être désactivés</li>
-                                <li>Ces opérations sont irréversibles</li>
+                                <li><strong>{{ total_qr_count }}</strong> QR codes au total (suppression possible)</li>
+                                <li>La suppression totale est irréversible</li>
                             </ul>
                         </div>
                     </div>

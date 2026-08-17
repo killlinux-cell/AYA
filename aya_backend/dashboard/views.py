@@ -182,6 +182,8 @@ def qr_codes_management(request):
         'page_obj': page_obj,
         'search': search,
         'status_filter': status_filter,
+        'total_qr_codes': QRCode.objects.count(),
+        'total_scans': UserQRCode.objects.count(),
     }
     
     return render(request, 'dashboard/qr_codes.html', context)
@@ -262,6 +264,37 @@ def delete_qr_code(request, qr_code_id):
     except QRCode.DoesNotExist:
         messages.error(request, 'QR Code introuvable')
     
+    return redirect('dashboard:qr_codes')
+
+@login_required
+@user_passes_test(is_admin)
+def delete_all_qr_codes(request):
+    """Supprimer tous les QR codes en une action (admin uniquement)."""
+    if request.method != 'POST':
+        return redirect('dashboard:qr_codes')
+
+    confirmation = (request.POST.get('confirmation') or '').strip()
+    if confirmation != 'SUPPRIMER':
+        messages.error(
+            request,
+            'Confirmation incorrecte. Tapez exactement SUPPRIMER pour valider.',
+        )
+        return redirect('dashboard:qr_codes')
+
+    scans_count = UserQRCode.objects.count()
+    qr_count = QRCode.objects.count()
+
+    if qr_count == 0:
+        messages.info(request, 'Aucun QR code à supprimer.')
+        return redirect('dashboard:qr_codes')
+
+    UserQRCode.objects.all().delete()
+    QRCode.objects.all().delete()
+
+    messages.success(
+        request,
+        f'{qr_count} QR codes et {scans_count} scans associés ont été supprimés.',
+    )
     return redirect('dashboard:qr_codes')
 
 @login_required
@@ -1906,6 +1939,23 @@ def bulk_operations(request):
                 expires_at__lt=timezone.now() - timedelta(days=30)
             ).delete()
             messages.success(request, f'{old_tokens[0]} anciens tokens ont été supprimés')
+
+        elif action == 'delete_all_qr':
+            confirmation = (request.POST.get('confirmation') or '').strip()
+            if confirmation != 'SUPPRIMER':
+                messages.error(
+                    request,
+                    'Confirmation incorrecte. Tapez exactement SUPPRIMER pour valider.',
+                )
+            else:
+                scans_count = UserQRCode.objects.count()
+                qr_count = QRCode.objects.count()
+                UserQRCode.objects.all().delete()
+                QRCode.objects.all().delete()
+                messages.success(
+                    request,
+                    f'{qr_count} QR codes et {scans_count} scans associés ont été supprimés.',
+                )
             
         return redirect('dashboard:bulk_operations')
     
@@ -1915,11 +1965,13 @@ def bulk_operations(request):
     old_tokens_count = ExchangeToken.objects.filter(
         expires_at__lt=timezone.now() - timedelta(days=30)
     ).count()
+    total_qr_count = QRCode.objects.count()
     
     context = {
         'inactive_qr_count': inactive_qr_count,
         'expired_qr_count': expired_qr_count,
         'old_tokens_count': old_tokens_count,
+        'total_qr_count': total_qr_count,
     }
     
     return render(request, 'dashboard/bulk_operations.html', context)

@@ -12,6 +12,7 @@ urlpatterns = [
     path('qr-codes/', views.qr_codes_management, name='qr_codes'),
     path('qr-codes/create/', views.create_qr_code, name='create_qr_code'),
     path('qr-codes/<uuid:qr_code_id>/edit/', views.edit_qr_code, name='edit_qr_code'),
+    path('qr-codes/delete-all/', views.delete_all_qr_codes, name='delete_all_qr_codes'),
     path('qr-codes/<uuid:qr_code_id>/delete/', views.delete_qr_code, name='delete_qr_code'),
     path('qr-codes/<uuid:qr_code_id>/generate/', views.generate_qr_code_image, name='generate_qr_code'),
     path('qr-codes/<uuid:qr_code_id>/download/', views.download_qr_code, name='download_qr_code'),
