@@ -72,6 +72,7 @@ cp "$AYA/dashboard/templates/dashboard/create_advertisement.html" "$BACKEND/dash
 cp "$AYA/dashboard/templates/dashboard/home_banner.html" "$BACKEND/dashboard/templates/dashboard/" 2>/dev/null || true
 
 echo "=== 4c. Recettes (vidéos indépendantes des pubs) ==="
+cp "$AYA/dashboard/models.py" "$BACKEND/dashboard/"
 cp "$AYA/dashboard/models_recipes.py" "$BACKEND/dashboard/"
 cp "$AYA/dashboard/views_recipes.py" "$BACKEND/dashboard/"
 cp "$AYA/dashboard/migrations/0004_recipevideo.py" "$BACKEND/dashboard/migrations/" 2>/dev/null || true
