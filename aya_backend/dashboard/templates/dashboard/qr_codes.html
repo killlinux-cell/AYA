@@ -34,20 +34,18 @@
 </div>
 
 <!-- Bouton créer QR Code -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3>Liste des QR Codes ({{ page_obj.paginator.count }} total)</h3>
-    <div class="btn-group" role="group">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h3 class="mb-0">Liste des QR Codes ({{ page_obj.paginator.count }} total)</h3>
+    <div class="d-flex flex-wrap gap-2">
         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bulkGenerateModal">
             <i class="fas fa-magic"></i> Génération en Lot
         </button>
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createQRModal">
             <i class="fas fa-plus"></i> Créer un QR Code
         </button>
-        {% if total_qr_codes %}
         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAllQRModal">
             <i class="fas fa-trash-alt"></i> Tout supprimer
         </button>
-        {% endif %}
     </div>
 </div>
 

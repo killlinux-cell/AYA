@@ -48,6 +48,8 @@ mkdir -p "$BACKEND/dashboard/templatetags"
 cp "$AYA/dashboard/templatetags/world_cup_tags.py" "$BACKEND/dashboard/templatetags/" 2>/dev/null || true
 touch "$BACKEND/dashboard/templatetags/__init__.py" 2>/dev/null || true
 cp "$AYA/dashboard/templates/dashboard/base.html" "$BACKEND/dashboard/templates/dashboard/"
+cp "$AYA/dashboard/templates/dashboard/qr_codes.html" "$BACKEND/dashboard/templates/dashboard/"
+cp "$AYA/dashboard/templates/dashboard/bulk_operations.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/games.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/world_cup.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/world_cup_bracket.html" "$BACKEND/dashboard/templates/dashboard/"
@@ -77,6 +79,7 @@ echo "=== 6. Vérification ==="
 grep -q "world_cup_bracket_api" "$BACKEND/dashboard/urls.py" && echo "OK bracket API" || { echo "ERREUR bracket API"; exit 1; }
 test -f "$BACKEND/dashboard/templates/dashboard/games.html" && grep -q "aya-games-skin" "$BACKEND/dashboard/templates/dashboard/games.html" && echo "OK skin jeux" || { echo "ERREUR games.html"; exit 1; }
 grep -q "chat_message" "$BACKEND/qr_codes/urls.py" && echo "OK chat SARCI" || { echo "ERREUR chat API"; exit 1; }
+test -f "$BACKEND/dashboard/templates/dashboard/qr_codes.html" && grep -q "deleteAllQRModal" "$BACKEND/dashboard/templates/dashboard/qr_codes.html" && echo "OK suppression QR" || { echo "ERREUR qr_codes.html"; exit 1; }
 test -f "$BACKEND/dashboard/templates/dashboard/world_cup_bracket.html" && echo "OK tableau" || { echo "ERREUR template tableau"; exit 1; }
 
 echo "=== 7. Migration + données CDM ==="
