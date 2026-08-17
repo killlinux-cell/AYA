@@ -71,6 +71,15 @@ cp "$AYA/dashboard/templates/dashboard/advertisements.html" "$BACKEND/dashboard/
 cp "$AYA/dashboard/templates/dashboard/create_advertisement.html" "$BACKEND/dashboard/templates/dashboard/" 2>/dev/null || true
 cp "$AYA/dashboard/templates/dashboard/home_banner.html" "$BACKEND/dashboard/templates/dashboard/" 2>/dev/null || true
 
+echo "=== 4c. Recettes (vidéos indépendantes des pubs) ==="
+cp "$AYA/dashboard/models_recipes.py" "$BACKEND/dashboard/"
+cp "$AYA/dashboard/views_recipes.py" "$BACKEND/dashboard/"
+cp "$AYA/dashboard/migrations/0004_recipevideo.py" "$BACKEND/dashboard/migrations/" 2>/dev/null || true
+cp "$AYA/dashboard/urls.py" "$BACKEND/dashboard/"
+cp "$AYA/dashboard/urls_api.py" "$BACKEND/dashboard/"
+cp "$AYA/dashboard/templates/dashboard/recipes.html" "$BACKEND/dashboard/templates/dashboard/"
+cp "$AYA/dashboard/templates/dashboard/create_recipe.html" "$BACKEND/dashboard/templates/dashboard/"
+
 echo "=== 5. Settings ==="
 cp "$AYA/aya_project/settings.py" "$BACKEND/aya_project/settings.py"
 test -f /root/.env.aya.backup && cp /root/.env.aya.backup "$BACKEND/.env" || true

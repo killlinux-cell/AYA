@@ -1,0 +1,75 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Ajouter une recette{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-plus-circle"></i> Ajouter une vidéo recette</h1>
+    <p>Visible uniquement dans l'onglet Recettes de l'application</p>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Titre *</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Catégorie</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="recettes">Recettes</option>
+                            <option value="astuces">Astuces du quotidien</option>
+                            <option value="bienetre">Bien-être & nature</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="video_file" class="form-label">Fichier vidéo * (MP4, max 50MB)</label>
+                        <input type="file" class="form-control" id="video_file" name="video_file"
+                               accept="video/mp4" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="thumbnail" class="form-label">Miniature (optionnel)</label>
+                        <input type="file" class="form-control" id="thumbnail" name="thumbnail" accept="image/*">
+                    </div>
+                    <div class="mb-3">
+                        <label for="sort_order" class="form-label">Ordre d'affichage</label>
+                        <input type="number" class="form-control" id="sort_order" name="sort_order" value="0">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+                        <label class="form-check-label" for="is_active">Activer immédiatement</label>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'dashboard:recipes' %}" class="btn btn-secondary">Retour</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Conseils</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Format MP4</li>
+                    <li>Max 50 Mo</li>
+                    <li>Ces vidéos n'apparaissent pas dans les pubs d'accueil</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

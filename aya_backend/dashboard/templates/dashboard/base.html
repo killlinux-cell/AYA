@@ -321,6 +321,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'recipes' or request.resolver_match.url_name == 'create_recipe' %}active{% endif %}" 
+                           href="{% url 'dashboard:recipes' %}">
+                            <i class="fas fa-utensils"></i> Recettes
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'home_banner' %}active{% endif %}" 
                            href="{% url 'dashboard:home_banner' %}">
                             <i class="fas fa-image"></i> Bannière Accueil

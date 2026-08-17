@@ -1,8 +1,35 @@
 import 'package:flutter/material.dart';
+import '../screens/recipe_video_player_screen.dart';
+import '../services/recipe_service.dart';
 import '../theme/app_colors.dart';
 
-class RecettesScreen extends StatelessWidget {
+class RecettesScreen extends StatefulWidget {
   const RecettesScreen({super.key});
+
+  @override
+  State<RecettesScreen> createState() => _RecettesScreenState();
+}
+
+class _RecettesScreenState extends State<RecettesScreen> {
+  final RecipeService _service = RecipeService();
+  List<RecipeVideoItem> _recipes = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    final recipes = await _service.getActiveRecipes();
+    if (!mounted) return;
+    setState(() {
+      _recipes = recipes;
+      _loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,230 +53,166 @@ class RecettesScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            _heroCard(),
-            const SizedBox(height: 24),
-            _comingSoonBadge(),
-            const SizedBox(height: 28),
-            _previewSection(),
-            const SizedBox(height: 24),
-            _notifyHint(),
-          ],
-        ),
+      body: RefreshIndicator(
+        color: AppColors.primaryGreen,
+        onRefresh: _load,
+        child: _loading
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.primaryGreen),
+              )
+            : _recipes.isEmpty
+                ? _emptyState()
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    itemCount: _recipes.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 14),
+                    itemBuilder: (context, index) =>
+                        _recipeCard(_recipes[index]),
+                  ),
       ),
     );
   }
 
-  Widget _heroCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primaryGreen, AppColors.primaryGreenLight],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryGreen.withValues(alpha: 0.25),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 88,
-            height: 88,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.restaurant_menu_rounded,
-              size: 48,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Bientôt disponible !',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Des recettes locales, des astuces cuisine et des idées pratiques '
-            'arrivent très prochainement dans Mon univers AYA.',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 15,
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _comingSoonBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.accentYellow.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: AppColors.accentYellow, width: 1.5),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.schedule, color: Color(0xFFB8960A), size: 20),
-          SizedBox(width: 8),
-          Text(
-            'Section en préparation',
-            style: TextStyle(
-              color: Color(0xFF8A6A00),
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _previewSection() {
-    const items = [
-      ('🥘', 'Recettes', 'Plats traditionnels et modernes'),
-      ('💡', 'Astuces du quotidien', 'Conseils pratiques pour la maison'),
-      ('🌿', 'Bien-être & nature', 'Idées saines et locales'),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _emptyState() {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(20),
       children: [
-        Row(
-          children: [
-            Container(
-              width: 4,
-              height: 22,
-              decoration: BoxDecoration(
-                color: AppColors.primaryGreen,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Text(
-              'Ce qui vous attend',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ],
+        const SizedBox(height: 40),
+        Icon(
+          Icons.restaurant_menu_rounded,
+          size: 64,
+          color: AppColors.primaryGreen.withValues(alpha: 0.7),
         ),
-        const SizedBox(height: 14),
-        ...items.map(
-          (item) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE3EAE6)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Text(item.$1, style: const TextStyle(fontSize: 32)),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.$2,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          item.$3,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.lock_outline,
-                    size: 18,
-                    color: Colors.grey.shade400,
-                  ),
-                ],
-              ),
-            ),
+        const SizedBox(height: 16),
+        const Text(
+          'Aucune recette pour le moment',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
           ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Les vidéos recettes et astuces apparaîtront ici dès qu’elles seront publiées depuis le dashboard.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.4),
         ),
       ],
     );
   }
 
-  Widget _notifyHint() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8F5E9),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.primaryGreen.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.notifications_active_outlined,
-            color: AppColors.primaryGreen,
+  Widget _recipeCard(RecipeVideoItem recipe) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => RecipeVideoPlayerScreen(recipe: recipe),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Restez connecté — vous serez informé dès que les recettes '
-              'et astuces seront en ligne.',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.primaryGreenDark,
-                height: 1.4,
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (recipe.thumbnailUrl != null &&
+                      recipe.thumbnailUrl!.isNotEmpty)
+                    Image.network(
+                      recipe.thumbnailUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _thumbPlaceholder(),
+                    )
+                  else
+                    _thumbPlaceholder(),
+                  Container(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    child: const Center(
+                      child: Icon(
+                        Icons.play_circle_fill,
+                        color: Colors.white,
+                        size: 56,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      recipe.categoryLabel,
+                      style: const TextStyle(
+                        color: AppColors.primaryGreen,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    recipe.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  if (recipe.description.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      recipe.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _thumbPlaceholder() {
+    return Container(
+      color: AppColors.primaryGreen,
+      child: const Icon(Icons.restaurant_menu, color: Colors.white, size: 40),
     );
   }
 }

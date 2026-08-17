@@ -48,6 +48,9 @@ class DjangoConfig {
   static const String chatEndpoint = '$qrUrl/chat/';
   static const String chatWelcomeEndpoint = '$qrUrl/chat/welcome/';
 
+  // Recettes (vidéos, indépendantes des pubs d'accueil)
+  static const String recipesActiveEndpoint = '$qrUrl/recipes/active/';
+
   // Configuration pour la production
   static const bool isDevelopment = false;
 

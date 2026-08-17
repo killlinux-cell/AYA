@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import views_ads
+from . import views_recipes
 
 app_name = 'dashboard'
 
@@ -83,5 +84,11 @@ urlpatterns = [
     path('advertisements/<uuid:ad_id>/toggle/', views_ads.toggle_advertisement_status, name='toggle_advertisement_status'),
     path('advertisements/<uuid:ad_id>/delete/', views_ads.delete_advertisement, name='delete_advertisement'),
     path('banner/', views_ads.home_banner_settings, name='home_banner'),
+
+    # Vidéos Recettes (indépendantes des pubs d'accueil)
+    path('recipes/', views_recipes.recipes_management, name='recipes'),
+    path('recipes/create/', views_recipes.create_recipe, name='create_recipe'),
+    path('recipes/<uuid:recipe_id>/toggle/', views_recipes.toggle_recipe_status, name='toggle_recipe_status'),
+    path('recipes/<uuid:recipe_id>/delete/', views_recipes.delete_recipe, name='delete_recipe'),
 ]
 
