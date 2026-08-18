@@ -30,21 +30,7 @@ class QRCodeService {
   /// Extraire le code QR d'une URL
   static String? extractQRCodeFromUrl(String url) {
     try {
-      final uri = Uri.parse(url);
-
-      // Vérifier si c'est une URL de notre landing page
-      if (uri.scheme == 'https' && uri.host == 'aya-app.com') {
-        if (uri.path.startsWith('/scan')) {
-          return uri.queryParameters['code'];
-        }
-      }
-
-      // Vérifier si c'est un deep link de l'app
-      if (uri.scheme == 'aya-huile-app' && uri.host == 'qr') {
-        return uri.queryParameters['code'];
-      }
-
-      return null;
+      return DeepLinkService.extractQrCode(Uri.parse(url));
     } catch (e) {
       print('Erreur lors de l\'extraction du code QR: $e');
       return null;

@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import '../models/qr_code.dart';
 import '../config/django_config.dart';
+import 'deep_link_service.dart';
 import 'django_auth_service.dart';
 
 class QRPrizeService {
@@ -17,24 +18,24 @@ class QRPrizeService {
       'Authorization': 'Bearer ${_authService.accessToken}',
   };
 
-  /// Extraire le code QR d'une URL ou retourner le code tel quel
-  String _extractCodeFromQR(String qrData) {
-    // Si c'est une URL, extraire le paramètre 'code'
+      String _extractCodeFromQR(String qrData) {
+    final fromLink = DeepLinkService.extractQrCode(
+      Uri.tryParse(qrData) ?? Uri(),
+    );
+    if (fromLink != null && fromLink.isNotEmpty) {
+      return fromLink;
+    }
+
     if (qrData.startsWith('http')) {
       try {
         final uri = Uri.parse(qrData);
         final code = uri.queryParameters['code'];
         if (code != null && code.isNotEmpty) {
-          print('🔗 URL détectée, code extrait: $code');
           return code;
         }
-      } catch (e) {
-        print('⚠️ Erreur lors de l\'extraction de l\'URL: $e');
-      }
+      } catch (_) {}
     }
 
-    // Sinon, retourner le code tel quel
-    print('📝 Code direct: $qrData');
     return qrData;
   }
 

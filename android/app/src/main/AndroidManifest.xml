@@ -51,26 +51,14 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Deep links pour l'authentification -->
+            <!-- Deep links personnalisés : aya-huile-app://qr?code= -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="aya-huile-app" />
             </intent-filter>
-            
-            <!-- App Links universels pour monuniversaya.com -->
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https"
-                      android:host="monuniversaya.com" />
-                <data android:scheme="https"
-                      android:host="www.monuniversaya.com" />
-            </intent-filter>
-            
-            <!-- App Links pour les QR codes -->
+            <!-- App Links HTTPS uniquement pour /scan (QR) -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -88,6 +76,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <meta-data
+            android:name="flutter_deeplinking_enabled"
+            android:value="false" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

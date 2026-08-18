@@ -3,20 +3,15 @@
     "details": [
       {
         "appIDs": [
-          "TEAMID.com.example.aya"
+          "32GST84HZ8.com.uborasoftware.aya"
         ],
         "components": [
           {
             "/": "/scan*",
-            "comment": "Matches any URL whose path starts with /scan"
+            "comment": "QR codes Mon univers AYA"
           }
         ]
       }
-    ]
-  },
-  "webcredentials": {
-    "apps": [
-      "TEAMID.com.example.aya"
     ]
   }
 }

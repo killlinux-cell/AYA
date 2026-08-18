@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:aya/providers/auth_provider.dart';
 import 'package:aya/providers/user_provider.dart';
 import 'package:aya/screens/splash_screen.dart';
+import 'package:aya/services/deep_link_service.dart';
 import 'package:aya/services/django_auth_service.dart';
 import 'package:aya/services/vendor_auth_service.dart';
 import 'package:aya/theme/app_theme.dart';
@@ -17,6 +18,7 @@ void main() async {
   // Charger les sessions persistées avant le premier écran
   await DjangoAuthService.instance.ensureReady();
   await VendorAuthService().initialize();
+  await DeepLinkService.init();
 
   runApp(const MyApp());
 }
@@ -49,6 +51,7 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
+        navigatorKey: appNavigatorKey,
         title: 'Mon univers AYA',
         theme: AppTheme.lightTheme,
         debugShowCheckedModeBanner: false,

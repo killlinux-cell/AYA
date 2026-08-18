@@ -3,9 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.example.aya",
+      "package_name": "com.uborasoftware.aya",
       "sha256_cert_fingerprints": [
-        "SHA256_FINGERPRINT_HERE"
+        "https://example.com/user/echo:https://example.net/a/vertex:https://example.com/p/cipher"
       ]
     }
   }

@@ -7,6 +7,7 @@ import '../screens/home_screen.dart';
 import '../screens/vendor_screen.dart';
 import '../screens/reset_password_screen.dart';
 import '../widgets/auth_notification.dart';
+import '../services/deep_link_service.dart';
 import '../services/vendor_auth_service.dart';
 
 class AuthForm extends StatefulWidget {
@@ -175,6 +176,9 @@ class _AuthFormState extends State<AuthForm> {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          DeepLinkService.consumePendingQr();
+        });
       } else {
         // Afficher l'erreur spécifique
         if (mounted) {

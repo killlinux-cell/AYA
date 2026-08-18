@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../services/deep_link_service.dart';
 import '../services/vendor_auth_service.dart';
 import '../services/app_update_service.dart';
 import '../widgets/loading_widget.dart';
@@ -69,6 +70,9 @@ class _SplashScreenState extends State<SplashScreen>
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          DeepLinkService.consumePendingQr();
+        });
       } else {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const AuthScreen()),

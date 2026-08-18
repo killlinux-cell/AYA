@@ -81,8 +81,17 @@ cp "$AYA/dashboard/urls_api.py" "$BACKEND/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/recipes.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/create_recipe.html" "$BACKEND/dashboard/templates/dashboard/"
 
-echo "=== 5. Settings ==="
+echo "=== 5. Settings + deep links QR (landing + stores) ==="
 cp "$AYA/aya_project/settings.py" "$BACKEND/aya_project/settings.py"
+cp "$AYA/aya_project/urls.py" "$BACKEND/aya_project/urls.py"
+mkdir -p "$BACKEND/templates/landing_page"
+cp "$AYA/templates/landing_page/index.html" "$BACKEND/templates/landing_page/"
+# Si nginx sert /.well-known depuis le disque (certbot, html racine)
+for ROOT in /var/www/html /var/www/aya_backend/static; do
+  mkdir -p "$ROOT/.well-known"
+  cp "$SRC/landing_page/.well-known/apple-app-site-association" "$ROOT/.well-known/" 2>/dev/null || true
+  cp "$SRC/landing_page/.well-known/assetlinks.json" "$ROOT/.well-known/" 2>/dev/null || true
+done
 test -f /root/.env.aya.backup && cp /root/.env.aya.backup "$BACKEND/.env" || true
 
 echo "=== 6. Vérification ==="
@@ -91,6 +100,8 @@ test -f "$BACKEND/dashboard/templates/dashboard/games.html" && grep -q "aya-game
 grep -q "chat_message" "$BACKEND/qr_codes/urls.py" && echo "OK chat SARCI" || { echo "ERREUR chat API"; exit 1; }
 test -f "$BACKEND/dashboard/templates/dashboard/qr_codes.html" && grep -q "deleteAllQRModal" "$BACKEND/dashboard/templates/dashboard/qr_codes.html" && echo "OK suppression QR" || { echo "ERREUR qr_codes.html"; exit 1; }
 test -f "$BACKEND/dashboard/templates/dashboard/world_cup_bracket.html" && echo "OK tableau" || { echo "ERREUR template tableau"; exit 1; }
+grep -q "com.uborasoftware.aya" "$BACKEND/templates/landing_page/index.html" && echo "OK landing stores" || { echo "ERREUR landing page stores"; exit 1; }
+grep -q "apple-app-site-association" "$BACKEND/aya_project/urls.py" && echo "OK well-known" || { echo "ERREUR urls well-known"; exit 1; }
 
 echo "=== 7. Migration + données CDM ==="
 cd "$BACKEND"
@@ -127,6 +138,12 @@ HTTP3=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8000/api/advert
 echo "HTTP /api/advertisements/banner/ = $HTTP3"
 HTTP4=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8000/api/advertisements/active/")
 echo "HTTP /api/advertisements/active/ = $HTTP4"
+HTTP5=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8000/scan?code=test")
+echo "HTTP /scan = $HTTP5"
+HTTP6=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8000/.well-known/apple-app-site-association")
+echo "HTTP apple-app-site-association = $HTTP6"
+HTTP7=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8000/.well-known/assetlinks.json")
+echo "HTTP assetlinks.json = $HTTP7"
 
 rm -rf "$SRC"
 echo ""
