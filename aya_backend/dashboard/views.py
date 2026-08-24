@@ -191,33 +191,48 @@ def qr_codes_management(request):
 @login_required
 @user_passes_test(is_admin)
 def create_qr_code(request):
-    """Créer un nouveau QR code"""
+    """Créer un nouveau code (saisie manuelle ou auto 6 chiffres)."""
     
     if request.method == 'POST':
-        code = request.POST.get('code')
+        from qr_codes.code_utils import generate_unique_six_digit_codes, is_six_digit_code
+
+        code = (request.POST.get('code') or '').strip()
         points = request.POST.get('points')
         description = request.POST.get('description')
         is_active = request.POST.get('is_active') == 'on'
+        auto_six = request.POST.get('auto_six_digit') == 'on'
         
-        if not code or not points:
-            messages.error(request, 'Le code et les points sont obligatoires')
+        if not points:
+            messages.error(request, 'Les points sont obligatoires')
             return redirect('dashboard:qr_codes')
-        
+
         try:
             points = int(points)
             prize_type = request.POST.get('prize_type', 'points')
+
+            if auto_six or not code:
+                existing = set(QRCode.objects.values_list('code', flat=True))
+                code = generate_unique_six_digit_codes(1, reserved=existing)[0]
+            elif is_six_digit_code(code):
+                if QRCode.objects.filter(code=code).exists():
+                    messages.error(request, f'Le code {code} existe déjà')
+                    return redirect('dashboard:qr_codes')
+            elif QRCode.objects.filter(code=code).exists():
+                messages.error(request, f'Le code "{code}" existe déjà')
+                return redirect('dashboard:qr_codes')
+
             qr_code = QRCode.objects.create(
                 code=code,
                 points=points,
-                description=description,
+                description=description or f'Code {code}',
                 prize_type=prize_type,
                 is_active=is_active,
                 created_by=request.user
             )
-            messages.success(request, f'QR Code "{code}" créé avec succès !')
+            messages.success(request, f'Code "{qr_code.code}" créé avec succès !')
             return redirect('dashboard:qr_codes')
-        except ValueError:
-            messages.error(request, 'Les points doivent être un nombre valide')
+        except ValueError as e:
+            messages.error(request, str(e) if str(e) else 'Les points doivent être un nombre valide')
         except Exception as e:
             messages.error(request, f'Erreur lors de la création: {str(e)}')
     
@@ -624,31 +639,33 @@ def update_exchange_status(request, exchange_id):
 @login_required
 @user_passes_test(is_admin)
 def generate_qr_code_image(request, qr_code_id):
-    """Générer l'image QR code pour un QR code spécifique"""
-    
+    """Aperçu impression : code 6 chiffres en texte, sinon QR historique."""
+    from qr_codes.code_utils import is_six_digit_code
+
     qr_code = get_object_or_404(QRCode, id=qr_code_id)
-    
-    # Créer le QR code
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
-    )
-    
-    # URL à encoder dans le QR code
-    qr_url = f"https://monuniversaya.com/scan?code={qr_code.code}"
-    qr.add_data(qr_url)
-    qr.make(fit=True)
-    
-    # Créer l'image
-    img = qr.make_image(fill_color="black", back_color="white")
-    
-    # Convertir en base64 pour l'affichage
+    is_digit = is_six_digit_code(qr_code.code)
+
+    if is_digit:
+        img = _render_capsule_code_image(qr_code.code)
+        print_mode = 'digits'
+        qr_url = None
+    else:
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr_url = f"https://monuniversaya.com/scan?code={qr_code.code}"
+        qr.add_data(qr_url)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        print_mode = 'qr'
+
     buffer = io.BytesIO()
     img.save(buffer, format='PNG')
     img_str = base64.b64encode(buffer.getvalue()).decode()
-    
+
     return JsonResponse({
         'success': True,
         'qr_code_id': str(qr_code.id),
@@ -656,86 +673,203 @@ def generate_qr_code_image(request, qr_code_id):
         'points': qr_code.points,
         'description': qr_code.description,
         'qr_url': qr_url,
+        'print_mode': print_mode,
         'image': f"data:image/png;base64,{img_str}"
     })
+
+
+def _render_capsule_code_image(code: str):
+    """Image noire/blanche du code 6 chiffres pour machine laser / aperçu."""
+    from PIL import Image, ImageDraw, ImageFont
+
+    width, height = 600, 280
+    img = Image.new('RGB', (width, height), 'white')
+    draw = ImageDraw.Draw(img)
+
+    font = None
+    for path in (
+        'C:/Windows/Fonts/arialbd.ttf',
+        'C:/Windows/Fonts/arial.ttf',
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+        '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+    ):
+        try:
+            font = ImageFont.truetype(path, 140)
+            break
+        except OSError:
+            continue
+    if font is None:
+        font = ImageFont.load_default()
+
+    text = str(code)
+    bbox = draw.textbbox((0, 0), text, font=font)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    x = (width - tw) // 2
+    y = (height - th) // 2 - 10
+    draw.text((x, y), text, fill='black', font=font)
+
+    # Cadre fin pour le positionnement machine
+    draw.rectangle([8, 8, width - 9, height - 9], outline='black', width=2)
+    return img
+
 
 @login_required
 @user_passes_test(is_admin)
 def download_qr_code(request, qr_code_id):
-    """Télécharger l'image QR code"""
-    
+    """Télécharger l'image d'impression (code chiffres ou QR)."""
+    from qr_codes.code_utils import is_six_digit_code
+
     qr_code = get_object_or_404(QRCode, id=qr_code_id)
-    
-    # Créer le QR code
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=15,
-        border=4,
-    )
-    
-    # URL à encoder dans le QR code
-    qr_url = f"https://monuniversaya.com/scan?code={qr_code.code}"
-    qr.add_data(qr_url)
-    qr.make(fit=True)
-    
-    # Créer l'image
-    img = qr.make_image(fill_color="black", back_color="white")
-    
-    # Préparer la réponse
+
+    if is_six_digit_code(qr_code.code):
+        img = _render_capsule_code_image(qr_code.code)
+        filename = f"code_capsule_{qr_code.code}.png"
+    else:
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=15,
+            border=4,
+        )
+        qr_url = f"https://monuniversaya.com/scan?code={qr_code.code}"
+        qr.add_data(qr_url)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        filename = f"qr_code_{qr_code.code}.png"
+
     response = HttpResponse(content_type='image/png')
-    response['Content-Disposition'] = f'attachment; filename="qr_code_{qr_code.code}.png"'
-    
-    # Sauvegarder l'image
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     img.save(response, 'PNG')
-    
     return response
+
 
 @login_required
 @user_passes_test(is_admin)
 def bulk_generate_qr_codes(request):
-    """Générer plusieurs QR codes en lot"""
+    """Générer plusieurs codes en lot (UUID historique ou 6 chiffres)."""
     
     if request.method == 'POST':
+        from qr_codes.code_utils import generate_unique_six_digit_codes
+
         count = int(request.POST.get('count', 10))
         points = int(request.POST.get('points', 10))
-        description = request.POST.get('description', 'QR Code généré automatiquement')
-        
-        generated_codes = []
-        
-        for i in range(count):
-            # Générer un code unique
-            import uuid
-            code = str(uuid.uuid4())[:8].upper()
-            
-            # Vérifier que le code n'existe pas déjà
-            while QRCode.objects.filter(code=code).exists():
-                code = str(uuid.uuid4())[:8].upper()
-            
-            # Créer le QR code
-            qr_code = QRCode.objects.create(
-                code=code,
-                points=points,
-                description=f"{description} #{i+1}",
-                is_active=True,
-                created_by=request.user
-            )
-            
-            generated_codes.append({
-                'id': str(qr_code.id),
-                'code': qr_code.code,
-                'points': qr_code.points,
-                'description': qr_code.description
+        description = request.POST.get('description', 'Code généré automatiquement')
+        code_format = request.POST.get('code_format', 'six_digit')  # six_digit | uuid8
+        prize_type = request.POST.get('prize_type', 'points')
+
+        if count < 1 or count > 5000:
+            return JsonResponse({
+                'success': False,
+                'error': 'Le nombre de codes doit être entre 1 et 5000.'
             })
         
-        messages.success(request, f'{count} QR codes générés avec succès !')
+        generated_codes = []
+
+        try:
+            if code_format == 'six_digit':
+                existing = set(QRCode.objects.values_list('code', flat=True))
+                codes = generate_unique_six_digit_codes(count, reserved=existing)
+            else:
+                import uuid
+                codes = []
+                for _ in range(count):
+                    code = str(uuid.uuid4())[:8].upper()
+                    while QRCode.objects.filter(code=code).exists() or code in codes:
+                        code = str(uuid.uuid4())[:8].upper()
+                    codes.append(code)
+
+            for i, code in enumerate(codes):
+                qr_code = QRCode.objects.create(
+                    code=code,
+                    points=points,
+                    description=f"{description} #{i+1}",
+                    prize_type=prize_type,
+                    is_active=True,
+                    created_by=request.user,
+                    is_printed=True,
+                )
+                generated_codes.append({
+                    'id': str(qr_code.id),
+                    'code': qr_code.code,
+                    'points': qr_code.points,
+                    'description': qr_code.description
+                })
+        except ValueError as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+        
+        messages.success(request, f'{count} codes générés avec succès !')
         return JsonResponse({
             'success': True,
             'count': count,
-            'codes': generated_codes
+            'codes': generated_codes,
+            'code_format': code_format,
         })
     
     return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
+
+
+@login_required
+@user_passes_test(is_admin)
+def export_codes_csv(request):
+    """Export CSV des codes actifs (pour impression laser machine)."""
+    import csv
+    from django.http import HttpResponse
+
+    status_filter = request.GET.get('status', 'active')
+    qs = QRCode.objects.all().order_by('created_at')
+    if status_filter == 'active':
+        qs = qs.filter(is_active=True)
+    elif status_filter == 'inactive':
+        qs = qs.filter(is_active=False)
+
+    # Filtrer optionnellement les seuls codes 6 chiffres
+    digits_only = request.GET.get('digits_only') == '1'
+    if digits_only:
+        qs = qs.filter(code__regex=r'^\d{6}$')
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="aya_codes.csv"'
+    response.write('\ufeff')  # BOM Excel
+    writer = csv.writer(response, delimiter=';')
+    writer.writerow(['code', 'points', 'prize_type', 'category', 'description', 'is_active', 'batch_number'])
+    for row in qs.iterator():
+        writer.writerow([
+            row.code,
+            row.points,
+            row.prize_type,
+            row.category or '',
+            row.description or '',
+            '1' if row.is_active else '0',
+            row.batch_number or '',
+        ])
+    return response
+
+
+@login_required
+@user_passes_test(is_admin)
+def export_codes_txt(request):
+    """Export TXT machine laser : un code par ligne (6 chiffres actifs par défaut)."""
+    status_filter = request.GET.get('status', 'active')
+    qs = QRCode.objects.all().order_by('created_at')
+    if status_filter == 'active':
+        qs = qs.filter(is_active=True)
+    elif status_filter == 'inactive':
+        qs = qs.filter(is_active=False)
+
+    digits_only = request.GET.get('digits_only', '1') == '1'
+    if digits_only:
+        qs = qs.filter(code__regex=r'^\d{6}$')
+
+    lines = [row.code for row in qs.iterator()]
+    content = '\n'.join(lines)
+    if content:
+        content += '\n'
+
+    response = HttpResponse(content, content_type='text/plain; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="aya_codes_machine.txt"'
+    return response
 
 
 def generate_standard_scenario(request, batch_number):

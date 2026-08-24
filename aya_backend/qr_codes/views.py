@@ -75,18 +75,31 @@ class QRCodeValidationView(APIView):
 
 class QRCodeValidateAndClaimView(APIView):
     """
-    Vue pour valider un QR code et réclamer le prix (avec support des tickets de fidélité)
+    Vue pour valider un code (QR historique ou code 6 chiffres) et réclamer le prix.
     """
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
-        code = request.data.get('code')
+        from django.core.cache import cache
+        from .code_utils import is_six_digit_code, normalize_claim_code
+
+        code = normalize_claim_code(request.data.get('code'))
         if not code:
             return Response({
                 'success': False,
-                'error': 'Code QR requis',
+                'error': 'Code requis',
                 'error_type': 'invalid_code'
             }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Anti-bruteforce léger (surtout utile pour les codes à 6 chiffres)
+        rate_key = f'claim_fail_{request.user.id}'
+        fails = cache.get(rate_key, 0)
+        if fails >= 20:
+            return Response({
+                'success': False,
+                'error': 'Trop de tentatives. Réessayez dans quelques minutes.',
+                'error_type': 'rate_limited'
+            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
         
         user = request.user
         
@@ -97,7 +110,7 @@ class QRCodeValidateAndClaimView(APIView):
             if UserQRCode.objects.filter(user=user, qr_code=qr_code).exists():
                 return Response({
                     'success': False,
-                    'error': 'Ce QR code a déjà été scanné',
+                    'error': 'Ce code a déjà été utilisé',
                     'error_type': 'already_used'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
@@ -105,7 +118,7 @@ class QRCodeValidateAndClaimView(APIView):
             if not qr_code.is_valid():
                 return Response({
                     'success': False,
-                    'error': 'QR code expiré ou inactif',
+                    'error': 'Ce code a déjà été utilisé ou a expiré',
                     'error_type': 'expired'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
@@ -143,6 +156,8 @@ class QRCodeValidateAndClaimView(APIView):
                     'description': f'{qr_code.points} points',
                     'is_loyalty_ticket': False
                 }
+
+            cache.delete(rate_key)
             
             return Response({
                 'success': True,
@@ -161,9 +176,15 @@ class QRCodeValidateAndClaimView(APIView):
             }, status=status.HTTP_200_OK)
                 
         except QRCode.DoesNotExist:
+            cache.set(rate_key, fails + 1, timeout=300)
+            hint = (
+                'Code invalide. Vérifiez les 6 chiffres sur le bouchon.'
+                if is_six_digit_code(code)
+                else 'Code introuvable'
+            )
             return Response({
                 'success': False,
-                'error': 'QR code introuvable',
+                'error': hint,
                 'error_type': 'invalid_code'
             }, status=status.HTTP_400_BAD_REQUEST)
 

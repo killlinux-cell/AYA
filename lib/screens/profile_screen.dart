@@ -326,15 +326,15 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         _buildTipItem(
-                          '1. Scannez des codes QR',
-                          'Allez dans "Scanner" pour collecter vos premiers points',
-                          Icons.qr_code_scanner,
+                          '1. Saisissez le code du bouchon',
+                          'Allez dans "Code" et entrez les 6 chiffres pour gagner des points',
+                          Icons.pin,
                         ),
                         const SizedBox(height: 8),
                         _buildTipItem(
-                          '2. Jouez aux mini-jeux',
-                          'Visitez la section "Jeux" pour gagner des points bonus',
-                          Icons.games,
+                          '2. Cumulez vos points',
+                          'Chaque bouchon valide rapporte des points sur votre compte',
+                          Icons.stars,
                         ),
                         const SizedBox(height: 8),
                         _buildTipItem(

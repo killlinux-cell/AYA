@@ -104,8 +104,8 @@ class QRPrizeService {
                     : null)) ??
             'Erreur de validation';
         final errStr = errorMsg is String ? errorMsg : errorMsg.toString();
-        // 401 = non authentifié
         final is401 = response.statusCode == 401;
+        final is429 = response.statusCode == 429;
         return QRPrizeResult(
           success: false,
           error: is401
@@ -113,7 +113,9 @@ class QRPrizeService {
               : errStr,
           errorType: is401
               ? QRPrizeError.notAuthenticated
-              : QRPrizeError.serverError,
+              : (is429
+                  ? QRPrizeError.serverError
+                  : _mapErrorType(errorData['error_type'] as String?)),
         );
       }
     } catch (e) {
@@ -201,6 +203,8 @@ class QRPrizeService {
         return QRPrizeError.invalidCode;
       case 'not_authenticated':
         return QRPrizeError.notAuthenticated;
+      case 'rate_limited':
+        return QRPrizeError.serverError;
       default:
         return QRPrizeError.serverError;
     }

@@ -35,6 +35,9 @@ cp "$AYA/qr_codes/migrations/0012_world_cup_match_bracket_code.py" "$BACKEND/qr_
 cp "$AYA/qr_codes/urls.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/admin.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/models.py" "$BACKEND/qr_codes/"
+cp "$AYA/qr_codes/views.py" "$BACKEND/qr_codes/"
+cp "$AYA/qr_codes/code_utils.py" "$BACKEND/qr_codes/"
+cp "$AYA/qr_codes/serializers.py" "$BACKEND/qr_codes/" 2>/dev/null || true
 mkdir -p "$BACKEND/qr_codes/management/commands"
 cp "$AYA/qr_codes/management/commands/"*.py "$BACKEND/qr_codes/management/commands/" 2>/dev/null || true
 touch "$BACKEND/qr_codes/management/__init__.py"

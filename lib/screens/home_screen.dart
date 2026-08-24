@@ -11,7 +11,6 @@ import '../widgets/api_video_widget.dart';
 import '../widgets/home_banner_widget.dart';
 import '../utils/loading_mixin.dart';
 import '../theme/app_colors.dart';
-import 'games_screen.dart';
 import 'qr_scanner_screen.dart';
 import 'profile_screen.dart';
 import 'recettes_screen.dart';
@@ -29,7 +28,6 @@ class _HomeScreenState extends State<HomeScreen> with LoadingMixin {
 
   final List<Widget> _screens = [
     const _HomeContent(),
-    const GamesScreen(),
     const RecettesScreen(),
     const QRScannerScreen(),
     const ProfileScreen(),
@@ -255,44 +253,19 @@ class _HomeContentState extends State<_HomeContent>
           ),
         ),
         const SizedBox(height: 16),
-
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionCard(
-                context,
-                icon: Icons.games,
-                title: 'Jouer',
-                subtitle: 'Gagner des points',
-                color: AppColors.accentYellow,
-                onTap: () {
-                  navigateWithLoading(
-                    const GamesScreen(),
-                    message: 'Chargement des jeux...',
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 16),
-
-        // Carte pour voir son QR code personnel
-        /*  _buildActionCard(
+        _buildActionCard(
           context,
-          icon: Icons.qr_code,
-          title: 'Mon QR Code',
-          subtitle: 'Voir mon identifiant personnel',
+          icon: Icons.pin,
+          title: 'Saisir un code',
+          subtitle: '6 chiffres du bouchon',
           color: AppColors.primaryGreen,
           onTap: () {
-            // Navigation vers le QR code personnel avec chargement
             navigateWithLoading(
-              const PersonalQRScreen(),
-              message: 'Chargement du QR personnel...',
+              const QRScannerScreen(),
+              message: 'Ouverture...',
             );
           },
-        ), */
+        ),
       ],
     );
   }
