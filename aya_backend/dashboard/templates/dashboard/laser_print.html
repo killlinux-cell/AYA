@@ -14,6 +14,20 @@
     (même réseau que la machine, ex. 192.168.0.101).
 </div>
 
+{% if active_six_digit == 0 and active_total > 0 %}
+<div class="alert alert-danger">
+    <strong>Attention :</strong> tu as <strong>{{ active_total }}</strong> codes actifs, mais
+    <strong>0</strong> codes à 6 chiffres. L’ancien bouton exportait seulement les 6 chiffres
+    → fichier TXT vide. Utilise maintenant
+    <strong>« Télécharger TXT — tous les codes actifs »</strong> ci-dessous.
+</div>
+{% elif active_total == 0 %}
+<div class="alert alert-danger">
+    Aucun code actif. Génère d’abord un lot dans
+    <a href="{% url 'dashboard:qr_codes' %}">QR Codes</a> (format 6 chiffres recommandé).
+</div>
+{% endif %}
+
 <div class="row g-4">
     <div class="col-lg-4">
         <div class="card h-100">
@@ -21,19 +35,25 @@
                 <i class="fas fa-database"></i> Codes prêts
             </div>
             <div class="card-body">
-                <p class="display-6 mb-1">{{ active_six_digit }}</p>
-                <p class="text-muted mb-3">codes 6 chiffres actifs</p>
-                <p class="mb-1">Tous actifs : <strong>{{ active_total }}</strong></p>
+                <p class="display-6 mb-1">{{ active_total }}</p>
+                <p class="text-muted mb-3">codes actifs (à envoyer au laser)</p>
+                <p class="mb-1">Dont 6 chiffres : <strong>{{ active_six_digit }}</strong></p>
                 <p class="mb-3">Total base : <strong>{{ total_codes }}</strong></p>
                 <div class="d-grid gap-2">
-                    <a class="btn btn-dark" href="{% url 'dashboard:export_codes_txt' %}?status=active&digits_only=1">
-                        <i class="fas fa-file-alt"></i> 1. Télécharger TXT (1 code / ligne)
+                    <a class="btn btn-dark" href="{% url 'dashboard:export_codes_txt' %}?status=active&digits_only=0">
+                        <i class="fas fa-file-alt"></i> 1. Télécharger TXT — tous les codes actifs
                     </a>
-                    <a class="btn btn-outline-success" href="{% url 'dashboard:export_codes_csv' %}?status=active&digits_only=1">
-                        <i class="fas fa-file-csv"></i> Export CSV (optionnel)
+                    <a class="btn btn-outline-dark" href="{% url 'dashboard:export_codes_txt' %}?status=active&digits_only=1">
+                        <i class="fas fa-hashtag"></i> TXT — 6 chiffres seulement
+                    </a>
+                    <a class="btn btn-outline-success" href="{% url 'dashboard:export_codes_csv' %}?status=active&digits_only=0">
+                        <i class="fas fa-file-csv"></i> Export CSV (tous actifs)
                     </a>
                     <a class="btn btn-outline-primary" href="{% url 'dashboard:download_laser_sender' %}">
                         <i class="fas fa-download"></i> 2. Télécharger le script Python
+                    </a>
+                    <a class="btn btn-outline-secondary" href="{% url 'dashboard:qr_codes' %}">
+                        <i class="fas fa-magic"></i> Générer des codes 6 chiffres
                     </a>
                 </div>
             </div>
@@ -43,7 +63,7 @@
     <div class="col-lg-8">
         <div class="card h-100">
             <div class="card-header">
-                <i class="fas fa-terminal"></i> Lancer les {{ active_six_digit|default:"N" }} envois
+                <i class="fas fa-terminal"></i> Lancer les {{ active_total }} envois
             </div>
             <div class="card-body">
                 <h5>Format envoyé (comme ton test)</h5>
@@ -53,6 +73,7 @@
                 <ol>
                     <li>Ferme <strong>Network Debug Assistant</strong> (sinon le port est déjà pris).</li>
                     <li>Place le TXT + le script dans le même dossier, ex. <code>C:\aya_laser\</code></li>
+                    <li>Vérifie que <code>aya_codes_machine.txt</code> fait plus de <strong>0 Ko</strong>.</li>
                     <li>Ouvre PowerShell dans ce dossier.</li>
                     <li><strong>Test 3 codes</strong> d’abord :</li>
                 </ol>

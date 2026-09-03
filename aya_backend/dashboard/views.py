@@ -850,7 +850,11 @@ def export_codes_csv(request):
 @login_required
 @user_passes_test(is_admin)
 def export_codes_txt(request):
-    """Export TXT machine laser : un code par ligne (6 chiffres actifs par défaut)."""
+    """Export TXT machine laser : un code par ligne.
+
+    digits_only=1 → uniquement 6 chiffres
+    digits_only=0 → tous les codes (défaut pour laser si non précisé: active)
+    """
     status_filter = request.GET.get('status', 'active')
     qs = QRCode.objects.all().order_by('created_at')
     if status_filter == 'active':
@@ -858,7 +862,8 @@ def export_codes_txt(request):
     elif status_filter == 'inactive':
         qs = qs.filter(is_active=False)
 
-    digits_only = request.GET.get('digits_only', '1') == '1'
+    # Défaut: tous les codes (pas seulement 6 chiffres) pour ne pas exporter un fichier vide
+    digits_only = request.GET.get('digits_only', '0') == '1'
     if digits_only:
         qs = qs.filter(code__regex=r'^\d{6}$')
 
@@ -867,8 +872,9 @@ def export_codes_txt(request):
     if content:
         content += '\n'
 
+    filename = 'aya_codes_machine_6digits.txt' if digits_only else 'aya_codes_machine.txt'
     response = HttpResponse(content, content_type='text/plain; charset=utf-8')
-    response['Content-Disposition'] = 'attachment; filename="aya_codes_machine.txt"'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
 
 

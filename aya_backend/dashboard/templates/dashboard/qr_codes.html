@@ -40,11 +40,14 @@
         <a href="{% url 'dashboard:laser_print' %}" class="btn btn-outline-dark">
             <i class="fas fa-industry"></i> Impression laser TCP
         </a>
-        <a href="{% url 'dashboard:export_codes_txt' %}?status=active&digits_only=1" class="btn btn-outline-dark">
-            <i class="fas fa-file-alt"></i> Export TXT machine (1 code / ligne)
+        <a href="{% url 'dashboard:export_codes_txt' %}?status=active&digits_only=0" class="btn btn-outline-dark">
+            <i class="fas fa-file-alt"></i> Export TXT machine (tous actifs)
         </a>
-        <a href="{% url 'dashboard:export_codes_csv' %}?status=active&digits_only=1" class="btn btn-outline-success">
-            <i class="fas fa-file-csv"></i> Export CSV (6 chiffres actifs)
+        <a href="{% url 'dashboard:export_codes_txt' %}?status=active&digits_only=1" class="btn btn-outline-secondary">
+            <i class="fas fa-hashtag"></i> Export TXT (6 chiffres)
+        </a>
+        <a href="{% url 'dashboard:export_codes_csv' %}?status=active&digits_only=0" class="btn btn-outline-success">
+            <i class="fas fa-file-csv"></i> Export CSV (tous actifs)
         </a>
         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bulkGenerateModal">
             <i class="fas fa-magic"></i> Génération en Lot
