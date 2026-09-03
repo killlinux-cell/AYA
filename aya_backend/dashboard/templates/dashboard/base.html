@@ -273,6 +273,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'laser_print' or request.resolver_match.url_name == 'download_laser_sender' %}active{% endif %}"
+                           href="{% url 'dashboard:laser_print' %}">
+                            <i class="fas fa-industry"></i> Laser TCP
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'users' %}active{% endif %}" 
                            href="{% url 'dashboard:users' %}">
                             <i class="fas fa-users"></i> Utilisateurs

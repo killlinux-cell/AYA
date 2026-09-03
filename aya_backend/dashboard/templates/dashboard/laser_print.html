@@ -1,0 +1,93 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Dashboard - Impression laser{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-industry"></i> Impression laser (TCP)</h1>
+    <p>Envoi automatique des codes vers la machine — IP {{ laser_host }}:{{ laser_port }}</p>
+</div>
+
+<div class="alert alert-warning">
+    <strong>Important :</strong> le serveur web (VPS) <u>ne peut pas</u> joindre l’IP locale
+    <code>{{ laser_host }}</code>. L’envoi doit se faire sur le <strong>PC de l’atelier</strong>
+    (même réseau que la machine, ex. 192.168.0.101).
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-database"></i> Codes prêts
+            </div>
+            <div class="card-body">
+                <p class="display-6 mb-1">{{ active_six_digit }}</p>
+                <p class="text-muted mb-3">codes 6 chiffres actifs</p>
+                <p class="mb-1">Tous actifs : <strong>{{ active_total }}</strong></p>
+                <p class="mb-3">Total base : <strong>{{ total_codes }}</strong></p>
+                <div class="d-grid gap-2">
+                    <a class="btn btn-dark" href="{% url 'dashboard:export_codes_txt' %}?status=active&digits_only=1">
+                        <i class="fas fa-file-alt"></i> 1. Télécharger TXT (1 code / ligne)
+                    </a>
+                    <a class="btn btn-outline-success" href="{% url 'dashboard:export_codes_csv' %}?status=active&digits_only=1">
+                        <i class="fas fa-file-csv"></i> Export CSV (optionnel)
+                    </a>
+                    <a class="btn btn-outline-primary" href="{% url 'dashboard:download_laser_sender' %}">
+                        <i class="fas fa-download"></i> 2. Télécharger le script Python
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="fas fa-terminal"></i> Lancer les {{ active_six_digit|default:"N" }} envois
+            </div>
+            <div class="card-body">
+                <h5>Format envoyé (comme ton test)</h5>
+                <pre class="bg-light p-3 rounded">SM https://monuniversaya.com/scan?code=CODE\r\n</pre>
+
+                <h5 class="mt-4">Sur le PC atelier (Windows)</h5>
+                <ol>
+                    <li>Ferme <strong>Network Debug Assistant</strong> (sinon le port est déjà pris).</li>
+                    <li>Place le TXT + le script dans le même dossier, ex. <code>C:\aya_laser\</code></li>
+                    <li>Ouvre PowerShell dans ce dossier.</li>
+                    <li><strong>Test 3 codes</strong> d’abord :</li>
+                </ol>
+                <pre class="bg-dark text-white p-3 rounded">python laser_tcp_sender.py --host {{ laser_host }} --port {{ laser_port }} --file aya_codes_machine.txt --limit 3 --mode interval --interval-ms 1000</pre>
+
+                <p class="mt-3"><strong>Lot complet</strong> (reprise auto si coupure) :</p>
+                <pre class="bg-dark text-white p-3 rounded">python laser_tcp_sender.py --host {{ laser_host }} --port {{ laser_port }} --file aya_codes_machine.txt --mode interval --interval-ms 1000</pre>
+
+                <p class="mt-3">Si tu confirmes que <code>SMX</code> arrive <em>après chaque</em> code (pas seulement en heartbeat) :</p>
+                <pre class="bg-dark text-white p-3 rounded">python laser_tcp_sender.py --host {{ laser_host }} --port {{ laser_port }} --file aya_codes_machine.txt --mode smx --wait-smx-ms 3000</pre>
+
+                <div class="alert alert-info mt-3 mb-0">
+                    Le fichier <code>laser_progress.json</code> mémorise le dernier code envoyé.
+                    Relance la même commande pour reprendre. Pour tout recommencer :
+                    ajoute <code>--reset-progress</code>.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header"><i class="fas fa-flask"></i> Vérifier SMX (expérience rapide)</div>
+    <div class="card-body">
+        <ol class="mb-0">
+            <li>Dans Network Debug Assistant, connecte-toi à {{ laser_host }}:{{ laser_port }}.</li>
+            <li>Observe si <code>SMX</code> arrive <strong>sans rien envoyer</strong> (heartbeat).</li>
+            <li>Envoie <strong>une seule</strong> fois :
+                <code>SM https://monuniversaya.com/scan?code=test1\r\n</code></li>
+            <li>Note ce qui apparaît juste après, avec l’heure.</li>
+            <li>
+                Si SMX arrive en continu → garde <code>--mode interval</code>.<br>
+                Si SMX arrive clairement après chaque envoi → tu peux utiliser <code>--mode smx</code>.
+            </li>
+        </ol>
+    </div>
+</div>
+{% endblock %}

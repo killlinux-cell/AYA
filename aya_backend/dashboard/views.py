@@ -872,6 +872,38 @@ def export_codes_txt(request):
     return response
 
 
+@login_required
+@user_passes_test(is_admin)
+def laser_print_page(request):
+    """Guide d'impression laser TCP + exports pour le PC atelier."""
+    active_qs = QRCode.objects.filter(is_active=True)
+    context = {
+        'laser_host': '192.168.0.100',
+        'laser_port': 8950,
+        'active_total': active_qs.count(),
+        'active_six_digit': active_qs.filter(code__regex=r'^\d{6}$').count(),
+        'total_codes': QRCode.objects.count(),
+    }
+    return render(request, 'dashboard/laser_print.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def download_laser_sender(request):
+    """Télécharge le script Python d'envoi TCP pour le PC atelier."""
+    from pathlib import Path
+
+    script_path = Path(__file__).resolve().parent.parent / 'laser_tcp_sender.py'
+    if not script_path.exists():
+        messages.error(request, 'Script laser_tcp_sender.py introuvable sur le serveur.')
+        return redirect('dashboard:laser_print')
+
+    content = script_path.read_text(encoding='utf-8')
+    response = HttpResponse(content, content_type='text/x-python; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="laser_tcp_sender.py"'
+    return response
+
+
 def generate_standard_scenario(request, batch_number):
     """Génère automatiquement le scénario standard de 50 000 QR codes"""
     print(f"🎯 MODE STANDARD : Génération du scénario complet pour le lot {batch_number}")

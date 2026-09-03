@@ -52,6 +52,9 @@ cp "$AYA/dashboard/templatetags/world_cup_tags.py" "$BACKEND/dashboard/templatet
 touch "$BACKEND/dashboard/templatetags/__init__.py" 2>/dev/null || true
 cp "$AYA/dashboard/templates/dashboard/base.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/qr_codes.html" "$BACKEND/dashboard/templates/dashboard/"
+cp "$AYA/dashboard/templates/dashboard/laser_print.html" "$BACKEND/dashboard/templates/dashboard/"
+cp "$AYA/dashboard/templates/dashboard/base.html" "$BACKEND/dashboard/templates/dashboard/" 2>/dev/null || true
+cp "$AYA/laser_tcp_sender.py" "$BACKEND/" 2>/dev/null || true
 cp "$AYA/dashboard/templates/dashboard/bulk_operations.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/games.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/world_cup.html" "$BACKEND/dashboard/templates/dashboard/"
