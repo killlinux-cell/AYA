@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../services/vendor_auth_service.dart';
 import '../services/exchange_token_service.dart';
 import '../services/client_info_service.dart';
+import '../services/vendor_exchange_history_service.dart';
 import '../widgets/vendor_confirmation_popup_widget.dart';
 import '../widgets/vendor_exchange_history_widget.dart';
 import 'vendor_login_screen.dart';
@@ -811,47 +812,70 @@ class _VendorScreenState extends State<VendorScreen>
 
                 const SizedBox(height: 24),
 
-                // Statistiques rapides
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.shade200),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildStatItem(
-                        'Échanges',
-                        '0',
-                        Icons.swap_horiz,
-                        Colors.blue,
+                // Statistiques rapides (réelles, filtrées au vendeur)
+                FutureBuilder<VendorExchangeStats>(
+                  future: VendorExchangeHistoryService(
+                    _vendorAuthService,
+                  ).getExchangeStats(),
+                  builder: (context, snapshot) {
+                    final stats = snapshot.data;
+                    final loading = snapshot.connectionState ==
+                        ConnectionState.waiting;
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blue.shade200),
                       ),
-                      Container(
-                        width: 1,
-                        height: 40,
-                        color: Colors.blue.shade200,
-                      ),
-                      _buildStatItem(
-                        'Tokens',
-                        '0',
-                        Icons.confirmation_number,
-                        Colors.green,
-                      ),
-                      Container(
-                        width: 1,
-                        height: 40,
-                        color: Colors.blue.shade200,
-                      ),
-                      _buildStatItem(
-                        'Clients',
-                        '0',
-                        Icons.people,
-                        Colors.orange,
-                      ),
-                    ],
-                  ),
+                      child: loading
+                          ? const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _buildStatItem(
+                                  'Échanges',
+                                  '${stats?.totalExchanges ?? 0}',
+                                  Icons.swap_horiz,
+                                  Colors.blue,
+                                ),
+                                Container(
+                                  width: 1,
+                                  height: 40,
+                                  color: Colors.blue.shade200,
+                                ),
+                                _buildStatItem(
+                                  'Points',
+                                  '${stats?.totalPoints ?? 0}',
+                                  Icons.stars,
+                                  Colors.green,
+                                ),
+                                Container(
+                                  width: 1,
+                                  height: 40,
+                                  color: Colors.blue.shade200,
+                                ),
+                                _buildStatItem(
+                                  'Clients',
+                                  '${stats?.uniqueClients ?? 0}',
+                                  Icons.people,
+                                  Colors.orange,
+                                ),
+                              ],
+                            ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 24),

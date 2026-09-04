@@ -87,18 +87,53 @@ class ExchangeRequestSerializer(serializers.ModelSerializer):
     is_completed = serializers.ReadOnlyField()
     formatted_date = serializers.ReadOnlyField()
     user_name = serializers.CharField(source='user.full_name', read_only=True)
+    vendor_name = serializers.SerializerMethodField()
+    vendor_code = serializers.SerializerMethodField()
+    reward = serializers.SerializerMethodField()
     
     class Meta:
         model = ExchangeRequest
         fields = (
             'id', 'user', 'user_name', 'points', 'exchange_code', 'status',
             'status_display', 'is_completed', 'formatted_date', 'created_at',
-            'approved_at', 'completed_at', 'notes'
+            'approved_at', 'completed_at', 'notes',
+            'vendor_name', 'vendor_code', 'reward',
         )
         read_only_fields = (
             'id', 'user', 'exchange_code', 'status', 'created_at',
             'approved_at', 'completed_at'
         )
+
+    def get_vendor_name(self, obj):
+        if not obj.approved_by:
+            return None
+        vendor = getattr(obj.approved_by, 'vendor_profile', None)
+        if vendor:
+            return vendor.business_name
+        return obj.approved_by.full_name
+
+    def get_vendor_code(self, obj):
+        if not obj.approved_by:
+            return None
+        vendor = getattr(obj.approved_by, 'vendor_profile', None)
+        return vendor.vendor_code if vendor else None
+
+    def get_reward(self, obj):
+        # Aligné avec le catalogue app Flutter
+        catalog = [
+            (5000, 'Carton huile 5L × 4'),
+            (2000, '2 × 5L huile'),
+            (1000, 'Carton huile 0,9L × 12'),
+            (500, 'Box Aya (mix produits)'),
+            (300, 'Huile 3L'),
+            (150, 'Huile 0,9L ou pâte à tartiner'),
+            (50, 'Huile 0,45L ou margarine 250g'),
+        ]
+        points = obj.points or 0
+        for threshold, label in catalog:
+            if points >= threshold:
+                return label
+        return None
 
 
 class ExchangeRequestCreateSerializer(serializers.ModelSerializer):

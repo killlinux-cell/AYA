@@ -134,11 +134,19 @@ class DjangoExchangeService {
               (exchangeData) => {
                 'id': exchangeData['id'],
                 'user_id': exchangeData['user'],
+                'user_name': exchangeData['user_name'],
                 'points': exchangeData['points'],
                 'exchange_code': exchangeData['exchange_code'],
+                'status': exchangeData['status'],
+                'status_display': exchangeData['status_display'],
                 'created_at': exchangeData['created_at'],
+                'approved_at': exchangeData['approved_at'],
                 'is_completed': exchangeData['is_completed'] ?? false,
                 'completed_at': exchangeData['completed_at'],
+                'notes': exchangeData['notes'],
+                'vendor_name': exchangeData['vendor_name'],
+                'vendor_code': exchangeData['vendor_code'],
+                'reward': exchangeData['reward'],
               },
             )
             .toList();

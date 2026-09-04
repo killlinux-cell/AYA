@@ -16,6 +16,12 @@ echo "=== 2. Sauvegarde .env et base ==="
 cp "$BACKEND/.env" /root/.env.aya.backup 2>/dev/null || true
 cp "$BACKEND/db.sqlite3" /root/db.sqlite3.before_deploy.$(date +%F_%H%M) 2>/dev/null || true
 
+echo "=== 3b. Auth vendeur (historique filtré + login) ==="
+cp "$AYA/authentication/views.py" "$BACKEND/authentication/"
+cp "$AYA/authentication/vendor_urls.py" "$BACKEND/authentication/" 2>/dev/null || true
+cp "$AYA/authentication/models.py" "$BACKEND/authentication/" 2>/dev/null || true
+cp "$AYA/qr_codes/serializers.py" "$BACKEND/qr_codes/" 2>/dev/null || true
+
 echo "=== 3. API Coupe du Monde ==="
 cp "$AYA/qr_codes/models_world_cup.py" "$BACKEND/qr_codes/"
 cp "$AYA/qr_codes/world_cup_scoring.py" "$BACKEND/qr_codes/"

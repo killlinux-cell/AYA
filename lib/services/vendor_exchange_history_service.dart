@@ -223,36 +223,45 @@ class VendorExchangeHistoryService {
     }
   }
 
-  /// Récupérer les statistiques des échanges
+  /// Récupérer les statistiques des échanges (depuis l'API vendeur filtrée)
   Future<VendorExchangeStats> getExchangeStats() async {
     try {
-      final exchanges = await getExchangeHistory();
-
-      final totalExchanges = exchanges.length;
-      final totalPoints = exchanges.fold(
-        0,
-        (sum, exchange) => sum + exchange.points,
+      await _vendorAuthService.initialize();
+      final response = await http.get(
+        Uri.parse('$baseUrl/vendor/exchange-history/'),
+        headers: _authHeaders,
       );
-      final todayExchanges = exchanges.where((exchange) {
-        final now = DateTime.now();
-        final exchangeDate = exchange.completedAt ?? exchange.createdAt;
-        return exchangeDate.year == now.year &&
-            exchangeDate.month == now.month &&
-            exchangeDate.day == now.day;
-      }).length;
 
-      final thisWeekExchanges = exchanges.where((exchange) {
-        final now = DateTime.now();
-        final exchangeDate = exchange.completedAt ?? exchange.createdAt;
-        final weekAgo = now.subtract(const Duration(days: 7));
-        return exchangeDate.isAfter(weekAgo);
-      }).length;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final stats = data['stats'] as Map<String, dynamic>?;
+        if (stats != null) {
+          return VendorExchangeStats(
+            totalExchanges: (stats['total_exchanges'] as num?)?.toInt() ?? 0,
+            totalPoints: (stats['total_points'] as num?)?.toInt() ?? 0,
+            todayExchanges: (stats['today_exchanges'] as num?)?.toInt() ?? 0,
+            thisWeekExchanges: (stats['week_exchanges'] as num?)?.toInt() ?? 0,
+            uniqueClients: (stats['unique_clients'] as num?)?.toInt() ?? 0,
+          );
+        }
+      }
 
+      // Fallback local si ancienne API
+      final exchanges = await getExchangeHistory();
+      final clientIds = exchanges.map((e) => e.userId).toSet();
       return VendorExchangeStats(
-        totalExchanges: totalExchanges,
-        totalPoints: totalPoints,
-        todayExchanges: todayExchanges,
-        thisWeekExchanges: thisWeekExchanges,
+        totalExchanges: exchanges.length,
+        totalPoints: exchanges.fold(0, (sum, e) => sum + e.points),
+        todayExchanges: exchanges.where((e) {
+          final d = e.completedAt ?? e.createdAt;
+          final now = DateTime.now();
+          return d.year == now.year && d.month == now.month && d.day == now.day;
+        }).length,
+        thisWeekExchanges: exchanges.where((e) {
+          final d = e.completedAt ?? e.createdAt;
+          return d.isAfter(DateTime.now().subtract(const Duration(days: 7)));
+        }).length,
+        uniqueClients: clientIds.length,
       );
     } catch (e) {
       print('Erreur lors du calcul des statistiques: $e');
@@ -261,6 +270,7 @@ class VendorExchangeHistoryService {
         totalPoints: 0,
         todayExchanges: 0,
         thisWeekExchanges: 0,
+        uniqueClients: 0,
       );
     }
   }
@@ -313,11 +323,13 @@ class VendorExchangeStats {
   final int totalPoints;
   final int todayExchanges;
   final int thisWeekExchanges;
+  final int uniqueClients;
 
   VendorExchangeStats({
     required this.totalExchanges,
     required this.totalPoints,
     required this.todayExchanges,
     required this.thisWeekExchanges,
+    this.uniqueClients = 0,
   });
 }

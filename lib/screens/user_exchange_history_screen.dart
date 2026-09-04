@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/django_exchange_service.dart';
 import '../services/django_auth_service.dart';
 import '../constants/exchange_catalog.dart';
+import 'user_exchange_detail_screen.dart';
 
 class UserExchangeHistoryScreen extends StatefulWidget {
   const UserExchangeHistoryScreen({super.key});
@@ -187,12 +188,23 @@ class _UserExchangeHistoryScreenState extends State<UserExchangeHistoryScreen> {
 
   Widget _buildExchangeCard(Map<String, dynamic> exchange) {
     final points = (exchange['points'] as num?)?.toInt() ?? 0;
-    final reward = getRewardForPoints(points);
+    final reward =
+        exchange['reward'] as String? ?? getRewardForPoints(points);
     final createdAt = exchange['created_at'] ?? exchange['completed_at'];
     final isCompleted =
         exchange['is_completed'] == true || exchange['completed_at'] != null;
+    final vendorName = exchange['vendor_name'] as String?;
 
-    return Container(
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => UserExchangeDetailScreen(exchange: exchange),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -228,24 +240,30 @@ class _UserExchangeHistoryScreenState extends State<UserExchangeHistoryScreen> {
                     ),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isCompleted
-                        ? Colors.green.shade100
-                        : Colors.orange.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    isCompleted ? 'Complété' : 'En attente',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: isCompleted
-                          ? Colors.green.shade700
-                          : Colors.orange.shade700,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isCompleted
+                            ? Colors.green.shade100
+                            : Colors.orange.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        isCompleted ? 'Complété' : 'En attente',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isCompleted
+                              ? Colors.green.shade700
+                              : Colors.orange.shade700,
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 6),
+                    Icon(Icons.chevron_right, color: Colors.grey.shade400),
+                  ],
                 ),
               ],
             ),
@@ -254,10 +272,10 @@ class _UserExchangeHistoryScreenState extends State<UserExchangeHistoryScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.card_giftcard,
                     size: 20,
-                    color: const Color(0xFF488950),
+                    color: Color(0xFF488950),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -286,6 +304,24 @@ class _UserExchangeHistoryScreenState extends State<UserExchangeHistoryScreen> {
                 ],
               ),
             ],
+            if (vendorName != null && vendorName.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Icon(Icons.store, size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      vendorName,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 12),
             Row(
               children: [
@@ -298,11 +334,21 @@ class _UserExchangeHistoryScreenState extends State<UserExchangeHistoryScreen> {
                     color: Colors.grey.shade600,
                   ),
                 ),
+                const Spacer(),
+                Text(
+                  'Voir le détail',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
               ],
             ),
           ],
         ),
       ),
+    ),
     );
   }
 }

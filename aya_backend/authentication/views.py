@@ -572,11 +572,10 @@ def search_vendors(request):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def vendor_exchange_history(request):
-    """Récupérer l'historique des échanges d'un vendeur"""
+    """Historique + stats UNIQUEMENT pour le vendeur connecté."""
     try:
         print(f'🔄 vendor_exchange_history: Requête reçue de {request.user.email}')
         
-        # Vérifier que l'utilisateur est un vendeur
         try:
             vendor = Vendor.objects.get(user=request.user)
             print(f'🏪 vendor_exchange_history: Vendeur trouvé: {vendor.business_name}')
@@ -586,20 +585,24 @@ def vendor_exchange_history(request):
                 'error': 'Accès refusé. Compte vendeur requis.'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        # Uniquement les échanges validés par CE vendeur (approved_by = utilisateur connecté)
+        from django.db.models import Count, Sum
         from qr_codes.models import ExchangeRequest
+
+        # Strict: uniquement les échanges validés par CE vendeur
         exchanges = ExchangeRequest.objects.filter(
             approved_by=request.user,
             status='completed'
         ).select_related('user').order_by('-completed_at')
-        
-        # Tokens en attente globaux (tout vendeur peut les valider via scan QR)
-        pending_tokens = ExchangeRequest.objects.filter(
-            status='pending'
-        ).select_related('user').order_by('-created_at')[:10]
-        
-        print(f'📊 vendor_exchange_history: Échanges du vendeur {vendor.business_name}: {exchanges.count()}')
-        print(f'📋 vendor_exchange_history: Tokens en attente: {pending_tokens.count()}')
+
+        now = timezone.now()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_ago = now - timedelta(days=7)
+
+        total_exchanges = exchanges.count()
+        total_points = exchanges.aggregate(s=Sum('points'))['s'] or 0
+        unique_clients = exchanges.values('user_id').distinct().count()
+        today_exchanges = exchanges.filter(completed_at__gte=today_start).count()
+        week_exchanges = exchanges.filter(completed_at__gte=week_ago).count()
         
         exchanges_data = []
         for exchange in exchanges:
@@ -614,33 +617,31 @@ def vendor_exchange_history(request):
                 'created_at': exchange.created_at.isoformat(),
                 'approved_at': exchange.approved_at.isoformat() if exchange.approved_at else None,
                 'completed_at': exchange.completed_at.isoformat() if exchange.completed_at else None,
-                'notes': exchange.notes,
-                'type': 'exchange_request'
+                'notes': exchange.notes or '',
+                'type': 'exchange_request',
+                'vendor_name': vendor.business_name,
             })
         
-        # Préparer les données des tokens en attente
-        pending_data = []
-        for token in pending_tokens:
-            pending_data.append({
-                'id': str(token.id),
-                'user_id': str(token.user.id),
-                'user_name': token.user.full_name,
-                'user_email': token.user.email,
-                'points': token.points,
-                'exchange_code': token.exchange_code,
-                'status': token.status,
-                'created_at': token.created_at.isoformat(),
-                'notes': token.notes,
-            })
-        
-        print(f'✅ vendor_exchange_history: Réponse envoyée avec {len(exchanges_data)} échanges du vendeur et {len(pending_data)} en attente')
+        print(
+            f'✅ vendor_exchange_history: {vendor.business_name} → '
+            f'{total_exchanges} échanges, {unique_clients} clients'
+        )
         
         return Response({
             'results': exchanges_data,
-            'total': len(exchanges_data),
-            'pending_tokens': pending_data,
-            'pending_count': len(pending_data),
+            'total': total_exchanges,
+            # Plus de pending_tokens globaux (fuite entre vendeurs)
+            'pending_tokens': [],
+            'pending_count': 0,
             'vendor_name': vendor.business_name,
+            'vendor_id': str(vendor.id),
+            'stats': {
+                'total_exchanges': total_exchanges,
+                'total_points': total_points,
+                'unique_clients': unique_clients,
+                'today_exchanges': today_exchanges,
+                'week_exchanges': week_exchanges,
+            },
         })
         
     except Exception as e:

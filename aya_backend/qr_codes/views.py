@@ -341,7 +341,9 @@ class ExchangeRequestListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        return ExchangeRequest.objects.filter(user=self.request.user)
+        return ExchangeRequest.objects.filter(
+            user=self.request.user
+        ).select_related('user', 'approved_by', 'approved_by__vendor_profile')
 
 
 class ExchangeValidationView(APIView):
@@ -580,6 +582,7 @@ class ExchangeTokenValidateView(APIView):
                 exchange_code=token,
                 status='completed',
                 completed_at=timezone.now(),
+                approved_at=timezone.now(),
                 approved_by=request.user
             )
             
