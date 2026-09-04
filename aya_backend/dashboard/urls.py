@@ -22,6 +22,7 @@ urlpatterns = [
     path('qr-codes/export-txt/', views.export_codes_txt, name='export_codes_txt'),
     path('laser/', views.laser_print_page, name='laser_print'),
     path('laser/download-sender/', views.download_laser_sender, name='download_laser_sender'),
+    path('laser/download-exe/', views.download_laser_exe, name='download_laser_exe'),
     path('qr-codes/generate-batch/', views.batch_generation_page, name='batch_generation_page'),
     path('qr-codes/generate-batch/process/', views.generate_batch_qr_codes, name='generate_batch_qr_codes'),
     path('games/loyalty-bonus/', views.loyalty_bonus_status, name='loyalty_bonus_status'),

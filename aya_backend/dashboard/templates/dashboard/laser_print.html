@@ -43,6 +43,13 @@
                     <a class="btn btn-dark" href="{% url 'dashboard:export_codes_txt' %}?status=active&digits_only=0">
                         <i class="fas fa-file-alt"></i> 1. Télécharger TXT — tous les codes actifs
                     </a>
+                    <a class="btn btn-success" href="{% url 'dashboard:download_laser_exe' %}">
+                        <i class="fas fa-windows"></i> 2. Télécharger AYA_Laser_Sender.exe
+                    </a>
+                    <p class="small text-muted mb-0">
+                        Depuis le <strong>PC atelier</strong> : TXT + exe dans le même dossier,
+                        puis double-clic (pause 10 s). Pas besoin de Python.
+                    </p>
                     <a class="btn btn-outline-dark" href="{% url 'dashboard:export_codes_txt' %}?status=active&digits_only=1">
                         <i class="fas fa-hashtag"></i> TXT — 6 chiffres seulement
                     </a>
@@ -50,7 +57,7 @@
                         <i class="fas fa-file-csv"></i> Export CSV (tous actifs)
                     </a>
                     <a class="btn btn-outline-primary" href="{% url 'dashboard:download_laser_sender' %}">
-                        <i class="fas fa-download"></i> 2. Télécharger le script Python
+                        <i class="fas fa-download"></i> Script Python (backup)
                     </a>
                     <a class="btn btn-outline-secondary" href="{% url 'dashboard:qr_codes' %}">
                         <i class="fas fa-magic"></i> Générer des codes 6 chiffres
@@ -72,18 +79,24 @@
                 <h5 class="mt-4">Sur le PC atelier (Windows)</h5>
                 <ol>
                     <li>Ferme <strong>Network Debug Assistant</strong> (sinon le port est déjà pris).</li>
-                    <li>Place le TXT + le script dans le même dossier, ex. <code>C:\aya_laser\</code></li>
+                    <li>Télécharge le TXT + l’exe (ou le script) dans le même dossier, ex. <code>C:\aya_laser\</code></li>
                     <li>Vérifie que <code>aya_codes_machine.txt</code> fait plus de <strong>0 Ko</strong>.</li>
-                    <li>Ouvre PowerShell dans ce dossier.</li>
-                    <li><strong>Test 3 codes</strong> d’abord :</li>
+                    <li><strong>Double-clique</strong> sur <code>AYA_Laser_Sender.exe</code> (pause <strong>10 s</strong> entre chaque code).</li>
                 </ol>
-                <pre class="bg-dark text-white p-3 rounded">python laser_tcp_sender.py --host {{ laser_host }} --port {{ laser_port }} --file aya_codes_machine.txt --limit 3 --mode interval --interval-ms 1000</pre>
 
-                <p class="mt-3"><strong>Lot complet</strong> (reprise auto si coupure) :</p>
-                <pre class="bg-dark text-white p-3 rounded">python laser_tcp_sender.py --host {{ laser_host }} --port {{ laser_port }} --file aya_codes_machine.txt --mode interval --interval-ms 1000</pre>
+                <p class="mt-3"><strong>Test 3 codes</strong> (PowerShell) :</p>
+                <pre class="bg-dark text-white p-3 rounded">AYA_Laser_Sender.exe --limit 3
+python laser_tcp_sender.py --file aya_codes_machine.txt --limit 3</pre>
 
-                <p class="mt-3">Si tu confirmes que <code>SMX</code> arrive <em>après chaque</em> code (pas seulement en heartbeat) :</p>
-                <pre class="bg-dark text-white p-3 rounded">python laser_tcp_sender.py --host {{ laser_host }} --port {{ laser_port }} --file aya_codes_machine.txt --mode smx --wait-smx-ms 3000</pre>
+                <p class="mt-3"><strong>Lot complet</strong> (reprise auto, 10 s entre codes) :</p>
+                <pre class="bg-dark text-white p-3 rounded">AYA_Laser_Sender.exe
+python laser_tcp_sender.py --file aya_codes_machine.txt</pre>
+
+                <p class="mt-3">Changer la pause (ex. 15 s) :</p>
+                <pre class="bg-dark text-white p-3 rounded">AYA_Laser_Sender.exe --interval-ms 15000</pre>
+
+                <p class="mt-3">Si tu confirmes que <code>SMX</code> arrive <em>après chaque</em> code :</p>
+                <pre class="bg-dark text-white p-3 rounded">AYA_Laser_Sender.exe --mode smx --wait-smx-ms 15000</pre>
 
                 <div class="alert alert-info mt-3 mb-0">
                     Le fichier <code>laser_progress.json</code> mémorise le dernier code envoyé.

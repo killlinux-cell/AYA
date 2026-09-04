@@ -61,6 +61,10 @@ cp "$AYA/dashboard/templates/dashboard/qr_codes.html" "$BACKEND/dashboard/templa
 cp "$AYA/dashboard/templates/dashboard/laser_print.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/base.html" "$BACKEND/dashboard/templates/dashboard/" 2>/dev/null || true
 cp "$AYA/laser_tcp_sender.py" "$BACKEND/" 2>/dev/null || true
+mkdir -p "$BACKEND/laser_bin"
+cp "$AYA/laser_bin/AYA_Laser_Sender.exe" "$BACKEND/laser_bin/" 2>/dev/null || true
+test -f "$BACKEND/laser_bin/AYA_Laser_Sender.exe" && echo "OK laser exe" || echo "WARN: AYA_Laser_Sender.exe absent (téléchargement exe indispo)"
+grep -q "download_laser_exe" "$BACKEND/dashboard/urls.py" && echo "OK laser exe URL" || { echo "ERREUR download_laser_exe"; exit 1; }
 cp "$AYA/dashboard/templates/dashboard/bulk_operations.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/games.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/world_cup.html" "$BACKEND/dashboard/templates/dashboard/"

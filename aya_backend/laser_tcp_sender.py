@@ -4,13 +4,17 @@ Envoi automatique des codes AYA vers la machine laser (TCP).
 
 Usage (sur le PC de l'atelier, même réseau que la machine) :
 
-  python laser_tcp_sender.py --host 192.168.0.100 --port 8950 --file aya_codes_machine.txt
+  # Double-clic sur AYA_Laser_Sender.exe
+  # ou :
+  AYA_Laser_Sender.exe
+  python laser_tcp_sender.py --file aya_codes_machine.txt
 
+Pause par défaut entre chaque code : 10 secondes.
 Format envoyé (comme Network Debug Assistant) :
   SM https://monuniversaya.com/scan?code=CODE\\r\\n
 
 IMPORTANT
-- Ne pas envoyer tous les codes d'un coup : 1 code → pause / SMX → code suivant.
+- Ne pas envoyer tous les codes d'un coup : 1 code → pause 10s → code suivant.
 - SMX peut être un heartbeat (récurrent) OU un ACK : utilisez --mode interval
   si SMX arrive en continu sans lien avec chaque envoi.
 - La reprise est automatique via le fichier --progress (défaut: laser_progress.json).
@@ -29,7 +33,16 @@ from typing import List, Optional
 
 DEFAULT_HOST = "192.168.0.100"
 DEFAULT_PORT = 8950
+DEFAULT_INTERVAL_MS = 10000  # 10 secondes entre chaque code (demande production)
+DEFAULT_FILE = "aya_codes_machine.txt"
 BASE_URL = "https://monuniversaya.com/scan?code="
+
+
+def app_dir() -> Path:
+    """Dossier de l'exe (PyInstaller) ou du script."""
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent
 
 
 def load_codes(path: Path) -> List[str]:
@@ -146,9 +159,13 @@ class LaserClient:
 
 
 def run(args: argparse.Namespace) -> int:
+    base = app_dir()
     codes_path = Path(args.file)
+    if not codes_path.is_absolute():
+        codes_path = base / codes_path
     if not codes_path.exists():
         print(f"[ERREUR] Fichier introuvable: {codes_path}")
+        print(f"Placez {DEFAULT_FILE} à côté de l'exe / script : {base}")
         return 1
 
     codes = load_codes(codes_path)
@@ -157,6 +174,8 @@ def run(args: argparse.Namespace) -> int:
         return 1
 
     progress_path = Path(args.progress)
+    if not progress_path.is_absolute():
+        progress_path = base / progress_path
     progress = load_progress(progress_path)
     start_index = progress.get("last_index", -1) + 1
 
@@ -261,24 +280,57 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Envoi TCP des codes AYA vers la machine laser")
     parser.add_argument("--host", default=DEFAULT_HOST, help="IP machine laser (défaut: 192.168.0.100)")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="Port TCP (défaut: 8950)")
-    parser.add_argument("--file", "-f", required=True, help="Fichier TXT/CSV des codes (1 code/ligne)")
+    parser.add_argument(
+        "--file",
+        "-f",
+        default=DEFAULT_FILE,
+        help=f"Fichier TXT/CSV des codes (défaut: {DEFAULT_FILE} à côté de l'exe)",
+    )
     parser.add_argument("--progress", default="laser_progress.json", help="Fichier de reprise")
     parser.add_argument(
         "--mode",
         choices=["interval", "smx"],
         default="interval",
-        help="interval=pause fixe (recommandé si SMX heartbeat) | smx=attendre SMX après chaque envoi",
+        help="interval=pause fixe (recommandé) | smx=attendre SMX après chaque envoi",
     )
-    parser.add_argument("--interval-ms", type=int, default=1000, help="Pause entre codes (mode interval)")
-    parser.add_argument("--wait-smx-ms", type=int, default=3000, help="Timeout attente SMX (mode smx)")
-    parser.add_argument("--timeout", type=float, default=10.0, help="Timeout socket (s)")
+    parser.add_argument(
+        "--interval-ms",
+        type=int,
+        default=DEFAULT_INTERVAL_MS,
+        help="Pause entre codes en ms (défaut: 10000 = 10 s)",
+    )
+    parser.add_argument("--wait-smx-ms", type=int, default=15000, help="Timeout attente SMX (mode smx)")
+    parser.add_argument("--timeout", type=float, default=15.0, help="Timeout socket (s)")
     parser.add_argument("--retries", type=int, default=3, help="Tentatives par code")
     parser.add_argument("--from-index", type=int, default=None, help="Forcer l'index de départ (0-based)")
     parser.add_argument("--reset-progress", action="store_true", help="Recommencer depuis le début")
     parser.add_argument("--stop-on-error", action="store_true", help="Arrêter si un code échoue")
     parser.add_argument("--limit", type=int, default=None, help="Envoyer au plus N codes (test)")
+    parser.add_argument(
+        "--no-pause",
+        action="store_true",
+        help="Ne pas attendre Entrée à la fin (utile en script)",
+    )
     args = parser.parse_args()
-    sys.exit(run(args))
+
+    print("=" * 60)
+    print("  AYA Laser Sender — envoi automatique des codes")
+    print(f"  Pause entre codes : {args.interval_ms / 1000:.0f} s")
+    print("=" * 60)
+
+    code = 0
+    try:
+        code = run(args)
+    except Exception as exc:
+        print(f"[ERREUR fatale] {exc}")
+        code = 1
+    finally:
+        if not args.no_pause:
+            try:
+                input("\nAppuyez sur Entrée pour fermer...")
+            except EOFError:
+                pass
+    sys.exit(code)
 
 
 if __name__ == "__main__":

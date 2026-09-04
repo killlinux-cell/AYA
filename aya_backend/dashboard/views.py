@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
 from datetime import datetime, timedelta
@@ -908,6 +908,28 @@ def download_laser_sender(request):
     response = HttpResponse(content, content_type='text/x-python; charset=utf-8')
     response['Content-Disposition'] = 'attachment; filename="laser_tcp_sender.py"'
     return response
+
+
+@login_required
+@user_passes_test(is_admin)
+def download_laser_exe(request):
+    """Télécharge AYA_Laser_Sender.exe pour le PC atelier (pas besoin de Python)."""
+    from pathlib import Path
+
+    exe_path = Path(__file__).resolve().parent.parent / 'laser_bin' / 'AYA_Laser_Sender.exe'
+    if not exe_path.exists():
+        messages.error(
+            request,
+            'AYA_Laser_Sender.exe introuvable sur le serveur. Rebuild + déploiement laser_bin/ requis.',
+        )
+        return redirect('dashboard:laser_print')
+
+    return FileResponse(
+        exe_path.open('rb'),
+        as_attachment=True,
+        filename='AYA_Laser_Sender.exe',
+        content_type='application/vnd.microsoft.portable-executable',
+    )
 
 
 def generate_standard_scenario(request, batch_number):
