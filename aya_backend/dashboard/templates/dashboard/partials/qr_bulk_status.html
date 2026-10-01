@@ -1,0 +1,40 @@
+<div class="card mb-4 border-warning">
+    <div class="card-header">
+        <i class="fas fa-toggle-on"></i> Activer ou désactiver un nombre de codes
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">
+            Choisissez le nombre (par exemple 1000). Les plus anciens sont pris en premier.
+            Un code déjà scanné n’est jamais réactivé.
+        </p>
+        <form method="post" action="{% url 'dashboard:bulk_set_qr_status' %}" class="row g-3 align-items-end"
+              onsubmit="return confirm('Appliquer cette action sur ' + this.count.value + ' codes ?');">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ status_next|default:'qr_codes' }}">
+            <div class="col-md-3">
+                <label class="form-label" for="bulkStatusCount">Nombre</label>
+                <input type="number" class="form-control" id="bulkStatusCount" name="count"
+                       min="1" max="100000" value="1000" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="bulkStatusBatch">Lot (optionnel)</label>
+                <input type="text" class="form-control" id="bulkStatusBatch" name="batch_number"
+                       placeholder="ex. 4151000" autocomplete="off">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" name="set_status" value="inactive" class="btn btn-warning w-100">
+                    <i class="fas fa-pause-circle"></i> Rendre inactifs
+                </button>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" name="set_status" value="active" class="btn btn-success w-100">
+                    <i class="fas fa-play-circle"></i> Rendre actifs
+                </button>
+            </div>
+        </form>
+        <p class="small text-muted mt-3 mb-0">
+            Actifs : <strong>{{ active_qr_count }}</strong>
+            — réactivables (inactifs, jamais scannés) : <strong>{{ inactive_unused_count }}</strong>
+        </p>
+    </div>
+</div>

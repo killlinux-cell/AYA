@@ -41,7 +41,7 @@
                 <p class="mb-3">Total base : <strong>{{ total_codes }}</strong></p>
                 <div class="d-grid gap-2">
                     <a class="btn btn-dark" href="{% url 'dashboard:export_codes_txt' %}?status=active&digits_only=0">
-                        <i class="fas fa-file-alt"></i> 1. Télécharger TXT — tous les codes actifs
+                        <i class="fas fa-file-alt"></i> 1. Télécharger TXT — code + URL
                     </a>
                     <a class="btn btn-success" href="{% url 'dashboard:download_laser_exe' %}">
                         <i class="fas fa-windows"></i> 2. Télécharger AYA_Laser_Sender.exe
@@ -55,7 +55,7 @@
                         <i class="fas fa-hashtag"></i> TXT — 6 chiffres seulement
                     </a>
                     <a class="btn btn-outline-success" href="{% url 'dashboard:export_codes_csv' %}?status=active&digits_only=0">
-                        <i class="fas fa-file-csv"></i> Export CSV (tous actifs)
+                        <i class="fas fa-file-csv"></i> Export CSV (code + URL)
                     </a>
                     <a class="btn btn-outline-primary" href="{% url 'dashboard:download_laser_sender' %}">
                         <i class="fas fa-download"></i> Script Python (backup)

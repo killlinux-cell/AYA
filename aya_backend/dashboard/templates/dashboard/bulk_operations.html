@@ -88,6 +88,7 @@
                 <h5><i class="fas fa-qrcode"></i> Gestion des QR Codes</h5>
             </div>
             <div class="card-body">
+                {% include 'dashboard/partials/qr_bulk_status.html' with status_next='bulk_operations' %}
                 <div class="row">
                     <div class="col-md-6">
                         <div class="d-grid gap-2">

@@ -18,6 +18,13 @@ from qr_codes.models import QRCode, UserQRCode, GameHistory, ExchangeRequest, Ex
 from django.core.paginator import Paginator
 import csv
 
+SCAN_CODE_URL = "https://monuniversaya.com/scan?code="
+
+
+def _scan_url(code: str) -> str:
+    return f"{SCAN_CODE_URL}{code}"
+
+
 def is_admin(user):
     """Vérifier si l'utilisateur est admin"""
     return user.is_staff or user.is_superuser
@@ -184,9 +191,76 @@ def qr_codes_management(request):
         'status_filter': status_filter,
         'total_qr_codes': QRCode.objects.count(),
         'total_scans': UserQRCode.objects.count(),
+        **_qr_status_counts(),
     }
     
     return render(request, 'dashboard/qr_codes.html', context)
+
+
+def _qr_status_counts():
+    return {
+        'active_qr_count': QRCode.objects.filter(is_active=True).count(),
+        'inactive_unused_count': QRCode.objects.filter(
+            is_active=False,
+            scanned_by_users__isnull=True,
+        ).count(),
+    }
+
+
+@login_required
+@user_passes_test(is_admin)
+def bulk_set_qr_status(request):
+    """Active ou désactive un nombre choisi de codes (les plus anciens d'abord)."""
+    next_name = request.POST.get('next') or 'qr_codes'
+    if next_name not in ('qr_codes', 'bulk_operations'):
+        next_name = 'qr_codes'
+    back = f'dashboard:{next_name}'
+
+    if request.method != 'POST':
+        return redirect(back)
+
+    set_status = request.POST.get('set_status')
+    if set_status not in ('active', 'inactive'):
+        messages.error(request, 'Action inconnue.')
+        return redirect(back)
+
+    try:
+        count = int(request.POST.get('count') or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count < 1 or count > 100_000:
+        messages.error(request, 'Indiquez un nombre entre 1 et 100 000.')
+        return redirect(back)
+
+    batch_number = (request.POST.get('batch_number') or '').strip()
+    want_active = set_status == 'active'
+
+    if want_active:
+        qs = QRCode.objects.filter(is_active=False, scanned_by_users__isnull=True)
+    else:
+        qs = QRCode.objects.filter(is_active=True)
+    if batch_number:
+        qs = qs.filter(batch_number=batch_number)
+
+    ids = list(
+        qs.order_by('created_at', 'batch_sequence').values_list('pk', flat=True)[:count]
+    )
+    updated = 0
+    for offset in range(0, len(ids), 500):
+        updated += QRCode.objects.filter(pk__in=ids[offset:offset + 500]).update(
+            is_active=want_active
+        )
+
+    lot = f' du lot {batch_number}' if batch_number else ''
+    label = 'activés' if want_active else 'désactivés'
+    if updated < count:
+        messages.warning(
+            request,
+            f'{updated} codes {label}{lot} (seulement {updated} disponibles sur {count} demandés).',
+        )
+    else:
+        messages.success(request, f'{updated} codes {label}{lot}.')
+    return redirect(back)
 
 @login_required
 @user_passes_test(is_admin)
@@ -833,10 +907,11 @@ def export_codes_csv(request):
     response['Content-Disposition'] = 'attachment; filename="aya_codes.csv"'
     response.write('\ufeff')  # BOM Excel
     writer = csv.writer(response, delimiter=';')
-    writer.writerow(['code', 'points', 'prize_type', 'category', 'description', 'is_active', 'batch_number'])
+    writer.writerow(['code', 'url', 'points', 'prize_type', 'category', 'description', 'is_active', 'batch_number'])
     for row in qs.iterator():
         writer.writerow([
             row.code,
+            _scan_url(row.code),
             row.points,
             row.prize_type,
             row.category or '',
@@ -850,7 +925,7 @@ def export_codes_csv(request):
 @login_required
 @user_passes_test(is_admin)
 def export_codes_txt(request):
-    """Export TXT machine laser : un code par ligne.
+    """Export TXT : code;url (l'exe laser ne lit que le code, avant le point-virgule).
 
     digits_only=1 → uniquement 6 chiffres
     digits_only=0 → tous les codes (défaut pour laser si non précisé: active)
@@ -867,7 +942,7 @@ def export_codes_txt(request):
     if digits_only:
         qs = qs.filter(code__regex=r'^\d{6}$')
 
-    lines = [row.code for row in qs.iterator()]
+    lines = [f"{row.code};{_scan_url(row.code)}" for row in qs.iterator()]
     content = '\n'.join(lines)
     if content:
         content += '\n'
@@ -2166,6 +2241,7 @@ def bulk_operations(request):
         'expired_qr_count': expired_qr_count,
         'old_tokens_count': old_tokens_count,
         'total_qr_count': total_qr_count,
+        **_qr_status_counts(),
     }
     
     return render(request, 'dashboard/bulk_operations.html', context)

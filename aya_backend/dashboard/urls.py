@@ -18,6 +18,7 @@ urlpatterns = [
     path('qr-codes/<uuid:qr_code_id>/generate/', views.generate_qr_code_image, name='generate_qr_code'),
     path('qr-codes/<uuid:qr_code_id>/download/', views.download_qr_code, name='download_qr_code'),
     path('qr-codes/bulk-generate/', views.bulk_generate_qr_codes, name='bulk_generate_qr_codes'),
+    path('qr-codes/bulk-status/', views.bulk_set_qr_status, name='bulk_set_qr_status'),
     path('qr-codes/export-csv/', views.export_codes_csv, name='export_codes_csv'),
     path('qr-codes/export-txt/', views.export_codes_txt, name='export_codes_txt'),
     path('laser/', views.laser_print_page, name='laser_print'),
