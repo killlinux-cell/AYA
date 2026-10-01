@@ -9,15 +9,17 @@ Usage (sur le PC de l'atelier, même réseau que la machine) :
   AYA_Laser_Sender.exe
   python laser_tcp_sender.py --file aya_codes_machine.txt
 
-Pause par défaut entre chaque code : 10 secondes.
+Comportement par défaut :
+  1 code envoyé → attente du retour laser (SMX = marquage terminé) → code suivant.
+  Rien n'est envoyé tant que la machine n'a pas répondu.
+
 Format envoyé (comme Network Debug Assistant) :
   SM https://monuniversaya.com/scan?code=CODE\\r\\n
 
 IMPORTANT
-- Ne pas envoyer tous les codes d'un coup : 1 code → pause 10s → code suivant.
-- SMX peut être un heartbeat (récurrent) OU un ACK : utilisez --mode interval
-  si SMX arrive en continu sans lien avec chaque envoi.
+- Un seul code en vol : le suivant part seulement après le retour.
 - La reprise est automatique via le fichier --progress (défaut: laser_progress.json).
+- --mode interval reste disponible (pause fixe) si besoin.
 """
 
 from __future__ import annotations
@@ -33,7 +35,9 @@ from typing import List, Optional
 
 DEFAULT_HOST = "192.168.0.100"
 DEFAULT_PORT = 8950
-DEFAULT_INTERVAL_MS = 10000  # 10 secondes entre chaque code (demande production)
+DEFAULT_INTERVAL_MS = 10000
+DEFAULT_ACK = "SMX"
+DEFAULT_ACK_TIMEOUT_MS = 180000  # 3 min max pour un marquage
 DEFAULT_FILE = "aya_codes_machine.txt"
 BASE_URL = "https://monuniversaya.com/scan?code="
 
@@ -125,30 +129,34 @@ class LaserClient:
         self._buffer += text
         return text
 
-    def wait_for_smx(self, timeout: float) -> bool:
-        """Attend la prochaine occurrence de SMX dans le flux reçu."""
+    def wait_for_token(self, token: str, timeout: float) -> str:
+        """Attend un retour arrivé APRÈS l'appel (le buffer doit être vidé avant l'envoi)."""
         if not self.sock:
-            return False
+            return ""
         deadline = time.time() + timeout
-        self.sock.settimeout(0.2)
+        self.sock.settimeout(0.3)
         while time.time() < deadline:
-            if "SMX" in self._buffer:
-                # Consomme jusqu'au premier SMX
-                idx = self._buffer.find("SMX")
-                self._buffer = self._buffer[idx + 3 :]
+            idx = self._buffer.find(token)
+            if idx >= 0:
+                snippet = self._buffer[: idx + len(token)]
+                self._buffer = self._buffer[idx + len(token) :]
                 self.sock.settimeout(self.timeout)
-                return True
+                return snippet
             try:
                 data = self.sock.recv(4096)
                 if not data:
                     break
-                self._buffer += data.decode("ascii", errors="ignore")
+                text = data.decode("ascii", errors="ignore")
+                self._buffer += text
+                preview = text.strip().replace("\r", " ").replace("\n", " ")
+                if preview:
+                    print(f"  ← {preview[:120]}")
             except socket.timeout:
                 continue
             except OSError:
                 break
         self.sock.settimeout(self.timeout)
-        return False
+        return ""
 
     def send_code(self, code: str) -> None:
         if not self.sock:
@@ -189,7 +197,10 @@ def run(args: argparse.Namespace) -> int:
     total = len(codes)
     print(f"[INFO] {total} codes chargés depuis {codes_path.name}")
     print(f"[INFO] Reprise à l'index {start_index} (code #{start_index + 1})")
-    print(f"[INFO] Mode: {args.mode} | interval={args.interval_ms}ms | wait_smx={args.wait_smx_ms}ms")
+    print(
+        f"[INFO] Mode: {args.mode} | ack={args.ack!r} | "
+        f"timeout_ack={args.wait_smx_ms}ms | interval={args.interval_ms}ms"
+    )
     print(f"[INFO] Machine: {args.host}:{args.port}")
     print("-" * 60)
 
@@ -215,20 +226,21 @@ def run(args: argparse.Namespace) -> int:
             retries = 0
             while True:
                 try:
-                    # Vide le buffer avant envoi (évite de compter un vieux SMX)
-                    client.drain(0.05)
+                    # Vide tout ce qui traînait (vieux SMX) pour ne pas le prendre comme "terminé"
+                    client.drain(0.15)
                     client._buffer = ""
                     client.send_code(code)
 
                     if args.mode == "smx":
-                        ok = client.wait_for_smx(args.wait_smx_ms / 1000.0)
-                        if not ok:
-                            raise TimeoutError(f"Pas de SMX sous {args.wait_smx_ms} ms")
-                        print("  ← SMX")
+                        print(f"  … attente retour laser ({args.ack}) avant le code suivant…")
+                        reply = client.wait_for_token(args.ack, args.wait_smx_ms / 1000.0)
+                        if not reply:
+                            raise TimeoutError(
+                                f"Pas de retour {args.ack!r} sous {args.wait_smx_ms} ms"
+                            )
+                        print("  ✓ marquage terminé, envoi du suivant")
                     else:
-                        # Mode interval : pause fixe (recommandé si SMX est un heartbeat)
                         time.sleep(max(args.interval_ms, 50) / 1000.0)
-                        # Lecture non bloquante pour log
                         rx = client.drain(0.05)
                         if rx.strip():
                             print(f"  ← {rx.strip()[:80]!r}")
@@ -289,17 +301,27 @@ def main() -> None:
     parser.add_argument("--progress", default="laser_progress.json", help="Fichier de reprise")
     parser.add_argument(
         "--mode",
-        choices=["interval", "smx"],
-        default="interval",
-        help="interval=pause fixe (recommandé) | smx=attendre SMX après chaque envoi",
+        choices=["smx", "interval"],
+        default="smx",
+        help="smx=attendre le retour laser avant le code suivant (défaut) | interval=pause fixe",
+    )
+    parser.add_argument(
+        "--ack",
+        default=DEFAULT_ACK,
+        help="Texte du retour « marquage terminé » (défaut: SMX)",
     )
     parser.add_argument(
         "--interval-ms",
         type=int,
         default=DEFAULT_INTERVAL_MS,
-        help="Pause entre codes en ms (défaut: 10000 = 10 s)",
+        help="Pause entre codes en ms, seulement en --mode interval",
     )
-    parser.add_argument("--wait-smx-ms", type=int, default=15000, help="Timeout attente SMX (mode smx)")
+    parser.add_argument(
+        "--wait-smx-ms",
+        type=int,
+        default=DEFAULT_ACK_TIMEOUT_MS,
+        help="Temps max d'attente du retour laser en ms (défaut: 180000 = 3 min)",
+    )
     parser.add_argument("--timeout", type=float, default=15.0, help="Timeout socket (s)")
     parser.add_argument("--retries", type=int, default=3, help="Tentatives par code")
     parser.add_argument("--from-index", type=int, default=None, help="Forcer l'index de départ (0-based)")
@@ -314,8 +336,12 @@ def main() -> None:
     args = parser.parse_args()
 
     print("=" * 60)
-    print("  AYA Laser Sender — envoi automatique des codes")
-    print(f"  Pause entre codes : {args.interval_ms / 1000:.0f} s")
+    print("  AYA Laser Sender — un code à la fois")
+    if args.mode == "smx":
+        print(f"  Attente du retour {args.ack} avant chaque code suivant")
+        print(f"  Timeout marquage : {args.wait_smx_ms / 1000:.0f} s")
+    else:
+        print(f"  Pause fixe entre codes : {args.interval_ms / 1000:.0f} s")
     print("=" * 60)
 
     code = 0
