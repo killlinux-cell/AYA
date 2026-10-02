@@ -268,3 +268,36 @@ APP_IOS_LATEST_VERSION = config('APP_IOS_LATEST_VERSION', default='1.2.0')
 APP_IOS_FORCE_UPDATE = config('APP_IOS_FORCE_UPDATE', default=False, cast=bool)
 APP_IOS_STORE_URL = config('APP_IOS_STORE_URL', default='https://apps.apple.com/app/id000000000')
 APP_IOS_BUNDLE_ID = config('APP_IOS_BUNDLE_ID', default='com.uborasoftware.aya')
+
+# Journal des erreurs (page Santé système)
+LOG_DIR = BASE_DIR / 'logs'
+try:
+    LOG_DIR.mkdir(exist_ok=True)
+except OSError:
+    LOG_DIR = None
+
+if LOG_DIR is not None:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': '{asctime} {levelname} {name} {message}',
+                'style': '{',
+            },
+        },
+        'handlers': {
+            'aya_file': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': str(LOG_DIR / 'aya.log'),
+                'maxBytes': 2_000_000,
+                'backupCount': 3,
+                'formatter': 'verbose',
+                'encoding': 'utf-8',
+            },
+        },
+        'root': {
+            'handlers': ['aya_file'],
+            'level': 'WARNING',
+        },
+    }

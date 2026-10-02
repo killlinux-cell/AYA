@@ -82,6 +82,8 @@ urlpatterns = [
     # Nouvelles fonctionnalités
     path('qr-codes-analytics/', views.qr_codes_analytics, name='qr_codes_analytics'),
     path('system-health/', views.system_health, name='system_health'),
+    path('system-health/clear-cache/', views.clear_system_cache, name='clear_system_cache'),
+    path('system-health/download-log/', views.download_system_log, name='download_system_log'),
     path('bulk-operations/', views.bulk_operations, name='bulk_operations'),
     
     # Gestion des publicités vidéo

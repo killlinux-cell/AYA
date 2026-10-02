@@ -2153,36 +2153,150 @@ def qr_codes_analytics(request):
     
     return render(request, 'dashboard/qr_codes_analytics.html', context)
 
+def _format_uptime(seconds):
+    seconds = max(0, int(seconds))
+    days, rem = divmod(seconds, 86400)
+    hours, rem = divmod(rem, 3600)
+    minutes, _ = divmod(rem, 60)
+    if days:
+        return f'{days} j {hours} h'
+    if hours:
+        return f'{hours} h {minutes} min'
+    return f'{minutes} min'
+
+
+def _server_uptime_seconds():
+    try:
+        with open('/proc/uptime', encoding='ascii') as handle:
+            return float(handle.read().split()[0])
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+def _cache_status():
+    from django.conf import settings
+    from django.core.cache import cache
+
+    backend = ''
+    caches_setting = getattr(settings, 'CACHES', {}) or {}
+    backend = str(caches_setting.get('default', {}).get('BACKEND', ''))
+    lowered = backend.lower()
+    if 'redis' in lowered:
+        label = 'Redis'
+    elif 'memcached' in lowered:
+        label = 'Memcached'
+    elif 'filebased' in lowered:
+        label = 'Fichier'
+    else:
+        label = 'Mémoire locale'
+    try:
+        cache.set('aya_health_ping', 'ok', 30)
+        ok = cache.get('aya_health_ping') == 'ok'
+    except Exception:
+        ok = False
+    return ok, label
+
+
+def _disk_status():
+    import shutil
+    from django.conf import settings
+
+    usage = shutil.disk_usage(settings.BASE_DIR)
+    free_gb = usage.free / (1024 ** 3)
+    used_pct = (usage.used / usage.total * 100) if usage.total else 0
+    ok = usage.free > 500 * 1024 * 1024
+    return ok, free_gb, used_pct
+
+
+def _recent_log_errors(limit=15):
+    from django.conf import settings
+
+    path = settings.BASE_DIR / 'logs' / 'aya.log'
+    if not path.exists():
+        return []
+    try:
+        raw = path.read_bytes()[-80_000:]
+    except OSError:
+        return []
+    lines = []
+    for line in raw.decode('utf-8', errors='replace').splitlines():
+        if ' ERROR ' in line or ' CRITICAL ' in line:
+            lines.append(line.strip())
+    return list(reversed(lines[-limit:]))
+
+
+def collect_system_health():
+    """Mesures réelles : base, cache, disque, démarrage du serveur, volumes AYA."""
+    import time
+    from django.db import connection
+
+    db_ok = False
+    db_ms = None
+    started = time.perf_counter()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT 1')
+            cursor.fetchone()
+        db_ok = True
+        db_ms = (time.perf_counter() - started) * 1000
+    except Exception:
+        db_ok = False
+
+    cache_ok, cache_label = _cache_status()
+    disk_ok, free_gb, used_pct = _disk_status()
+    uptime_seconds = _server_uptime_seconds()
+
+    today = timezone.localdate()
+    return {
+        'health_checks': {
+            'database': db_ok,
+            'cache': cache_ok,
+            'storage': disk_ok,
+            'api': db_ok,
+        },
+        'cache_label': cache_label,
+        'db_ms': None if db_ms is None else f'{db_ms:.1f}',
+        'disk_free_gb': f'{free_gb:.1f}',
+        'disk_used_pct': f'{used_pct:.0f}',
+        'uptime_label': _format_uptime(uptime_seconds) if uptime_seconds is not None else 'indisponible',
+        'recent_errors': _recent_log_errors(),
+        'stats': {
+            'users': User.objects.count(),
+            'qr_active': QRCode.objects.filter(is_active=True).count(),
+            'qr_inactive': QRCode.objects.filter(is_active=False).count(),
+            'scans': UserQRCode.objects.count(),
+            'scans_today': UserQRCode.objects.filter(scanned_at__date=today).count(),
+        },
+    }
+
+
 @login_required
 @user_passes_test(is_admin)
 def system_health(request):
-    """Vue de santé du système"""
-    
-    # Vérifications système
-    health_checks = {
-        'database': True,  # À implémenter
-        'redis': False,    # À implémenter si utilisé
-        'storage': True,   # À implémenter
-        'api': True,       # À implémenter
-    }
-    
-    # Statistiques de performance
-    performance_stats = {
-        'avg_response_time': 0.5,  # À implémenter
-        'error_rate': 0.02,        # À implémenter
-        'uptime': '99.9%',         # À implémenter
-    }
-    
-    # Logs récents (à implémenter avec un système de logging)
-    recent_errors = []
-    
-    context = {
-        'health_checks': health_checks,
-        'performance_stats': performance_stats,
-        'recent_errors': recent_errors,
-    }
-    
-    return render(request, 'dashboard/system_health.html', context)
+    """Santé réelle du serveur et volumes de l'application."""
+    return render(request, 'dashboard/system_health.html', collect_system_health())
+
+
+@login_required
+@user_passes_test(is_admin)
+def clear_system_cache(request):
+    if request.method != 'POST':
+        return redirect('dashboard:system_health')
+    from django.core.cache import cache
+    cache.clear()
+    messages.success(request, 'Cache vidé.')
+    return redirect('dashboard:system_health')
+
+
+@login_required
+@user_passes_test(is_admin)
+def download_system_log(request):
+    from django.conf import settings
+    path = settings.BASE_DIR / 'logs' / 'aya.log'
+    if not path.exists():
+        messages.info(request, 'Aucun journal pour le moment.')
+        return redirect('dashboard:system_health')
+    return FileResponse(path.open('rb'), as_attachment=True, filename='aya.log')
 
 @login_required
 @user_passes_test(is_admin)

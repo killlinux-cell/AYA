@@ -59,6 +59,7 @@ touch "$BACKEND/dashboard/templatetags/__init__.py" 2>/dev/null || true
 cp "$AYA/dashboard/templates/dashboard/base.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/qr_codes.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/laser_print.html" "$BACKEND/dashboard/templates/dashboard/"
+cp "$AYA/dashboard/templates/dashboard/system_health.html" "$BACKEND/dashboard/templates/dashboard/"
 cp "$AYA/dashboard/templates/dashboard/base.html" "$BACKEND/dashboard/templates/dashboard/" 2>/dev/null || true
 cp "$AYA/laser_tcp_sender.py" "$BACKEND/" 2>/dev/null || true
 mkdir -p "$BACKEND/laser_bin"
