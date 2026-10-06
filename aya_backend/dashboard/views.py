@@ -959,7 +959,7 @@ def laser_print_page(request):
     """Guide d'impression laser TCP + exports pour le PC atelier."""
     active_qs = QRCode.objects.filter(is_active=True)
     context = {
-        'laser_host': '192.168.0.100',
+        'laser_host': '192.168.0.101',
         'laser_port': 8950,
         'active_total': active_qs.count(),
         'active_six_digit': active_qs.filter(code__regex=r'^\d{6}$').count(),

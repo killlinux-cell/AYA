@@ -33,7 +33,7 @@ from pathlib import Path
 from typing import List, Optional
 
 
-DEFAULT_HOST = "192.168.0.100"
+DEFAULT_HOST = "192.168.0.101"
 DEFAULT_PORT = 8950
 DEFAULT_INTERVAL_MS = 10000
 DEFAULT_ACK = "SMX"
@@ -290,7 +290,7 @@ def run(args: argparse.Namespace) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Envoi TCP des codes AYA vers la machine laser")
-    parser.add_argument("--host", default=DEFAULT_HOST, help="IP machine laser (défaut: 192.168.0.100)")
+    parser.add_argument("--host", default=DEFAULT_HOST, help="IP machine laser (défaut: 192.168.0.101)")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="Port TCP (défaut: 8950)")
     parser.add_argument(
         "--file",
