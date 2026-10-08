@@ -49,7 +49,7 @@
                     <p class="small text-muted mb-0">
                         Depuis le <strong>PC atelier</strong> : TXT + exe dans le même dossier,
                         puis double-clic. Un code part seulement quand le laser a renvoyé
-                        <code>SMX</code> (marquage terminé). Pas besoin de Python.
+                        <code>MK</code> (capsule imprimée) avant le code suivant. Pas besoin de Python.
                     </p>
                     <a class="btn btn-outline-dark" href="{% url 'dashboard:export_codes_txt' %}?status=active&digits_only=1">
                         <i class="fas fa-hashtag"></i> TXT — 6 chiffres seulement
@@ -74,8 +74,9 @@
                 <i class="fas fa-terminal"></i> Lancer les {{ active_total }} envois
             </div>
             <div class="card-body">
-                <h5>Format envoyé (comme ton test)</h5>
-                <pre class="bg-light p-3 rounded">SM https://monuniversaya.com/scan?code=CODE\r\n</pre>
+                <h5>Cycle par capsule (notice machine)</h5>
+                <pre class="bg-light p-3 rounded">SM https://monuniversaya.com/scan?code=CODE\r\n   → réponse SMX (données reçues)
+SGT\r\n                                             → attend MK (impression finie)</pre>
 
                 <h5 class="mt-4">Sur le PC atelier (Windows)</h5>
                 <ol>
@@ -83,8 +84,10 @@
                     <li>Télécharge le TXT + l’exe (ou le script) dans le même dossier, ex. <code>C:\aya_laser\</code></li>
                     <li>Vérifie que <code>aya_codes_machine.txt</code> fait plus de <strong>0 Ko</strong>.</li>
                     <li><strong>Double-clique</strong> sur <code>AYA_Laser_Sender.exe</code>.
-                        Il envoie <strong>un seul</strong> code, attend le retour <code>SMX</code>
-                        (marquage terminé), puis envoie le suivant.</li>
+                        Pour chaque capsule : envoi des données (<code>SM</code>),
+                        déclenchement (<code>SGT</code>), attente de <code>MK</code>
+                        (impression finie), puis seulement la capsule suivante.
+                        <code>SMX</code> ne veut pas dire que c’est imprimé.</li>
                 </ol>
 
                 <p class="mt-3"><strong>Test 3 codes</strong> (PowerShell) :</p>
@@ -93,8 +96,8 @@
                 <p class="mt-3"><strong>Lot complet</strong> (reprise auto, attente du retour laser) :</p>
                 <pre class="bg-dark text-white p-3 rounded">AYA_Laser_Sender.exe</pre>
 
-                <p class="mt-3">Si le retour n’est pas <code>SMX</code> (autre texte affiché dans la fenêtre) :</p>
-                <pre class="bg-dark text-white p-3 rounded">AYA_Laser_Sender.exe --ack TEXTE_RECU</pre>
+                <p class="mt-3">Pour réimprimer un fichier déjà marqué « envoyé » :</p>
+                <pre class="bg-dark text-white p-3 rounded">AYA_Laser_Sender.exe --reset-progress --limit 3</pre>
 
                 <div class="alert alert-info mt-3 mb-0">
                     Le fichier <code>laser_progress.json</code> mémorise le dernier code envoyé.
@@ -116,8 +119,8 @@
                 <code>SM https://monuniversaya.com/scan?code=test1\r\n</code></li>
             <li>Note ce qui apparaît juste après, avec l’heure.</li>
             <li>
-                Le texte qui apparaît <strong>quand le marquage est fini</strong> est le retour à attendre
-                (souvent <code>SMX</code>). L’exe s’arrête dessus avant d’envoyer le code suivant.
+                <code>SMX</code> = données reçues. <code>MK</code> = impression terminée.
+                L’exe n’envoie le code suivant qu’après <code>MK</code>.
             </li>
         </ol>
     </div>

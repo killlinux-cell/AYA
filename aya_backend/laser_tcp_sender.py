@@ -9,12 +9,14 @@ Usage (sur le PC de l'atelier, même réseau que la machine) :
   AYA_Laser_Sender.exe
   python laser_tcp_sender.py --file aya_codes_machine.txt
 
-Comportement par défaut :
-  1 code envoyé → attente du retour laser (SMX = marquage terminé) → code suivant.
-  Rien n'est envoyé tant que la machine n'a pas répondu.
+Comportement par défaut (notice machine) :
+  1. SM  = enregistrer le contenu (réponse SMX = données reçues, PAS imprimé)
+  2. SGT = déclencher l'impression de cette capsule
+  3. MK  = impression terminée, seulement alors le code suivant
 
-Format envoyé (comme Network Debug Assistant) :
+Format envoyé :
   SM https://monuniversaya.com/scan?code=CODE\\r\\n
+  SGT\\r\\n
 
 IMPORTANT
 - Un seul code en vol : le suivant part seulement après le retour.
@@ -36,7 +38,9 @@ from typing import List, Optional
 DEFAULT_HOST = "192.168.0.101"
 DEFAULT_PORT = 8950
 DEFAULT_INTERVAL_MS = 10000
-DEFAULT_ACK = "SMX"
+DEFAULT_ACCEPT = "SMX"  # données enregistrées, impression pas encore faite
+DEFAULT_TRIGGER = "SGT"  # déclenche vraiment le marquage (STY ne le fait pas)
+DEFAULT_ACK = "MK"  # notification « marquage terminé »
 DEFAULT_ACK_TIMEOUT_MS = 180000  # 3 min max pour un marquage
 DEFAULT_FILE = "aya_codes_machine.txt"
 BASE_URL = "https://monuniversaya.com/scan?code="
@@ -158,12 +162,17 @@ class LaserClient:
         self.sock.settimeout(self.timeout)
         return ""
 
-    def send_code(self, code: str) -> None:
+    def send_line(self, text: str) -> None:
         if not self.sock:
             raise RuntimeError("Non connecté")
-        payload = build_payload(code)
-        self.sock.sendall(payload)
-        print(f"  → {payload.decode('ascii', errors='ignore').rstrip()}")
+        if not text.endswith("\r\n"):
+            text += "\r\n"
+        self.sock.sendall(text.encode("ascii", errors="ignore"))
+        print(f"  → {text.rstrip()}")
+
+    def send_code(self, code: str) -> None:
+        payload = build_payload(code).decode("ascii", errors="ignore")
+        self.send_line(payload.rstrip("\r\n"))
 
 
 def run(args: argparse.Namespace) -> int:
@@ -226,19 +235,33 @@ def run(args: argparse.Namespace) -> int:
             retries = 0
             while True:
                 try:
-                    # Vide tout ce qui traînait (vieux SMX) pour ne pas le prendre comme "terminé"
+                    # Vide les vieux retours pour ne pas les prendre comme « imprimé »
                     client.drain(0.15)
                     client._buffer = ""
                     client.send_code(code)
 
                     if args.mode == "smx":
-                        print(f"  … attente retour laser ({args.ack}) avant le code suivant…")
-                        reply = client.wait_for_token(args.ack, args.wait_smx_ms / 1000.0)
-                        if not reply:
+                        print("  … attente SMX (données reçues, capsule pas encore imprimée)…")
+                        accepted = client.wait_for_token(DEFAULT_ACCEPT, args.accept_ms / 1000.0)
+                        if not accepted:
                             raise TimeoutError(
-                                f"Pas de retour {args.ack!r} sous {args.wait_smx_ms} ms"
+                                f"Pas de {DEFAULT_ACCEPT} sous {args.accept_ms} ms"
                             )
-                        print("  ✓ marquage terminé, envoi du suivant")
+                        print("  ✓ données acceptées (SMX)")
+                        # SMX et MK peuvent arriver collés : ne pas renvoyer SGT dans ce cas
+                        if args.ack in client._buffer:
+                            client.wait_for_token(args.ack, 2.0)
+                            print(f"  ✓ capsule imprimée ({args.ack} déjà reçu)")
+                        else:
+                            client.send_line(args.trigger)
+                            print(f"  … attente {args.ack} (fin d'impression de cette capsule)…")
+                            done = client.wait_for_token(args.ack, args.wait_smx_ms / 1000.0)
+                            if not done:
+                                raise TimeoutError(
+                                    f"Pas de {args.ack!r} sous {args.wait_smx_ms} ms "
+                                    "(impression non confirmée)"
+                                )
+                            print("  ✓ capsule imprimée, code suivant")
                     else:
                         time.sleep(max(args.interval_ms, 50) / 1000.0)
                         rx = client.drain(0.05)
@@ -303,12 +326,23 @@ def main() -> None:
         "--mode",
         choices=["smx", "interval"],
         default="smx",
-        help="smx=attendre le retour laser avant le code suivant (défaut) | interval=pause fixe",
+        help="smx=SM puis SGT, attendre MK (défaut) | interval=pause fixe",
+    )
+    parser.add_argument(
+        "--trigger",
+        default=DEFAULT_TRIGGER,
+        help="Commande qui déclenche l'impression (défaut: SGT). STY ne marque pas.",
     )
     parser.add_argument(
         "--ack",
         default=DEFAULT_ACK,
-        help="Texte du retour « marquage terminé » (défaut: SMX)",
+        help="Texte « impression terminée » (défaut: MK). SMX veut seulement dire données reçues.",
+    )
+    parser.add_argument(
+        "--accept-ms",
+        type=int,
+        default=15000,
+        help="Temps max pour recevoir SMX après l'envoi des données (défaut: 15000)",
     )
     parser.add_argument(
         "--interval-ms",
@@ -338,8 +372,8 @@ def main() -> None:
     print("=" * 60)
     print("  AYA Laser Sender — un code à la fois")
     if args.mode == "smx":
-        print(f"  Attente du retour {args.ack} avant chaque code suivant")
-        print(f"  Timeout marquage : {args.wait_smx_ms / 1000:.0f} s")
+        print("  SM = données, SGT = imprimer, MK = capsule terminée")
+        print(f"  Timeout impression : {args.wait_smx_ms / 1000:.0f} s")
     else:
         print(f"  Pause fixe entre codes : {args.interval_ms / 1000:.0f} s")
     print("=" * 60)
