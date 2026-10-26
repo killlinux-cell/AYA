@@ -12,19 +12,32 @@
 <div class="card mb-4">
     <div class="card-body">
         <form method="GET" class="row g-3">
-            <div class="col-md-6">
-                <input type="text" class="form-control search-box" name="search" 
-                       placeholder="Rechercher par code ou description..." 
+            <div class="col-lg-4">
+                <input type="text" class="form-control search-box" name="search"
+                       placeholder="Rechercher par code ou description..."
                        value="{{ search }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-lg-2">
                 <select class="form-select" name="status">
                     <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Tous les statuts</option>
                     <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Actifs</option>
                     <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactifs</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-lg-2">
+                <select class="form-select" id="pointsSelect">
+                    <option value="">Tous les points</option>
+                    {% for pts in points_choices %}
+                    <option value="{{ pts }}" {% if points_filter == pts|stringformat:"s" %}selected{% endif %}>{{ pts }} pts</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-2">
+                <input type="number" class="form-control" id="pointsTyped" name="points" min="0"
+                       placeholder="Ou saisir (ex. 10)"
+                       value="{% if points_filter %}{{ points_filter }}{% endif %}">
+            </div>
+            <div class="col-lg-2">
                 <button type="submit" class="btn btn-primary w-100">
                     <i class="fas fa-search"></i> Filtrer
                 </button>
@@ -152,10 +165,10 @@
     <ul class="pagination justify-content-center">
         {% if page_obj.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Premier</a>
+                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if points_filter %}&points={{ points_filter }}{% endif %}">Premier</a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Précédent</a>
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if points_filter %}&points={{ points_filter }}{% endif %}">Précédent</a>
             </li>
         {% endif %}
         
@@ -167,10 +180,10 @@
         
         {% if page_obj.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Suivant</a>
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if points_filter %}&points={{ points_filter }}{% endif %}">Suivant</a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Dernier</a>
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if points_filter %}&points={{ points_filter }}{% endif %}">Dernier</a>
             </li>
         {% endif %}
     </ul>
@@ -395,6 +408,15 @@
 
 {% block extra_js %}
 <script>
+(function () {
+    const select = document.getElementById('pointsSelect');
+    const typed = document.getElementById('pointsTyped');
+    if (!select || !typed) return;
+    select.addEventListener('change', function () {
+        typed.value = this.value;
+    });
+})();
+
 let currentQRCodeId = null;
 
 // Afficher le QR Code

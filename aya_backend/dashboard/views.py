@@ -166,29 +166,45 @@ def qr_codes_management(request):
     # Filtres
     search = request.GET.get('search', '')
     status_filter = request.GET.get('status', 'all')
-    
+    points_raw = (request.GET.get('points') or '').strip()
+    points_filter = None
+    if points_raw != '':
+        try:
+            points_filter = int(points_raw)
+        except ValueError:
+            points_filter = None
+
     qr_codes = QRCode.objects.all()
-    
+
     if search:
         qr_codes = qr_codes.filter(
-            Q(code__icontains=search) | 
+            Q(code__icontains=search) |
             Q(description__icontains=search)
         )
-    
+
     if status_filter == 'active':
         qr_codes = qr_codes.filter(is_active=True)
     elif status_filter == 'inactive':
         qr_codes = qr_codes.filter(is_active=False)
-    
+
+    if points_filter is not None:
+        qr_codes = qr_codes.filter(points=points_filter)
+
+    points_choices = list(
+        QRCode.objects.values_list('points', flat=True).distinct().order_by('points')
+    )
+
     # Pagination
     paginator = Paginator(qr_codes, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'search': search,
         'status_filter': status_filter,
+        'points_filter': '' if points_filter is None else str(points_filter),
+        'points_choices': points_choices,
         'total_qr_codes': QRCode.objects.count(),
         'total_scans': UserQRCode.objects.count(),
         **_qr_status_counts(),
